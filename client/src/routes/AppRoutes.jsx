@@ -8,26 +8,25 @@ import {
   AdminStatisticsPage,
 } from '../pages/admin/AdminModulePages.jsx';
 import EvaluatorDashboard from '../pages/evaluator/EvaluatorDashboard.jsx';
-import {
-  EvaluatorEvaluationsPage,
-  EvaluatorInstrumentsPage,
-  EvaluatorProfilePage,
-  EvaluatorReportsPage,
-} from '../pages/evaluator/EvaluatorModulePages.jsx';
+import EvaluatorEvaluationsPage from '../pages/evaluator/EvaluatorEvaluationsPage.jsx';
+import EvaluatorReportsPage from '../pages/evaluator/EvaluatorReportsPage.jsx';
 import EvaluatorGroupsPage from '../pages/evaluator/EvaluatorGroupsPage.jsx';
+import EvaluatorInstrumentsPage from '../pages/evaluator/EvaluatorInstrumentsPage.jsx';
+import ChecklistBuilderPage from '../pages/evaluator/ChecklistBuilderPage.jsx';
+import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
 import EvaluatorTasksPage from '../pages/evaluator/EvaluatorTasksPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
 import StudentRegisterPage from '../pages/public/StudentRegisterPage.jsx';
 import StudentDashboard from '../pages/student/StudentDashboard.jsx';
+import ProfilePage from '../pages/shared/ProfilePage.jsx';
+import { StudentTasksPage } from '../pages/student/StudentModulePages.jsx';
 import {
-  StudentEvaluationsPage,
-  StudentProfilePage,
-  StudentResultsPage,
-  StudentSuggestionsPage,
-  StudentTasksPage,
-} from '../pages/student/StudentModulePages.jsx';
+  StudentEvaluationsRealPage,
+  StudentResultsRealPage,
+  StudentSuggestionsRealPage,
+} from '../pages/student/StudentResultsPages.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import RoleRoute from './RoleRoute.jsx';
 
@@ -53,17 +52,19 @@ function AppRoutes() {
             <Route path="evaluator/students" element={<EvaluatorStudentsPage />} />
             <Route path="evaluator/tasks" element={<EvaluatorTasksPage />} />
             <Route path="evaluator/instruments" element={<EvaluatorInstrumentsPage />} />
+            <Route path="evaluator/instruments/rubric-builder" element={<RubricBuilderPage />} />
+            <Route path="evaluator/instruments/checklist-builder" element={<ChecklistBuilderPage />} />
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
-            <Route path="evaluator/profile" element={<EvaluatorProfilePage />} />
+            <Route path="evaluator/profile" element={<ProfilePage role="evaluator" />} />
           </Route>
           <Route element={<RoleRoute allowedRoles={['student']} />}>
             <Route path="student" element={<StudentDashboard />} />
             <Route path="student/tasks" element={<StudentTasksPage />} />
-            <Route path="student/evaluations" element={<StudentEvaluationsPage />} />
-            <Route path="student/results" element={<StudentResultsPage />} />
-            <Route path="student/suggestions" element={<StudentSuggestionsPage />} />
-            <Route path="student/profile" element={<StudentProfilePage />} />
+            <Route path="student/evaluations" element={<StudentEvaluationsRealPage />} />
+            <Route path="student/results" element={<StudentResultsRealPage />} />
+            <Route path="student/suggestions" element={<StudentSuggestionsRealPage />} />
+            <Route path="student/profile" element={<ProfilePage role="student" />} />
           </Route>
         </Route>
       </Route>
