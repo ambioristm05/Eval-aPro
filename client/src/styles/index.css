@@ -910,6 +910,8 @@ a.action-item:focus-visible {
 .builder-page {
   display: grid;
   gap: 1.25rem;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .builder-layout {
@@ -917,6 +919,7 @@ a.action-item:focus-visible {
   grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .builder-actions {
@@ -966,25 +969,31 @@ a.action-item:focus-visible {
 }
 
 .rubric-table textarea {
-  min-width: 190px;
+  min-width: 0;
+  max-width: 100%;
   resize: vertical;
 }
 
 .rubric-table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   border: 1px solid #d8e0ea;
   border-radius: 8px;
 }
 
 .rubric-table {
-  width: 100%;
-  min-width: 900px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   background: #ffffff;
+  table-layout: fixed;
 }
 
 .rubric-table th,
 .rubric-table td {
+  width: clamp(150px, 18vw, 220px);
   padding: 0.85rem;
   border-bottom: 1px solid #e4eaf1;
   border-right: 1px solid #e4eaf1;
@@ -1006,7 +1015,12 @@ a.action-item:focus-visible {
 }
 
 .rubric-table td:first-child {
-  min-width: 220px;
+  width: clamp(180px, 22vw, 260px);
+}
+
+.rubric-table th:last-child,
+.rubric-table td:last-child {
+  width: 110px;
 }
 
 .rubric-table td:last-child,
