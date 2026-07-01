@@ -643,6 +643,11 @@ a.action-item:focus-visible {
   align-items: start;
 }
 
+.panel-stack {
+  display: grid;
+  gap: 1rem;
+}
+
 .panel-heading-row {
   display: flex;
   align-items: start;

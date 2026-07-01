@@ -9,7 +9,7 @@ async function getEvaluatorGroupIds(evaluatorId) {
 }
 
 async function buildStudentFilter(req) {
-  const { groupId, search, status } = req.validated.query;
+  const { availableForGroup, groupId, search, status } = req.validated.query;
   const filter = {
     role: USER_ROLES.STUDENT
   };
@@ -28,11 +28,27 @@ async function buildStudentFilter(req) {
   }
 
   if (req.user.role === USER_ROLES.ADMIN) {
+    if (availableForGroup) {
+      filter.status = USER_STATUSES.ACTIVE;
+      filter.groups = { $ne: availableForGroup };
+      return filter;
+    }
+
     if (groupId) filter.groups = groupId;
     return filter;
   }
 
   const evaluatorGroupIds = await getEvaluatorGroupIds(req.user._id);
+
+  if (availableForGroup) {
+    const ownsGroup = evaluatorGroupIds.some((id) => id.equals(availableForGroup));
+    if (!ownsGroup) throw new AppError('Grupo no encontrado', 404);
+
+    filter.status = USER_STATUSES.ACTIVE;
+    filter.groups = { $ne: availableForGroup };
+    return filter;
+  }
+
   if (!evaluatorGroupIds.length) {
     filter._id = { $in: [] };
     return filter;

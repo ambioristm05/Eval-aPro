@@ -2,7 +2,7 @@ import api from './api.js';
 
 const endpointMap = {
   groups: '/groups',
-  students: '/users',
+  students: '/users/students',
   tasks: '/tasks',
   instruments: '/instruments',
   evaluations: '/evaluations',
@@ -26,5 +26,15 @@ export async function updateResource(resource, id, payload) {
 
 export async function deleteResource(resource, id) {
   const { data } = await api.delete(`${endpointMap[resource]}/${id}`);
+  return data;
+}
+
+export async function addStudentToGroup(groupId, studentId) {
+  const { data } = await api.post(`/groups/${groupId}/students`, { studentId });
+  return data;
+}
+
+export async function removeStudentFromGroup(groupId, studentId) {
+  const { data } = await api.delete(`/groups/${groupId}/students/${studentId}`);
   return data;
 }

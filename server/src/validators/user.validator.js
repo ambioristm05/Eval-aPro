@@ -10,6 +10,7 @@ export const listStudentsSchema = z.object({
     search: z.string().trim().max(100).optional(),
     status: z.enum(Object.values(USER_STATUSES)).optional(),
     groupId: mongoIdSchema.optional(),
+    availableForGroup: mongoIdSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20)
   })

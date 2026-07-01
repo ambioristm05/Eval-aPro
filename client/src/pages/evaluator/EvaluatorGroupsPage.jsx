@@ -1,6 +1,7 @@
 import {
   Archive,
   GraduationCap,
+  Link,
   Pencil,
   Plus,
   RotateCcw,
@@ -9,34 +10,15 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-
-const initialGroups = [
-  {
-    id: 'group-literature-4a',
-    name: 'Literatura 4to A',
-    description: 'Analisis de textos, exposiciones y rubricas de lectura.',
-    status: 'active',
-    studentsCount: 28,
-    tasksCount: 4,
-  },
-  {
-    id: 'group-projects-5b',
-    name: 'Proyecto final 5to B',
-    description: 'Seguimiento de entregas, presentaciones y defensa oral.',
-    status: 'active',
-    studentsCount: 22,
-    tasksCount: 3,
-  },
-  {
-    id: 'group-observation',
-    name: 'Practica de observacion',
-    description: 'Grupo archivado para conservar resultados historicos.',
-    status: 'archived',
-    studentsCount: 16,
-    tasksCount: 2,
-  },
-];
+import { useEffect, useMemo, useState } from 'react';
+import {
+  addStudentToGroup,
+  createResource,
+  deleteResource,
+  listResource,
+  updateResource,
+} from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const emptyForm = {
   name: '',
@@ -49,12 +31,34 @@ const statusLabels = {
   archived: 'Archivado',
 };
 
+function getId(resource) {
+  return resource.id ?? resource._id;
+}
+
+function getStudentCount(group) {
+  return Array.isArray(group.students) ? group.students.length : 0;
+}
+
 function EvaluatorGroupsPage() {
-  const [groups, setGroups] = useState(initialGroups);
+  const [groups, setGroups] = useState([]);
+  const [availableStudents, setAvailableStudents] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
+
+  const activeGroupsForSelect = useMemo(
+    () => groups.filter((group) => group.status === 'active'),
+    [groups],
+  );
 
   const filteredGroups = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -64,14 +68,91 @@ function EvaluatorGroupsPage() {
       const matchesSearch =
         !normalizedSearch ||
         group.name.toLowerCase().includes(normalizedSearch) ||
-        group.description.toLowerCase().includes(normalizedSearch);
+        (group.description ?? '').toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
     });
   }, [groups, searchTerm, statusFilter]);
 
   const activeGroups = groups.filter((group) => group.status === 'active').length;
-  const totalStudents = groups.reduce((total, group) => total + group.studentsCount, 0);
+  const totalStudents = groups.reduce((total, group) => total + getStudentCount(group), 0);
+
+  const loadGroups = async () => {
+    const data = await listResource('groups', { limit: 100 });
+    setGroups(data.groups ?? []);
+
+    if (!selectedGroupId && data.groups?.length) {
+      const firstActiveGroup = data.groups.find((group) => group.status === 'active') ?? data.groups[0];
+      setSelectedGroupId(getId(firstActiveGroup));
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchGroups() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await listResource('groups', { limit: 100 });
+        if (!isMounted) return;
+
+        setGroups(data.groups ?? []);
+        const firstActiveGroup = data.groups?.find((group) => group.status === 'active') ?? data.groups?.[0];
+        setSelectedGroupId(firstActiveGroup ? getId(firstActiveGroup) : '');
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchGroups();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchAvailableStudents() {
+      if (!selectedGroupId) {
+        setAvailableStudents([]);
+        setSelectedStudentId('');
+        return;
+      }
+
+      try {
+        const data = await listResource('students', {
+          availableForGroup: selectedGroupId,
+          search: studentSearch || undefined,
+          limit: 100,
+        });
+
+        if (!isMounted) return;
+        setAvailableStudents(data.students ?? []);
+        setSelectedStudentId((current) => {
+          if (data.students?.some((student) => getId(student) === current)) return current;
+          return data.students?.[0] ? getId(data.students[0]) : '';
+        });
+      } catch (requestError) {
+        if (!isMounted) return;
+        setAvailableStudents([]);
+        setSelectedStudentId('');
+        setError(getErrorMessage(requestError));
+      }
+    }
+
+    fetchAvailableStudents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedGroupId, studentSearch]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -83,70 +164,107 @@ function EvaluatorGroupsPage() {
     setEditingId(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const normalizedName = formData.name.trim();
+    setError('');
+    setMessage('');
 
+    const normalizedName = formData.name.trim();
     if (!normalizedName) return;
 
-    if (editingId) {
-      setGroups((current) =>
-        current.map((group) =>
-          group.id === editingId
-            ? {
-                ...group,
-                name: normalizedName,
-                description: formData.description.trim(),
-                status: formData.status,
-              }
-            : group,
-        ),
-      );
-      resetForm();
-      return;
-    }
+    setIsSubmitting(true);
 
-    setGroups((current) => [
-      {
-        id: `group-${Date.now()}`,
-        name: normalizedName,
-        description: formData.description.trim(),
-        status: formData.status,
-        studentsCount: 0,
-        tasksCount: 0,
-      },
-      ...current,
-    ]);
-    resetForm();
+    try {
+      if (editingId) {
+        await updateResource('groups', editingId, {
+          name: normalizedName,
+          description: formData.description.trim(),
+          status: formData.status,
+        });
+        setMessage('Grupo actualizado correctamente.');
+      } else {
+        await createResource('groups', {
+          name: normalizedName,
+          description: formData.description.trim(),
+        });
+        setMessage('Grupo creado correctamente.');
+      }
+
+      resetForm();
+      await loadGroups();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = (group) => {
-    setEditingId(group.id);
+    setEditingId(getId(group));
     setFormData({
       name: group.name,
-      description: group.description,
+      description: group.description ?? '',
       status: group.status,
     });
   };
 
-  const handleToggleStatus = (groupId) => {
-    setGroups((current) =>
-      current.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              status: group.status === 'active' ? 'archived' : 'active',
-            }
-          : group,
-      ),
-    );
+  const handleToggleStatus = async (group) => {
+    setError('');
+    setMessage('');
+
+    try {
+      await updateResource('groups', getId(group), {
+        status: group.status === 'active' ? 'archived' : 'active',
+      });
+      setMessage(group.status === 'active' ? 'Grupo archivado.' : 'Grupo reactivado.');
+      await loadGroups();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
-  const handleDelete = (groupId) => {
-    setGroups((current) => current.filter((group) => group.id !== groupId));
+  const handleDelete = async (groupId) => {
+    setError('');
+    setMessage('');
 
-    if (editingId === groupId) {
-      resetForm();
+    try {
+      await deleteResource('groups', groupId);
+      setMessage('Grupo eliminado correctamente.');
+      if (editingId === groupId) resetForm();
+      await loadGroups();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
+  };
+
+  const handleLinkStudent = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (!selectedGroupId || !selectedStudentId) {
+      setError('Selecciona un grupo y un estudiante activo.');
+      return;
+    }
+
+    setIsLinking(true);
+
+    try {
+      await addStudentToGroup(selectedGroupId, selectedStudentId);
+      setMessage('Estudiante vinculado al grupo correctamente.');
+      setStudentSearch('');
+      await loadGroups();
+
+      const data = await listResource('students', {
+        availableForGroup: selectedGroupId,
+        limit: 100,
+      });
+      setAvailableStudents(data.students ?? []);
+      setSelectedStudentId(data.students?.[0] ? getId(data.students[0]) : '');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -160,11 +278,13 @@ function EvaluatorGroupsPage() {
           <p className="eyebrow">Evaluador</p>
           <h1>Mis grupos</h1>
           <p className="dashboard-description">
-            Organiza clases, conserva su historial y prepara la vinculacion de estudiantes,
-            tareas e instrumentos.
+            Organiza clases, conserva su historial y vincula estudiantes registrados.
           </p>
         </div>
       </div>
+
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {message ? <p className="form-message form-message-success">{message}</p> : null}
 
       <div className="metric-grid" aria-label="Resumen de grupos">
         <article className="metric-card">
@@ -191,61 +311,124 @@ function EvaluatorGroupsPage() {
           </span>
           <div>
             <strong>{totalStudents}</strong>
-            <span>Estudiantes</span>
+            <span>Estudiantes vinculados</span>
           </div>
         </article>
       </div>
 
       <div className="management-grid">
-        <section className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>{editingId ? 'Editar grupo' : 'Crear grupo'}</h2>
-            <p>Define la informacion basica de la clase.</p>
-          </div>
-
-          <form className="stacked-form compact-form" onSubmit={handleSubmit}>
-            <label>
-              Nombre del grupo
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                placeholder="Ej. Comunicacion oral 3ro A"
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <label>
-              Descripcion
-              <textarea
-                name="description"
-                value={formData.description}
-                placeholder="Proposito del grupo o actividad principal"
-                rows="4"
-                onChange={handleChange}
-              />
-            </label>
-            <label>
-              Estado
-              <select name="status" value={formData.status} onChange={handleChange}>
-                <option value="active">Activo</option>
-                <option value="archived">Archivado</option>
-              </select>
-            </label>
-
-            <div className="form-actions">
-              <button className="button button-primary" type="submit">
-                {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
-                {editingId ? 'Guardar cambios' : 'Crear grupo'}
-              </button>
-              {editingId ? (
-                <button className="button button-secondary" type="button" onClick={resetForm}>
-                  Cancelar
-                </button>
-              ) : null}
+        <div className="panel-stack">
+          <section className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>{editingId ? 'Editar grupo' : 'Crear grupo'}</h2>
+              <p>Define la informacion basica de la clase.</p>
             </div>
-          </form>
-        </section>
+
+            <form className="stacked-form compact-form" onSubmit={handleSubmit}>
+              <label>
+                Nombre del grupo
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  placeholder="Ej. Comunicacion oral 3ro A"
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+              <label>
+                Descripcion
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  placeholder="Proposito del grupo o actividad principal"
+                  rows="4"
+                  onChange={handleChange}
+                />
+              </label>
+              {editingId ? (
+                <label>
+                  Estado
+                  <select name="status" value={formData.status} onChange={handleChange}>
+                    <option value="active">Activo</option>
+                    <option value="archived">Archivado</option>
+                  </select>
+                </label>
+              ) : null}
+
+              <div className="form-actions">
+                <button className="button button-primary" type="submit" disabled={isSubmitting}>
+                  {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
+                  {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear grupo'}
+                </button>
+                {editingId ? (
+                  <button className="button button-secondary" type="button" onClick={resetForm}>
+                    Cancelar
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          </section>
+
+          <section className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Vincular estudiante</h2>
+              <p>Selecciona un estudiante activo registrado y agregalo al grupo.</p>
+            </div>
+
+            <form className="stacked-form compact-form" onSubmit={handleLinkStudent}>
+              <label>
+                Grupo
+                <select
+                  value={selectedGroupId}
+                  onChange={(event) => setSelectedGroupId(event.target.value)}
+                  required
+                >
+                  {activeGroupsForSelect.map((group) => (
+                    <option key={getId(group)} value={getId(group)}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Buscar estudiante disponible
+                <input
+                  type="search"
+                  value={studentSearch}
+                  placeholder="Nombre o correo"
+                  onChange={(event) => setStudentSearch(event.target.value)}
+                />
+              </label>
+
+              <label>
+                Estudiante
+                <select
+                  value={selectedStudentId}
+                  onChange={(event) => setSelectedStudentId(event.target.value)}
+                  required
+                  disabled={!availableStudents.length}
+                >
+                  {availableStudents.map((student) => (
+                    <option key={getId(student)} value={getId(student)}>
+                      {student.name} - {student.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                className="button button-primary"
+                type="submit"
+                disabled={isLinking || !activeGroupsForSelect.length || !availableStudents.length}
+              >
+                <Link size={18} aria-hidden="true" />
+                {isLinking ? 'Vinculando...' : 'Vincular estudiante'}
+              </button>
+            </form>
+          </section>
+        </div>
 
         <section className="dashboard-panel">
           <div className="panel-heading panel-heading-row">
@@ -280,7 +463,7 @@ function EvaluatorGroupsPage() {
 
           <div className="resource-list">
             {filteredGroups.map((group) => (
-              <article className="resource-item" key={group.id}>
+              <article className="resource-item" key={getId(group)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
                     <h3>{group.name}</h3>
@@ -290,12 +473,23 @@ function EvaluatorGroupsPage() {
                   </div>
                   <p>{group.description || 'Sin descripcion registrada.'}</p>
                   <div className="resource-meta">
-                    <span>{group.studentsCount} estudiantes</span>
-                    <span>{group.tasksCount} tareas</span>
+                    <span>{getStudentCount(group)} estudiantes</span>
                   </div>
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${group.name}`}>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => {
+                      setSelectedGroupId(getId(group));
+                      setMessage(`Grupo seleccionado: ${group.name}`);
+                    }}
+                    title="Seleccionar para vincular"
+                    aria-label={`Seleccionar ${group.name} para vincular estudiantes`}
+                  >
+                    <Link size={17} aria-hidden="true" />
+                  </button>
                   <button
                     className="icon-button"
                     type="button"
@@ -308,7 +502,7 @@ function EvaluatorGroupsPage() {
                   <button
                     className="icon-button"
                     type="button"
-                    onClick={() => handleToggleStatus(group.id)}
+                    onClick={() => handleToggleStatus(group)}
                     title={group.status === 'active' ? 'Archivar' : 'Reactivar'}
                     aria-label={group.status === 'active' ? `Archivar ${group.name}` : `Reactivar ${group.name}`}
                   >
@@ -321,7 +515,7 @@ function EvaluatorGroupsPage() {
                   <button
                     className="icon-button danger"
                     type="button"
-                    onClick={() => handleDelete(group.id)}
+                    onClick={() => handleDelete(getId(group))}
                     title="Eliminar"
                     aria-label={`Eliminar ${group.name}`}
                   >
@@ -333,8 +527,8 @@ function EvaluatorGroupsPage() {
 
             {filteredGroups.length === 0 ? (
               <div className="inline-empty">
-                <h3>No hay grupos</h3>
-                <p>Ajusta la busqueda o crea un grupo nuevo.</p>
+                <h3>{isLoading ? 'Cargando grupos...' : 'No hay grupos'}</h3>
+                <p>{isLoading ? 'Espera un momento.' : 'Ajusta la busqueda o crea un grupo nuevo.'}</p>
               </div>
             ) : null}
           </div>
