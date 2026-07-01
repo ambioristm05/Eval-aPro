@@ -1,5 +1,5 @@
 import { LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
@@ -10,9 +10,16 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const setSession = useAuthStore((state) => state.setSession);
+  const user = useAuthStore((state) => state.user);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate(getDashboardPath(user.role), { replace: true });
+    }
+  }, [navigate, user]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -22,6 +29,12 @@ function LoginPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+
+    if (user) {
+      navigate(getDashboardPath(user.role), { replace: true });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {

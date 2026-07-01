@@ -28,7 +28,7 @@ router.use(protect, checkUserStatus);
 
 router
   .route('/')
-  .post(authorize(USER_ROLES.EVALUATOR), validateRequest(createGroupSchema), createGroup)
+  .post(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(createGroupSchema), createGroup)
   .get(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(listGroupsSchema), getGroups);
 
 router.post(

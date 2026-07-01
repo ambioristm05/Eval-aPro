@@ -28,6 +28,7 @@ import {
   StudentResultsRealPage,
   StudentSuggestionsRealPage,
 } from '../pages/student/StudentResultsPages.jsx';
+import GuestRoute from './GuestRoute.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import RoleRoute from './RoleRoute.jsx';
 
@@ -36,9 +37,11 @@ function AppRoutes() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<PublicHomePage />} />
-        <Route path="login" element={<LoginPage />} />
-        <Route path="register/student" element={<StudentRegisterPage />} />
-        <Route path="register/evaluator" element={<EvaluatorRegisterPage />} />
+        <Route element={<GuestRoute />}>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register/student" element={<StudentRegisterPage />} />
+          <Route path="register/evaluator" element={<EvaluatorRegisterPage />} />
+        </Route>
 
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
