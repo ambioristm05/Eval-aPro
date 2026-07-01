@@ -2,12 +2,14 @@ import mongoose from 'mongoose';
 import { app } from './app.js';
 import { connectDb } from './config/db.js';
 import { env } from './config/env.js';
+import { ensureAdminUser } from './utils/ensureAdminUser.js';
 
 let server;
 
 async function bootstrap() {
   try {
     await connectDb();
+    await ensureAdminUser();
 
     server = app.listen(env.port, () => {
       console.log(`Servidor escuchando en puerto ${env.port}`);
