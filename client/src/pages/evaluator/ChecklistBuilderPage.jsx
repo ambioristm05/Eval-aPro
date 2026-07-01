@@ -7,6 +7,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { createResource } from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const initialIndicators = [
   {
@@ -51,6 +53,8 @@ function ChecklistBuilderPage() {
   const [options, setOptions] = useState(initialOptions);
   const [indicators, setIndicators] = useState(initialIndicators);
   const [savedMessage, setSavedMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const maxScore = useMemo(
     () => indicators.reduce((total, indicator) => total + Number(indicator.score || 0), 0),
@@ -136,9 +140,31 @@ function ChecklistBuilderPage() {
     setIndicators((current) => current.filter((indicator) => indicator.id !== indicatorId));
   };
 
-  const handleSave = () => {
-    setSavedMessage('Lista de cotejo guardada localmente como borrador.');
-    window.setTimeout(() => setSavedMessage(''), 2600);
+  const handleSave = async () => {
+    setError('');
+    setSavedMessage('');
+    setIsSaving(true);
+
+    try {
+      await createResource('instruments', {
+        title: checklist.title,
+        description: checklist.description,
+        type: 'checklist',
+        status: checklist.status,
+        criteria: [],
+        indicators: indicators.map((indicator) => ({
+          text: indicator.text,
+          score: Number(indicator.score) || 0,
+        })),
+      });
+
+      setSavedMessage('Lista de cotejo guardada en la base de datos.');
+      window.setTimeout(() => setSavedMessage(''), 2600);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -219,10 +245,11 @@ function ChecklistBuilderPage() {
           </form>
 
           <div className="builder-actions">
-            <button className="button button-primary" type="button" onClick={handleSave}>
+            <button className="button button-primary" type="button" onClick={handleSave} disabled={isSaving}>
               <Save size={18} aria-hidden="true" />
-              Guardar borrador
+              {isSaving ? 'Guardando...' : 'Guardar borrador'}
             </button>
+            {error ? <p className="form-message form-message-error">{error}</p> : null}
             {savedMessage ? <p className="form-message form-message-success">{savedMessage}</p> : null}
           </div>
         </aside>

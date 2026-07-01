@@ -6,6 +6,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { createResource } from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const initialLevels = [
   { id: 'level-excellent', name: 'Excelente', score: 5 },
@@ -52,6 +54,8 @@ function RubricBuilderPage() {
   const [levels, setLevels] = useState(initialLevels);
   const [criteria, setCriteria] = useState(initialCriteria);
   const [savedMessage, setSavedMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const maxScore = useMemo(
     () => criteria.reduce((total, criterion) => total + Number(criterion.maxScore || 0), 0),
@@ -159,9 +163,37 @@ function RubricBuilderPage() {
     setCriteria((current) => current.filter((criterion) => criterion.id !== criterionId));
   };
 
-  const handleSave = () => {
-    setSavedMessage('Rubrica guardada localmente como borrador.');
-    window.setTimeout(() => setSavedMessage(''), 2600);
+  const handleSave = async () => {
+    setError('');
+    setSavedMessage('');
+    setIsSaving(true);
+
+    try {
+      await createResource('instruments', {
+        title: rubric.title,
+        description: rubric.description,
+        type: 'rubric',
+        status: rubric.status,
+        criteria: criteria.map((criterion) => ({
+          name: criterion.name,
+          description: '',
+          maxScore: Number(criterion.maxScore) || 0,
+          levels: levels.map((level) => ({
+            name: level.name,
+            description: criterion.descriptions[level.id] ?? '',
+            score: Number(level.score) || 0,
+          })),
+        })),
+        indicators: [],
+      });
+
+      setSavedMessage('Rubrica guardada en la base de datos.');
+      window.setTimeout(() => setSavedMessage(''), 2600);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -242,10 +274,11 @@ function RubricBuilderPage() {
           </form>
 
           <div className="builder-actions">
-            <button className="button button-primary" type="button" onClick={handleSave}>
+            <button className="button button-primary" type="button" onClick={handleSave} disabled={isSaving}>
               <Save size={18} aria-hidden="true" />
-              Guardar borrador
+              {isSaving ? 'Guardando...' : 'Guardar borrador'}
             </button>
+            {error ? <p className="form-message form-message-error">{error}</p> : null}
             {savedMessage ? <p className="form-message form-message-success">{savedMessage}</p> : null}
           </div>
         </aside>

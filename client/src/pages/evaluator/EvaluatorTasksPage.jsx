@@ -9,43 +9,14 @@ import {
   Trash2,
   Weight,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-
-const initialTasks = [
-  {
-    id: 'task-reading-analysis',
-    title: 'Analisis de cuento latinoamericano',
-    description: 'Entrega escrita con criterios de comprension, estructura y argumentacion.',
-    group: 'Literatura 4to A',
-    instrument: 'Rubrica analitica de lectura',
-    status: 'in_progress',
-    startDate: '2026-07-01',
-    dueDate: '2026-07-10',
-    weight: 20,
-  },
-  {
-    id: 'task-final-presentation',
-    title: 'Presentacion del proyecto final',
-    description: 'Exposicion oral y defensa de decisiones del proyecto.',
-    group: 'Proyecto final 5to B',
-    instrument: 'Escala de presentacion oral',
-    status: 'pending',
-    startDate: '2026-07-08',
-    dueDate: '2026-07-18',
-    weight: 35,
-  },
-  {
-    id: 'task-observation-guide',
-    title: 'Practica de observacion',
-    description: 'Registro de desempeno durante actividad guiada.',
-    group: 'Practica de observacion',
-    instrument: 'Guia de observacion',
-    status: 'completed',
-    startDate: '2026-06-12',
-    dueDate: '2026-06-20',
-    weight: 15,
-  },
-];
+import { useEffect, useMemo, useState } from 'react';
+import {
+  createResource,
+  deleteResource,
+  listResource,
+  updateResource,
+} from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const emptyForm = {
   title: '',
@@ -65,12 +36,48 @@ const statusLabels = {
   cancelled: 'Cancelada',
 };
 
+function getId(resource) {
+  return resource.id ?? resource._id;
+}
+
+function toInputDate(value) {
+  if (!value) return '';
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function getGroupName(task) {
+  return task.group?.name ?? 'Sin grupo';
+}
+
+function getInstrumentName(task) {
+  return task.instrument?.title ?? 'Sin instrumento';
+}
+
+function buildTaskPayload(formData) {
+  return {
+    title: formData.title.trim(),
+    description: formData.description.trim(),
+    group: formData.group || undefined,
+    instrument: formData.instrument || undefined,
+    status: formData.status,
+    startDate: formData.startDate || undefined,
+    dueDate: formData.dueDate || undefined,
+    weight: Number(formData.weight) || 0,
+  };
+}
+
 function EvaluatorTasksPage() {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [instruments, setInstruments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -80,9 +87,9 @@ function EvaluatorTasksPage() {
       const matchesSearch =
         !normalizedSearch ||
         task.title.toLowerCase().includes(normalizedSearch) ||
-        task.description.toLowerCase().includes(normalizedSearch) ||
-        task.group.toLowerCase().includes(normalizedSearch) ||
-        task.instrument.toLowerCase().includes(normalizedSearch);
+        (task.description ?? '').toLowerCase().includes(normalizedSearch) ||
+        getGroupName(task).toLowerCase().includes(normalizedSearch) ||
+        getInstrumentName(task).toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
     });
@@ -91,6 +98,44 @@ function EvaluatorTasksPage() {
   const activeTasks = tasks.filter((task) => ['pending', 'in_progress'].includes(task.status)).length;
   const completedTasks = tasks.filter((task) => task.status === 'completed').length;
   const totalWeight = tasks.reduce((total, task) => total + Number(task.weight || 0), 0);
+
+  const loadTasks = async () => {
+    const data = await listResource('tasks', { limit: 100 });
+    setTasks(data.tasks ?? []);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchInitialData() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const [tasksData, groupsData, instrumentsData] = await Promise.all([
+          listResource('tasks', { limit: 100 }),
+          listResource('groups', { status: 'active', limit: 100 }),
+          listResource('instruments', { limit: 100 }),
+        ]);
+
+        if (!isMounted) return;
+        setTasks(tasksData.tasks ?? []);
+        setGroups(groupsData.groups ?? []);
+        setInstruments(instrumentsData.instruments ?? []);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -102,58 +147,74 @@ function EvaluatorTasksPage() {
     setEditingId(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const normalizedTitle = formData.title.trim();
+    setError('');
+    setMessage('');
 
+    const normalizedTitle = formData.title.trim();
     if (!normalizedTitle) return;
 
-    const taskPayload = {
-      title: normalizedTitle,
-      description: formData.description.trim(),
-      group: formData.group.trim() || 'Sin grupo',
-      instrument: formData.instrument.trim() || 'Sin instrumento',
-      status: formData.status,
-      startDate: formData.startDate,
-      dueDate: formData.dueDate,
-      weight: Number(formData.weight) || 0,
-    };
+    setIsSubmitting(true);
 
-    if (editingId) {
-      setTasks((current) =>
-        current.map((task) => (task.id === editingId ? { ...task, ...taskPayload } : task)),
-      );
+    try {
+      const payload = buildTaskPayload(formData);
+
+      if (editingId) {
+        await updateResource('tasks', editingId, payload);
+        setMessage('Tarea actualizada correctamente.');
+      } else {
+        await createResource('tasks', payload);
+        setMessage('Tarea creada correctamente.');
+      }
+
       resetForm();
-      return;
+      await loadTasks();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setTasks((current) => [{ id: `task-${Date.now()}`, ...taskPayload }, ...current]);
-    resetForm();
   };
 
   const handleEdit = (task) => {
-    setEditingId(task.id);
+    setEditingId(getId(task));
     setFormData({
       title: task.title,
-      description: task.description,
-      group: task.group,
-      instrument: task.instrument,
+      description: task.description ?? '',
+      group: task.group ? getId(task.group) : '',
+      instrument: task.instrument ? getId(task.instrument) : '',
       status: task.status,
-      startDate: task.startDate,
-      dueDate: task.dueDate,
-      weight: task.weight,
+      startDate: toInputDate(task.startDate),
+      dueDate: toInputDate(task.dueDate),
+      weight: task.weight ?? 0,
     });
   };
 
-  const updateTaskStatus = (taskId, status) => {
-    setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, status } : task)));
+  const updateTaskStatus = async (taskId, status) => {
+    setError('');
+    setMessage('');
+
+    try {
+      await updateResource('tasks', taskId, { status });
+      setMessage('Estado de tarea actualizado.');
+      await loadTasks();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
-  const deleteTask = (taskId) => {
-    setTasks((current) => current.filter((task) => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    setError('');
+    setMessage('');
 
-    if (editingId === taskId) {
-      resetForm();
+    try {
+      await deleteResource('tasks', taskId);
+      setMessage('Tarea eliminada correctamente.');
+      if (editingId === taskId) resetForm();
+      await loadTasks();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
     }
   };
 
@@ -172,6 +233,9 @@ function EvaluatorTasksPage() {
           </p>
         </div>
       </div>
+
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {message ? <p className="form-message form-message-success">{message}</p> : null}
 
       <div className="metric-grid" aria-label="Resumen de tareas">
         <article className="metric-card">
@@ -235,23 +299,25 @@ function EvaluatorTasksPage() {
             <div className="form-two-columns">
               <label>
                 Grupo
-                <input
-                  type="text"
-                  name="group"
-                  value={formData.group}
-                  placeholder="Grupo asignado"
-                  onChange={handleChange}
-                />
+                <select name="group" value={formData.group} onChange={handleChange}>
+                  <option value="">Sin grupo</option>
+                  {groups.map((group) => (
+                    <option key={getId(group)} value={getId(group)}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Instrumento
-                <input
-                  type="text"
-                  name="instrument"
-                  value={formData.instrument}
-                  placeholder="Rubrica o lista"
-                  onChange={handleChange}
-                />
+                <select name="instrument" value={formData.instrument} onChange={handleChange}>
+                  <option value="">Sin instrumento</option>
+                  {instruments.map((instrument) => (
+                    <option key={getId(instrument)} value={getId(instrument)}>
+                      {instrument.title}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
             <div className="form-two-columns">
@@ -288,9 +354,9 @@ function EvaluatorTasksPage() {
             </div>
 
             <div className="form-actions">
-              <button className="button button-primary" type="submit">
+              <button className="button button-primary" type="submit" disabled={isSubmitting}>
                 {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
-                {editingId ? 'Guardar cambios' : 'Crear tarea'}
+                {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear tarea'}
               </button>
               {editingId ? (
                 <button className="button button-secondary" type="button" onClick={resetForm}>
@@ -336,7 +402,7 @@ function EvaluatorTasksPage() {
 
           <div className="resource-list">
             {filteredTasks.map((task) => (
-              <article className="resource-item" key={task.id}>
+              <article className="resource-item" key={getId(task)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
                     <h3>{task.title}</h3>
@@ -346,10 +412,10 @@ function EvaluatorTasksPage() {
                   </div>
                   <p>{task.description || 'Sin descripcion registrada.'}</p>
                   <div className="resource-meta">
-                    <span>{task.group}</span>
-                    <span>{task.instrument}</span>
+                    <span>{getGroupName(task)}</span>
+                    <span>{getInstrumentName(task)}</span>
                     <span>{task.weight}%</span>
-                    <span>{task.dueDate || 'Sin entrega'}</span>
+                    <span>{toInputDate(task.dueDate) || 'Sin entrega'}</span>
                   </div>
                 </div>
 
@@ -366,7 +432,7 @@ function EvaluatorTasksPage() {
                   <button
                     className="icon-button"
                     type="button"
-                    onClick={() => updateTaskStatus(task.id, 'completed')}
+                    onClick={() => updateTaskStatus(getId(task), 'completed')}
                     title="Marcar completada"
                     aria-label={`Marcar completada ${task.title}`}
                     disabled={task.status === 'completed'}
@@ -376,7 +442,7 @@ function EvaluatorTasksPage() {
                   <button
                     className="icon-button danger"
                     type="button"
-                    onClick={() => deleteTask(task.id)}
+                    onClick={() => handleDeleteTask(getId(task))}
                     title="Eliminar"
                     aria-label={`Eliminar ${task.title}`}
                   >
@@ -388,8 +454,8 @@ function EvaluatorTasksPage() {
 
             {filteredTasks.length === 0 ? (
               <div className="inline-empty">
-                <h3>No hay tareas</h3>
-                <p>Ajusta los filtros o crea una tarea nueva.</p>
+                <h3>{isLoading ? 'Cargando tareas...' : 'No hay tareas'}</h3>
+                <p>{isLoading ? 'Espera un momento.' : 'Ajusta los filtros o crea una tarea nueva.'}</p>
               </div>
             ) : null}
           </div>

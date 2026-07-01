@@ -88,7 +88,7 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
 }
 
 export const createTask = asyncHandler(async (req, res) => {
-  const { title, description, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
+  const { title, description, status, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
   const relations = await resolveTaskRelations(req, { groupId, studentIds });
   const resolvedInstrument = await ensureInstrumentForEvaluator({
     instrumentId: instrument,
@@ -98,7 +98,7 @@ export const createTask = asyncHandler(async (req, res) => {
   const task = await Task.create({
     title,
     description,
-    status: TASK_STATUSES.PENDING,
+    status,
     evaluator: req.user._id,
     group: relations.group?._id,
     students: relations.students.map((student) => student._id),

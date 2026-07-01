@@ -19,6 +19,7 @@ const taskBodyShape = {
   group: mongoIdSchema.optional(),
   students: z.array(mongoIdSchema).default([]),
   instrument: mongoIdSchema.optional(),
+  status: z.enum(Object.values(TASK_STATUSES)).default(TASK_STATUSES.PENDING),
   startDate: optionalDateSchema,
   dueDate: optionalDateSchema,
   weight: z.coerce.number().min(0).max(100).default(0)

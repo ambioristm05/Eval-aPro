@@ -11,38 +11,15 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const initialInstruments = [
-  {
-    id: 'instrument-reading-rubric',
-    title: 'Rubrica analitica de lectura',
-    description: 'Criterios de comprension, estructura, evidencia y argumentacion.',
-    type: 'rubric',
-    status: 'active',
-    maxScore: 25,
-    criteriaCount: 5,
-  },
-  {
-    id: 'instrument-presentation-scale',
-    title: 'Escala de presentacion oral',
-    description: 'Valoracion de dominio, claridad, recursos y manejo del tiempo.',
-    type: 'rating_scale',
-    status: 'draft',
-    maxScore: 20,
-    criteriaCount: 4,
-  },
-  {
-    id: 'instrument-observation-guide',
-    title: 'Guia de observacion',
-    description: 'Registro de desempeno durante practicas supervisadas.',
-    type: 'observation_guide',
-    status: 'archived',
-    maxScore: 15,
-    criteriaCount: 6,
-  },
-];
+import {
+  createResource,
+  deleteResource,
+  listResource,
+  updateResource,
+} from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const emptyForm = {
   title: '',
@@ -75,13 +52,59 @@ const typeIcons = {
   questionnaire: FileQuestion,
 };
 
+function getId(resource) {
+  return resource.id ?? resource._id;
+}
+
+function getCriteriaCount(instrument) {
+  return (instrument.criteria?.length ?? 0) + (instrument.indicators?.length ?? 0);
+}
+
+function buildInstrumentPayload(formData) {
+  const count = Math.max(Number(formData.criteriaCount) || 1, 1);
+  const maxScore = Math.max(Number(formData.maxScore) || 0, 0);
+  const score = count > 0 ? Number((maxScore / count).toFixed(2)) : 0;
+  const basePayload = {
+    title: formData.title.trim(),
+    description: formData.description.trim(),
+    type: formData.type,
+    status: formData.status,
+    criteria: [],
+    indicators: [],
+  };
+
+  if (formData.type === 'checklist') {
+    return {
+      ...basePayload,
+      indicators: Array.from({ length: count }, (_, index) => ({
+        text: `Indicador ${index + 1}`,
+        score,
+      })),
+    };
+  }
+
+  return {
+    ...basePayload,
+    criteria: Array.from({ length: count }, (_, index) => ({
+      name: `Criterio ${index + 1}`,
+      description: '',
+      maxScore: score,
+      levels: [],
+    })),
+  };
+}
+
 function EvaluatorInstrumentsPage() {
-  const [instruments, setInstruments] = useState(initialInstruments);
+  const [instruments, setInstruments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredInstruments = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -92,7 +115,7 @@ function EvaluatorInstrumentsPage() {
       const matchesSearch =
         !normalizedSearch ||
         instrument.title.toLowerCase().includes(normalizedSearch) ||
-        instrument.description.toLowerCase().includes(normalizedSearch) ||
+        (instrument.description ?? '').toLowerCase().includes(normalizedSearch) ||
         typeLabels[instrument.type].toLowerCase().includes(normalizedSearch);
 
       return matchesType && matchesStatus && matchesSearch;
@@ -101,7 +124,38 @@ function EvaluatorInstrumentsPage() {
 
   const activeCount = instruments.filter((instrument) => instrument.status === 'active').length;
   const draftCount = instruments.filter((instrument) => instrument.status === 'draft').length;
-  const totalCriteria = instruments.reduce((total, instrument) => total + instrument.criteriaCount, 0);
+  const totalCriteria = instruments.reduce((total, instrument) => total + getCriteriaCount(instrument), 0);
+
+  const loadInstruments = async () => {
+    const data = await listResource('instruments', { limit: 100 });
+    setInstruments(data.instruments ?? []);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchInstruments() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await listResource('instruments', { limit: 100 });
+        if (!isMounted) return;
+        setInstruments(data.instruments ?? []);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInstruments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -113,63 +167,72 @@ function EvaluatorInstrumentsPage() {
     setEditingId(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const normalizedTitle = formData.title.trim();
+    setError('');
+    setMessage('');
 
+    const normalizedTitle = formData.title.trim();
     if (!normalizedTitle) return;
 
-    const instrumentPayload = {
-      title: normalizedTitle,
-      description: formData.description.trim(),
-      type: formData.type,
-      status: formData.status,
-      maxScore: Number(formData.maxScore) || 0,
-      criteriaCount: Number(formData.criteriaCount) || 0,
-    };
+    setIsSubmitting(true);
 
-    if (editingId) {
-      setInstruments((current) =>
-        current.map((instrument) =>
-          instrument.id === editingId ? { ...instrument, ...instrumentPayload } : instrument,
-        ),
-      );
+    try {
+      const payload = buildInstrumentPayload(formData);
+
+      if (editingId) {
+        await updateResource('instruments', editingId, payload);
+        setMessage('Instrumento actualizado correctamente.');
+      } else {
+        await createResource('instruments', payload);
+        setMessage('Instrumento creado correctamente.');
+      }
+
       resetForm();
-      return;
+      await loadInstruments();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setInstruments((current) => [
-      { id: `instrument-${Date.now()}`, ...instrumentPayload },
-      ...current,
-    ]);
-    resetForm();
   };
 
   const handleEdit = (instrument) => {
-    setEditingId(instrument.id);
+    setEditingId(getId(instrument));
     setFormData({
       title: instrument.title,
-      description: instrument.description,
+      description: instrument.description ?? '',
       type: instrument.type,
       status: instrument.status,
-      maxScore: instrument.maxScore,
-      criteriaCount: instrument.criteriaCount,
+      maxScore: instrument.maxScore ?? 0,
+      criteriaCount: getCriteriaCount(instrument) || 1,
     });
   };
 
-  const updateInstrumentStatus = (instrumentId, status) => {
-    setInstruments((current) =>
-      current.map((instrument) =>
-        instrument.id === instrumentId ? { ...instrument, status } : instrument,
-      ),
-    );
+  const updateInstrumentStatus = async (instrumentId, status) => {
+    setError('');
+    setMessage('');
+
+    try {
+      await updateResource('instruments', instrumentId, { status });
+      setMessage('Estado de instrumento actualizado.');
+      await loadInstruments();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
-  const deleteInstrument = (instrumentId) => {
-    setInstruments((current) => current.filter((instrument) => instrument.id !== instrumentId));
+  const handleDeleteInstrument = async (instrumentId) => {
+    setError('');
+    setMessage('');
 
-    if (editingId === instrumentId) {
-      resetForm();
+    try {
+      await deleteResource('instruments', instrumentId);
+      setMessage('Instrumento archivado correctamente.');
+      if (editingId === instrumentId) resetForm();
+      await loadInstruments();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
     }
   };
 
@@ -188,6 +251,9 @@ function EvaluatorInstrumentsPage() {
           </p>
         </div>
       </div>
+
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {message ? <p className="form-message form-message-success">{message}</p> : null}
 
       <div className="metric-grid" aria-label="Resumen de instrumentos">
         <article className="metric-card">
@@ -280,11 +346,11 @@ function EvaluatorInstrumentsPage() {
                 />
               </label>
               <label>
-                Criterios
+                Criterios o indicadores
                 <input
                   type="number"
                   name="criteriaCount"
-                  min="0"
+                  min="1"
                   value={formData.criteriaCount}
                   onChange={handleChange}
                 />
@@ -292,9 +358,9 @@ function EvaluatorInstrumentsPage() {
             </div>
 
             <div className="form-actions">
-              <button className="button button-primary" type="submit">
+              <button className="button button-primary" type="submit" disabled={isSubmitting}>
                 {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
-                {editingId ? 'Guardar cambios' : 'Crear instrumento'}
+                {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear instrumento'}
               </button>
               {editingId ? (
                 <button className="button button-secondary" type="button" onClick={resetForm}>
@@ -377,7 +443,7 @@ function EvaluatorInstrumentsPage() {
               const TypeIcon = typeIcons[instrument.type];
 
               return (
-                <article className="resource-item" key={instrument.id}>
+                <article className="resource-item" key={getId(instrument)}>
                   <div className="resource-main">
                     <div className="resource-title-row">
                       <span className="small-type-icon">
@@ -391,8 +457,8 @@ function EvaluatorInstrumentsPage() {
                     <p>{instrument.description || 'Sin descripcion registrada.'}</p>
                     <div className="resource-meta">
                       <span>{typeLabels[instrument.type]}</span>
-                      <span>{instrument.criteriaCount} criterios</span>
-                      <span>{instrument.maxScore} puntos</span>
+                      <span>{getCriteriaCount(instrument)} criterios</span>
+                      <span>{instrument.maxScore ?? 0} puntos</span>
                     </div>
                   </div>
 
@@ -409,7 +475,7 @@ function EvaluatorInstrumentsPage() {
                     <button
                       className="icon-button"
                       type="button"
-                      onClick={() => updateInstrumentStatus(instrument.id, 'archived')}
+                      onClick={() => updateInstrumentStatus(getId(instrument), 'archived')}
                       title="Archivar"
                       aria-label={`Archivar ${instrument.title}`}
                       disabled={instrument.status === 'archived'}
@@ -419,7 +485,7 @@ function EvaluatorInstrumentsPage() {
                     <button
                       className="icon-button danger"
                       type="button"
-                      onClick={() => deleteInstrument(instrument.id)}
+                      onClick={() => handleDeleteInstrument(getId(instrument))}
                       title="Eliminar"
                       aria-label={`Eliminar ${instrument.title}`}
                     >
@@ -432,8 +498,8 @@ function EvaluatorInstrumentsPage() {
 
             {filteredInstruments.length === 0 ? (
               <div className="inline-empty">
-                <h3>No hay instrumentos</h3>
-                <p>Ajusta los filtros o crea un instrumento nuevo.</p>
+                <h3>{isLoading ? 'Cargando instrumentos...' : 'No hay instrumentos'}</h3>
+                <p>{isLoading ? 'Espera un momento.' : 'Ajusta los filtros o crea un instrumento nuevo.'}</p>
               </div>
             ) : null}
           </div>
