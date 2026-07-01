@@ -1,0 +1,10 @@
+packages:
+  - client
+  - server
+onlyBuiltDependencies:
+  - esbuild
+ignoredBuiltDependencies:
+  - puppeteer
+allowBuilds:
+  esbuild: true
+  puppeteer: true

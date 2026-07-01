@@ -1,0 +1,22 @@
+{
+  "name": "evaluapro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema de gestion de tareas e instrumentos de evaluacion.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "seed:admin": "npm run seed:admin --workspace server",
+    "lint": "npm run lint --workspace client && npm run lint --workspace server",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
