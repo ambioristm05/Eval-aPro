@@ -357,6 +357,32 @@ h2 {
   background: #e0edf0;
 }
 
+.invitation-result {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.invitation-result span {
+  color: #314252;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.invitation-result input {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17202a;
+}
+
 .route-loader {
   display: grid;
   min-height: 18rem;

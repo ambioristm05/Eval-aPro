@@ -1,4 +1,8 @@
+import { Copy, MailPlus } from 'lucide-react';
+import { useState } from 'react';
 import ModulePage from '../../components/dashboard/ModulePage.jsx';
+import { createEvaluatorInvitation } from '../../services/authService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { moduleIcons } from '../../utils/navigation.jsx';
 
 export function AdminEvaluatorsPage() {
@@ -32,32 +36,140 @@ export function AdminEvaluatorsPage() {
 }
 
 export function AdminInvitationsPage() {
+  const [formData, setFormData] = useState({ email: '', expiresInDays: 7 });
+  const [invitation, setInvitation] = useState(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setInvitation(null);
+    setIsSubmitting(true);
+
+    try {
+      const result = await createEvaluatorInvitation({
+        email: formData.email,
+        expiresInDays: Number(formData.expiresInDays),
+      });
+      setInvitation(result);
+      setMessage('Invitacion creada correctamente.');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!invitation?.registrationUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(invitation.registrationUrl);
+      setMessage('Enlace copiado al portapapeles.');
+    } catch {
+      setError('No se pudo copiar automaticamente. Copia el enlace manualmente.');
+    }
+  };
+
   return (
-    <ModulePage
-      eyebrow="Administracion"
-      title="Invitaciones"
-      description="Modulo para generar enlaces o codigos de registro de evaluadores sin exponer un registro publico."
-      icon={moduleIcons.KeyRound}
-      primaryItems={[
-        {
-          title: 'Generar token',
-          description: 'Crear invitaciones de un solo uso asociadas a un correo.',
-        },
-        {
-          title: 'Validar expiracion',
-          description: 'Controlar vigencia y estado de uso de cada invitacion.',
-        },
-        {
-          title: 'Revocar acceso',
-          description: 'Invalidar invitaciones antes de que sean usadas.',
-        },
-      ]}
-      statusItems={[
-        { label: 'Registro publico profesor', value: 'Oculto' },
-        { label: 'Pantalla base', value: 'Lista' },
-        { label: 'API requerida', value: 'Pendiente' },
-      ]}
-    />
+    <section className="module-page">
+      <div className="module-hero">
+        <span className="module-hero-icon">
+          <moduleIcons.KeyRound size={28} aria-hidden="true" />
+        </span>
+        <div>
+          <p className="eyebrow">Administracion</p>
+          <h1>Invitaciones</h1>
+          <p className="dashboard-description">
+            Genera enlaces de registro para evaluadores sin exponer un formulario publico.
+          </p>
+        </div>
+      </div>
+
+      <div className="module-page-grid">
+        <section className="dashboard-panel">
+          <div className="panel-heading">
+            <h2>Crear invitacion de evaluador</h2>
+            <p>El enlace queda asociado al correo indicado y solo puede usarse una vez.</p>
+          </div>
+
+          <form className="stacked-form compact-form" onSubmit={handleSubmit}>
+            <label>
+              Correo del evaluador
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                placeholder="profesor@correo.com"
+                autoComplete="email"
+                onChange={handleChange}
+                required
+              />
+            </label>
+            <label>
+              Expira en dias
+              <input
+                type="number"
+                name="expiresInDays"
+                value={formData.expiresInDays}
+                min="1"
+                max="30"
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            {error ? <p className="form-message form-message-error">{error}</p> : null}
+            {message ? <p className="form-message form-message-success">{message}</p> : null}
+
+            <button className="button button-primary" type="submit" disabled={isSubmitting}>
+              <MailPlus size={18} aria-hidden="true" />
+              {isSubmitting ? 'Generando...' : 'Generar invitacion'}
+            </button>
+          </form>
+
+          {invitation ? (
+            <div className="invitation-result">
+              <span>Enlace de registro</span>
+              <input type="text" value={invitation.registrationUrl} readOnly />
+              <button className="button button-secondary" type="button" onClick={handleCopy}>
+                <Copy size={18} aria-hidden="true" />
+                Copiar enlace
+              </button>
+            </div>
+          ) : null}
+        </section>
+
+        <aside className="dashboard-panel">
+          <div className="panel-heading">
+            <h2>Estado</h2>
+            <p>Control del registro protegido de evaluadores.</p>
+          </div>
+          <div className="progress-list">
+            <div>
+              <span>Registro publico profesor</span>
+              <strong>Oculto</strong>
+            </div>
+            <div>
+              <span>Generacion de enlaces</span>
+              <strong>Activa</strong>
+            </div>
+            <div>
+              <span>Uso de invitacion</span>
+              <strong>Un solo uso</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
   );
 }
 

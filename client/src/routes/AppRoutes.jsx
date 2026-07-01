@@ -17,6 +17,7 @@ import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
 import EvaluatorTasksPage from '../pages/evaluator/EvaluatorTasksPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
+import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
 import StudentRegisterPage from '../pages/public/StudentRegisterPage.jsx';
 import StudentDashboard from '../pages/student/StudentDashboard.jsx';
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route index element={<PublicHomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register/student" element={<StudentRegisterPage />} />
+        <Route path="register/evaluator" element={<EvaluatorRegisterPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={['admin']} />}>

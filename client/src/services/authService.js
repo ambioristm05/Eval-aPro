@@ -10,6 +10,21 @@ export async function registerStudent(payload) {
   return data;
 }
 
+export async function registerEvaluatorWithInvitation(payload) {
+  const { data } = await api.post('/auth/register/evaluator/invitation', payload);
+  return data;
+}
+
+export async function createEvaluatorInvitation(payload) {
+  const { data } = await api.post('/invitations/evaluator', payload);
+  return data;
+}
+
+export async function validateInvitation(token) {
+  const { data } = await api.get(`/invitations/validate/${token}`);
+  return data;
+}
+
 export async function getMe() {
   const { data } = await api.get('/auth/me');
   return data.user;
