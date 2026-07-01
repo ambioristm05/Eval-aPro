@@ -13,10 +13,10 @@ import {
   EvaluatorInstrumentsPage,
   EvaluatorProfilePage,
   EvaluatorReportsPage,
-  EvaluatorStudentsPage,
-  EvaluatorTasksPage,
 } from '../pages/evaluator/EvaluatorModulePages.jsx';
 import EvaluatorGroupsPage from '../pages/evaluator/EvaluatorGroupsPage.jsx';
+import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
+import EvaluatorTasksPage from '../pages/evaluator/EvaluatorTasksPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
 import StudentRegisterPage from '../pages/public/StudentRegisterPage.jsx';

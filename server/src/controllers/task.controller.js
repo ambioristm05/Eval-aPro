@@ -1,5 +1,6 @@
 import { TASK_STATUSES } from '../constants/task.constants.js';
 import { USER_ROLES, USER_STATUSES } from '../constants/user.constants.js';
+import { ensureInstrumentForEvaluator } from './instrument.controller.js';
 import { Group } from '../models/Group.js';
 import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
@@ -9,7 +10,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 const taskPopulate = [
   { path: 'evaluator', select: 'name email role' },
   { path: 'group', select: 'name status evaluator' },
-  { path: 'students', select: 'name email role status' }
+  { path: 'students', select: 'name email role status' },
+  { path: 'instrument', select: 'title type status maxScore' }
 ];
 
 function taskScope(req) {
@@ -88,6 +90,10 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
 export const createTask = asyncHandler(async (req, res) => {
   const { title, description, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
   const relations = await resolveTaskRelations(req, { groupId, studentIds });
+  const resolvedInstrument = await ensureInstrumentForEvaluator({
+    instrumentId: instrument,
+    evaluatorId: req.user._id
+  });
 
   const task = await Task.create({
     title,
@@ -96,7 +102,7 @@ export const createTask = asyncHandler(async (req, res) => {
     evaluator: req.user._id,
     group: relations.group?._id,
     students: relations.students.map((student) => student._id),
-    instrument,
+    instrument: resolvedInstrument?._id,
     startDate,
     dueDate,
     weight
@@ -155,10 +161,17 @@ export const updateTask = asyncHandler(async (req, res) => {
     task.students = relations.students.map((student) => student._id);
   }
 
+  if (instrument !== undefined) {
+    const resolvedInstrument = await ensureInstrumentForEvaluator({
+      instrumentId: instrument,
+      evaluatorId: task.evaluator._id || task.evaluator
+    });
+    task.instrument = resolvedInstrument?._id;
+  }
+
   if (title !== undefined) task.title = title;
   if (description !== undefined) task.description = description;
   if (status !== undefined) task.status = status;
-  if (instrument !== undefined) task.instrument = instrument;
   if (startDate !== undefined) task.startDate = startDate;
   if (dueDate !== undefined) task.dueDate = dueDate;
   if (weight !== undefined) task.weight = weight;
