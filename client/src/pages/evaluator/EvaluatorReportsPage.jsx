@@ -27,6 +27,23 @@ function getInstrumentTitle(evaluation) {
   return evaluation.instrument?.title ?? 'Instrumento';
 }
 
+function getGradeValue(value) {
+  if (value && typeof value === 'object') {
+    return Number(value.grade ?? value.average ?? 0);
+  }
+
+  return Number(value ?? 0);
+}
+
+function formatPercent(value) {
+  const numericValue = getGradeValue(value);
+  return `${Number.isFinite(numericValue) ? numericValue : 0}%`;
+}
+
+function getSummaryValue(report) {
+  return report?.summary?.finalGrade ?? report?.summary?.average ?? 0;
+}
+
 function EvaluatorReportsPage() {
   const [reportType, setReportType] = useState('student');
   const [students, setStudents] = useState([]);
@@ -54,7 +71,7 @@ function EvaluatorReportsPage() {
 
   const selectedId = reportType === 'final' ? selectedIds.final || selectedIds.group : selectedIds[reportType];
   const evaluations = report?.evaluations ?? [];
-  const summaryValue = report?.summary?.finalGrade ?? report?.summary?.average ?? 0;
+  const summaryValue = getSummaryValue(report);
 
   useEffect(() => {
     let isMounted = true;
@@ -195,7 +212,7 @@ function EvaluatorReportsPage() {
             <h1>{reportTitles[reportType]}</h1>
             <p>{report?.generatedAt ? new Date(report.generatedAt).toLocaleDateString('es-DO') : new Date().toLocaleDateString('es-DO')}</p>
           </div>
-          <strong>{summaryValue}%</strong>
+          <strong>{formatPercent(summaryValue)}</strong>
         </header>
 
         {reportType === 'final' ? (
@@ -210,7 +227,7 @@ function EvaluatorReportsPage() {
               {(report?.grades ?? []).map((grade) => (
                 <tr key={getId(grade.student)}>
                   <td>{grade.student?.name ?? 'Estudiante'}</td>
-                  <td>{grade.finalGrade}%</td>
+                  <td>{formatPercent(grade.finalGrade)}</td>
                 </tr>
               ))}
             </tbody>
