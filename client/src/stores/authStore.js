@@ -12,6 +12,7 @@ export const useAuthStore = create((set) => ({
 
     set({ user, token, isBootstrapping: false });
   },
+  setUser: (user) => set({ user }),
   bootstrapSession: async () => {
     const token = window.localStorage.getItem('evaluapro_token');
 

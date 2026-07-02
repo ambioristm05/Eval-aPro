@@ -1,36 +1,151 @@
 import { Save, Trash2, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  changeMyPassword,
+  deleteMyAccount,
+  getMyProfile,
+  updateMyProfile,
+} from '../../services/studentService.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { getErrorMessage } from '../../utils/errors.js';
+
+function getGroupNames(user) {
+  const groups = user?.groups ?? [];
+  if (!groups.length) return 'Sin grupo asignado';
+  return groups.map((group) => group.name).join(', ');
+}
 
 function ProfilePage({ role }) {
-  const user = useAuthStore((state) => state.user);
+  const storeUser = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const [user, setLocalUser] = useState(storeUser);
   const [profile, setProfile] = useState({
-    name: user?.name ?? '',
-    email: user?.email ?? '',
-    specialty: role === 'evaluator' ? 'Lengua y literatura' : '',
-    group: role === 'student' ? 'Literatura 4to A' : '',
+    name: storeUser?.name ?? '',
+    email: storeUser?.email ?? '',
   });
-  const [password, setPassword] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState('');
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+  });
+  const [deleteForm, setDeleteForm] = useState({
+    confirmation: '',
+    password: '',
+    reason: '',
+  });
+  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleChange = (event) => {
+  const groupNames = useMemo(() => getGroupNames(user), [user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchProfile() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const currentUser = await getMyProfile();
+        if (!isMounted) return;
+        setLocalUser(currentUser);
+        setUser(currentUser);
+        setProfile({
+          name: currentUser.name ?? '',
+          email: currentUser.email ?? '',
+        });
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setUser]);
+
+  const handleProfileChange = (event) => {
     const { name, value } = event.target;
     setProfile((current) => ({ ...current, [name]: value }));
   };
 
-  const saveProfile = () => {
-    setMessage('Perfil guardado localmente.');
-    window.setTimeout(() => setMessage(''), 2400);
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+    setPasswordForm((current) => ({ ...current, [name]: value }));
   };
 
-  const deleteAccount = () => {
-    if (confirmDelete !== 'ELIMINAR') {
-      setMessage('Escribe ELIMINAR para confirmar.');
+  const handleDeleteChange = (event) => {
+    const { name, value } = event.target;
+    setDeleteForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSaving(true);
+
+    try {
+      const updatedUser = await updateMyProfile({
+        name: profile.name,
+        email: profile.email,
+      });
+      setLocalUser(updatedUser);
+      setUser(updatedUser);
+      setMessage('Perfil actualizado correctamente.');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updatePassword = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSaving(true);
+
+    try {
+      await changeMyPassword(passwordForm);
+      setPasswordForm({ currentPassword: '', newPassword: '' });
+      setMessage('Contrasena actualizada correctamente.');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setError('');
+    setMessage('');
+
+    if (deleteForm.confirmation !== 'ELIMINAR') {
+      setError('Escribe ELIMINAR para confirmar.');
       return;
     }
-    clearSession();
+
+    setIsSaving(true);
+
+    try {
+      await deleteMyAccount({
+        password: deleteForm.password,
+        reason: deleteForm.reason || undefined,
+      });
+      clearSession();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -46,29 +161,49 @@ function ProfilePage({ role }) {
         </div>
       </div>
 
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {message ? <p className="form-message form-message-success">{message}</p> : null}
+
       <div className="management-grid">
         <section className="dashboard-panel">
           <div className="panel-heading"><h2>Datos personales</h2><p>Informacion principal de la cuenta.</p></div>
-          <form className="stacked-form compact-form">
-            <label>Nombre<input name="name" value={profile.name} onChange={handleChange} /></label>
-            <label>Email<input name="email" type="email" value={profile.email} onChange={handleChange} /></label>
-            {role === 'evaluator' ? (
-              <label>Especialidad<input name="specialty" value={profile.specialty} onChange={handleChange} /></label>
-            ) : (
-              <label>Grupo<input name="group" value={profile.group} onChange={handleChange} /></label>
-            )}
-            <button className="button button-primary" type="button" onClick={saveProfile}>
+          <form className="stacked-form compact-form" onSubmit={saveProfile}>
+            <label>Nombre<input name="name" value={profile.name} onChange={handleProfileChange} disabled={isLoading} /></label>
+            <label>Email<input name="email" type="email" value={profile.email} onChange={handleProfileChange} disabled={isLoading} /></label>
+            {role === 'student' ? (
+              <label>Grupo<input name="group" value={groupNames} disabled readOnly /></label>
+            ) : null}
+            <button className="button button-primary" type="submit" disabled={isSaving || isLoading}>
               <Save size={18} aria-hidden="true" />
-              Guardar perfil
+              {isSaving ? 'Guardando...' : 'Guardar perfil'}
             </button>
           </form>
         </section>
 
         <aside className="dashboard-panel">
-          <div className="panel-heading"><h2>Seguridad</h2><p>Cambio local de contrasena y acciones sensibles.</p></div>
-          <form className="stacked-form compact-form">
-            <label>Nueva contrasena<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-            <button className="button button-secondary" type="button" onClick={() => setMessage('Contrasena preparada para actualizar por API.')}>
+          <div className="panel-heading"><h2>Seguridad</h2><p>Cambio de contrasena y acciones sensibles.</p></div>
+          <form className="stacked-form compact-form" onSubmit={updatePassword}>
+            <label>
+              Contrasena actual
+              <input
+                name="currentPassword"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </label>
+            <label>
+              Nueva contrasena
+              <input
+                name="newPassword"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </label>
+            <button className="button button-secondary" type="submit" disabled={isSaving}>
               Actualizar contrasena
             </button>
           </form>
@@ -76,16 +211,32 @@ function ProfilePage({ role }) {
           {role === 'student' ? (
             <div className="danger-zone">
               <h3>Eliminar cuenta</h3>
-              <p>La eliminacion debe ser logica y cerrar sesion automaticamente.</p>
-              <input value={confirmDelete} placeholder="Escribe ELIMINAR" onChange={(event) => setConfirmDelete(event.target.value)} />
-              <button className="button danger-button" type="button" onClick={deleteAccount}>
+              <p>La eliminacion es logica y cierra la sesion automaticamente.</p>
+              <input
+                name="confirmation"
+                value={deleteForm.confirmation}
+                placeholder="Escribe ELIMINAR"
+                onChange={handleDeleteChange}
+              />
+              <input
+                name="password"
+                type="password"
+                value={deleteForm.password}
+                placeholder="Contrasena actual"
+                onChange={handleDeleteChange}
+              />
+              <input
+                name="reason"
+                value={deleteForm.reason}
+                placeholder="Motivo opcional"
+                onChange={handleDeleteChange}
+              />
+              <button className="button danger-button" type="button" onClick={deleteAccount} disabled={isSaving}>
                 <Trash2 size={18} aria-hidden="true" />
                 Eliminar mi cuenta
               </button>
             </div>
           ) : null}
-
-          {message ? <p className="form-message form-message-success">{message}</p> : null}
         </aside>
       </div>
     </section>

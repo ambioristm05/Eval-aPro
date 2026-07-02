@@ -1,16 +1,72 @@
 import { Award, BookOpenCheck, FileDown, MessageSquareText, Target } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import DashboardShell from '../../components/dashboard/DashboardShell.jsx';
+import {
+  getStudentFinalGrade,
+  getStudentResults,
+  getStudentTasks,
+} from '../../services/studentService.js';
+import { getErrorMessage } from '../../utils/errors.js';
+
+function formatGrade(grade) {
+  if (!grade || grade.count === 0) return '--';
+  return `${grade.grade}%`;
+}
 
 function StudentDashboard() {
+  const [tasks, setTasks] = useState([]);
+  const [results, setResults] = useState([]);
+  const [finalGrade, setFinalGrade] = useState(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchDashboard() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const [tasksData, resultsData, finalGradeData] = await Promise.all([
+          getStudentTasks(),
+          getStudentResults(),
+          getStudentFinalGrade(),
+        ]);
+
+        if (!isMounted) return;
+        setTasks(tasksData.tasks ?? []);
+        setResults(resultsData.results ?? []);
+        setFinalGrade(finalGradeData);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const suggestionsCount = results.reduce(
+    (total, result) => total + (result.suggestions?.length ?? 0) + (result.improvements?.length ?? 0),
+    0
+  );
+
   return (
     <DashboardShell
       eyebrow="Panel del estudiante"
       title="Mi avance"
       description="Consulta tareas asignadas, resultados publicados, sugerencias de mejora y la nota acumulada cuando esten disponibles."
       stats={[
-        { label: 'Tareas asignadas', value: '0', icon: BookOpenCheck },
-        { label: 'Evaluaciones', value: '0', icon: Target },
-        { label: 'Nota final', value: '--', icon: Award },
+        { label: 'Tareas asignadas', value: isLoading ? '...' : String(tasks.length), icon: BookOpenCheck },
+        { label: 'Evaluaciones', value: isLoading ? '...' : String(results.length), icon: Target },
+        { label: 'Nota final', value: isLoading ? '...' : formatGrade(finalGrade), icon: Award },
       ]}
       actions={[
         {
@@ -42,11 +98,11 @@ function StudentDashboard() {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Resumen personal</h2>
-          <p>El historial aparecera aqui despues de publicar evaluaciones.</p>
+          <p>{error || 'Datos actualizados desde tus tareas y resultados publicados.'}</p>
         </div>
         <div className="student-score">
           <span>Nota acumulada</span>
-          <strong>Sin datos</strong>
+          <strong>{isLoading ? 'Cargando...' : formatGrade(finalGrade)}</strong>
         </div>
         <div className="progress-list">
           <div>
@@ -55,11 +111,11 @@ function StudentDashboard() {
           </div>
           <div>
             <span>Resultados publicados</span>
-            <strong>0</strong>
+            <strong>{results.length}</strong>
           </div>
           <div>
             <span>Sugerencias recibidas</span>
-            <strong>0</strong>
+            <strong>{suggestionsCount}</strong>
           </div>
         </div>
       </aside>

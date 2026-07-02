@@ -89,3 +89,30 @@ export const deleteMyAccountSchema = z.object({
   params: z.object({}).optional(),
   query: z.object({}).optional()
 });
+
+export const updateMyProfileSchema = z.object({
+  body: z
+    .object({
+      name: z
+        .string()
+        .trim()
+        .min(2, 'El nombre debe tener al menos 2 caracteres')
+        .max(100, 'El nombre no puede exceder 100 caracteres')
+        .optional(),
+      email: z.string().trim().email('Email invalido').toLowerCase().optional()
+    })
+    .refine((body) => Object.keys(body).length > 0, {
+      message: 'Debes enviar al menos un campo para actualizar'
+    }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+export const changeMyPasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1, 'La contrasena actual es requerida'),
+    newPassword: passwordSchema
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});

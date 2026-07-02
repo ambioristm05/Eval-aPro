@@ -84,6 +84,13 @@ async function findManageableStudent(req, id) {
   return student;
 }
 
+async function getCurrentUserProfile(userId) {
+  return User.findById(userId).populate({
+    path: 'groups',
+    select: 'name status evaluator'
+  });
+}
+
 export const createStudent = asyncHandler(async (req, res) => {
   const { name, email, password, group: groupId } = req.validated.body;
 
@@ -241,6 +248,48 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   res.json({
     message: 'Estudiante eliminado logicamente',
     student
+  });
+});
+
+export const getMyProfile = asyncHandler(async (req, res) => {
+  const user = await getCurrentUserProfile(req.user._id);
+
+  res.json({ user });
+});
+
+export const updateMyProfile = asyncHandler(async (req, res) => {
+  const { name, email } = req.validated.body;
+
+  if (email && email !== req.user.email) {
+    const existingUser = await User.exists({ email, _id: { $ne: req.user._id } });
+    if (existingUser) {
+      throw new AppError('Ya existe una cuenta con este email', 409);
+    }
+
+    req.user.email = email;
+  }
+
+  if (name !== undefined) req.user.name = name;
+
+  await req.user.save();
+  const user = await getCurrentUserProfile(req.user._id);
+
+  res.json({ user });
+});
+
+export const changeMyPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.validated.body;
+  const passwordMatches = await req.user.comparePassword(currentPassword);
+
+  if (!passwordMatches) {
+    throw new AppError('Contrasena actual incorrecta', 401);
+  }
+
+  req.user.password = newPassword;
+  await req.user.save();
+
+  res.json({
+    message: 'Contrasena actualizada correctamente'
   });
 });
 
