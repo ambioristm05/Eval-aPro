@@ -4,10 +4,10 @@ import { Evaluation } from '../models/Evaluation.js';
 import { Group } from '../models/Group.js';
 import { Instrument } from '../models/Instrument.js';
 import { Task } from '../models/Task.js';
-import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { calculateFinalGrade } from '../utils/calculateGrades.js';
+import { buildStudentReport } from '../services/report.service.js';
 
 const evaluationPopulate = [
   { path: 'student', select: 'name email status' },
@@ -80,45 +80,32 @@ function serializeEvaluation(evaluation) {
 }
 
 export const getStudentReport = asyncHandler(async (req, res) => {
-  const { studentId } = req.validated.params;
-
-  if (req.user.role === USER_ROLES.STUDENT && String(req.user._id) !== studentId) {
-    throw new AppError('No tienes permiso para ver este reporte', 403);
-  }
-
-  const evaluationFilter = {
-    status: EVALUATION_STATUSES.PUBLISHED,
-    student: studentId
-  };
-  const studentFilter = {
-    _id: studentId,
-    role: USER_ROLES.STUDENT
-  };
-
-  if (req.user.role === USER_ROLES.EVALUATOR) {
-    evaluationFilter.evaluator = req.user._id;
-    const evaluatorGroupIds = await Group.find({ evaluator: req.user._id }).distinct('_id');
-    studentFilter.groups = { $in: evaluatorGroupIds };
-  }
-
-  const [student, evaluations] = await Promise.all([
-    User.findOne(studentFilter).populate('groups', 'name status evaluator'),
-    Evaluation.find(evaluationFilter).populate(evaluationPopulate).sort({ publishedAt: -1, evaluatedAt: -1 })
-  ]);
-
-  if (!student) throw new AppError('Estudiante no encontrado', 404);
+  const report = await buildStudentReport(req, req.validated.params.studentId);
 
   res.json({
-    report: {
-      type: 'student',
-      student,
-      summary: {
-        ...summarizeEvaluations(evaluations),
-        finalGrade: calculateFinalGrade(evaluations)
-      },
-      evaluations: evaluations.map(serializeEvaluation),
-      generatedAt: new Date().toISOString()
-    }
+    report
+  });
+});
+
+export const updateStudentReportPermission = asyncHandler(async (req, res) => {
+  const { studentId } = req.validated.params;
+  const { enabled } = req.validated.body;
+  const filter = {
+    status: EVALUATION_STATUSES.PUBLISHED,
+    student: studentId,
+    ...evaluatorScope(req)
+  };
+  const result = await Evaluation.updateMany(filter, {
+    $set: { studentReportEnabled: enabled }
+  });
+
+  res.json({
+    message: enabled
+      ? 'Impresion de reporte habilitada para el estudiante.'
+      : 'Impresion de reporte deshabilitada para el estudiante.',
+    studentReportEnabled: enabled,
+    updated: result.modifiedCount ?? result.nModified ?? 0,
+    matched: result.matchedCount ?? result.n ?? 0
   });
 });
 

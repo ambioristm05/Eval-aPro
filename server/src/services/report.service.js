@@ -73,6 +73,7 @@ function serializeEvaluation(evaluation) {
     percentage: evaluation.percentage,
     feedback: evaluation.feedback,
     suggestions: evaluation.suggestions,
+    studentReportEnabled: evaluation.studentReportEnabled,
     evaluatedAt: evaluation.evaluatedAt,
     publishedAt: evaluation.publishedAt
   };
@@ -98,16 +99,26 @@ export async function buildStudentReport(req, studentId) {
     studentFilter.groups = { $in: evaluatorGroupIds };
   }
 
+  if (req.user.role === USER_ROLES.STUDENT) {
+    evaluationFilter.studentReportEnabled = true;
+  }
+
   const [student, evaluations] = await Promise.all([
     User.findOne(studentFilter).populate('groups', 'name status evaluator'),
     Evaluation.find(evaluationFilter).populate(evaluationPopulate).sort({ publishedAt: -1, evaluatedAt: -1 })
   ]);
 
   if (!student) throw new AppError('Estudiante no encontrado', 404);
+  if (req.user.role === USER_ROLES.STUDENT && !evaluations.length) {
+    throw new AppError('El reporte imprimible aun no esta habilitado por el evaluador', 403);
+  }
 
   return {
     type: 'student',
     student,
+    permissions: {
+      studentPrintEnabled: evaluations.some((evaluation) => evaluation.studentReportEnabled)
+    },
     summary: {
       ...summarizeEvaluations(evaluations),
       finalGrade: calculateFinalGrade(evaluations)

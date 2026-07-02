@@ -1,7 +1,13 @@
 import { Download, Printer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { getReport, listResource } from '../../services/resourceService.js';
+import {
+  getPrintableReport,
+  getReport,
+  listResource,
+  updateStudentReportPermission,
+} from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { openPrintableHtml } from '../../utils/printReport.js';
 
 const reportTitles = {
   student: 'Reporte individual',
@@ -59,7 +65,9 @@ function EvaluatorReportsPage() {
   });
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
 
   const activeOptions = useMemo(() => {
     if (reportType === 'student') return students;
@@ -72,6 +80,7 @@ function EvaluatorReportsPage() {
   const selectedId = reportType === 'final' ? selectedIds.final || selectedIds.group : selectedIds[reportType];
   const evaluations = report?.evaluations ?? [];
   const summaryValue = getSummaryValue(report);
+  const studentPrintEnabled = Boolean(report?.permissions?.studentPrintEnabled);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,6 +88,7 @@ function EvaluatorReportsPage() {
     async function fetchCatalogs() {
       setIsLoading(true);
       setError('');
+      setMessage('');
 
       try {
         const [studentsData, groupsData, tasksData, instrumentsData] = await Promise.all([
@@ -153,16 +163,56 @@ function EvaluatorReportsPage() {
   const handleReportTypeChange = (event) => {
     const nextType = event.target.value;
     setReportType(nextType);
+    setMessage('');
   };
 
   const handleSelectedIdChange = (event) => {
     const value = event.target.value;
+    setMessage('');
     setSelectedIds((current) => ({
       ...current,
       [reportType]: value,
       ...(reportType === 'group' ? { final: value } : {}),
       ...(reportType === 'final' ? { group: value } : {}),
     }));
+  };
+
+  const refreshCurrentReport = async () => {
+    if (!selectedId) return;
+    const nextReport = await getReport(reportType, selectedId);
+    setReport(nextReport);
+  };
+
+  const handlePrintPermission = async (enabled) => {
+    if (reportType !== 'student' || !selectedId) return;
+
+    setError('');
+    setMessage('');
+    setIsUpdatingPermission(true);
+
+    try {
+      const result = await updateStudentReportPermission(selectedId, enabled);
+      setMessage(result.message);
+      await refreshCurrentReport();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsUpdatingPermission(false);
+    }
+  };
+
+  const handleOpenPrintableReport = async () => {
+    if (!report || !selectedId) return;
+
+    setError('');
+    setMessage('');
+
+    try {
+      const html = await getPrintableReport(reportType, selectedId);
+      openPrintableHtml(html);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
   return (
@@ -181,6 +231,7 @@ function EvaluatorReportsPage() {
       </div>
 
       {error ? <p className="form-message form-message-error no-print">{error}</p> : null}
+      {message ? <p className="form-message form-message-success no-print">{message}</p> : null}
 
       <div className="dashboard-panel no-print">
         <div className="toolbar toolbar-wide">
@@ -198,11 +249,27 @@ function EvaluatorReportsPage() {
               </option>
             ))}
           </select>
-          <button className="button button-primary" type="button" onClick={() => window.print()} disabled={!report}>
+          <button className="button button-primary" type="button" onClick={handleOpenPrintableReport} disabled={!report}>
             <Printer size={18} aria-hidden="true" />
             Imprimir
           </button>
         </div>
+
+        {reportType === 'student' ? (
+          <div className="form-actions">
+            <button
+              className={studentPrintEnabled ? 'button button-secondary' : 'button button-primary'}
+              type="button"
+              onClick={() => handlePrintPermission(!studentPrintEnabled)}
+              disabled={!report || isUpdatingPermission || !evaluations.length}
+            >
+              {studentPrintEnabled ? 'Bloquear impresion al estudiante' : 'Permitir impresion al estudiante'}
+            </button>
+            <span className={`status-badge ${studentPrintEnabled ? 'status-published' : 'status-pending'}`}>
+              {studentPrintEnabled ? 'Permitido para estudiante' : 'No permitido'}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <section className="print-sheet">
@@ -274,7 +341,7 @@ function EvaluatorReportsPage() {
         </div>
       </section>
 
-      <button className="floating-print no-print" type="button" onClick={() => window.print()} title="Imprimir" disabled={!report}>
+      <button className="floating-print no-print" type="button" onClick={handleOpenPrintableReport} title="Imprimir" disabled={!report}>
         <Download size={20} aria-hidden="true" />
       </button>
     </section>

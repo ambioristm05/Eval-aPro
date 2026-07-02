@@ -5,7 +5,8 @@ import {
   getGroupReport,
   getInstrumentReport,
   getStudentReport,
-  getTaskReport
+  getTaskReport,
+  updateStudentReportPermission
 } from '../controllers/report.controller.js';
 import {
   pdfFinalGradesReport,
@@ -26,6 +27,7 @@ import { validateRequest } from '../middlewares/validate.middleware.js';
 import {
   groupReportSchema,
   instrumentReportSchema,
+  studentReportPermissionSchema,
   studentReportSchema,
   taskReportSchema
 } from '../validators/report.validator.js';
@@ -33,6 +35,13 @@ import {
 const router = Router();
 
 router.use(protect, checkUserStatus);
+
+router.patch(
+  '/student/:studentId/print-permission',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(studentReportPermissionSchema),
+  updateStudentReportPermission
+);
 
 router.get(
   '/student/:studentId/print',

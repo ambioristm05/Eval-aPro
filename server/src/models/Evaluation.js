@@ -84,6 +84,10 @@ const evaluationSchema = new mongoose.Schema(
       enum: Object.values(EVALUATION_STATUSES),
       default: EVALUATION_STATUSES.DRAFT
     },
+    studentReportEnabled: {
+      type: Boolean,
+      default: false
+    },
     evaluatedAt: Date,
     publishedAt: Date
   },

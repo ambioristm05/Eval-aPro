@@ -88,6 +88,7 @@ function buildResult(evaluation) {
     percentage: evaluation.percentage,
     feedback: evaluation.feedback,
     suggestions: evaluation.suggestions,
+    studentReportEnabled: evaluation.studentReportEnabled,
     answers,
     strengths,
     improvements,

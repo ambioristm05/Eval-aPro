@@ -59,6 +59,11 @@ export async function publishEvaluation(evaluationId) {
   return data;
 }
 
+export async function updateStudentReportPermission(studentId, enabled) {
+  const { data } = await api.patch(`/reports/student/${studentId}/print-permission`, { enabled });
+  return data;
+}
+
 export async function getReport(type, id) {
   const pathMap = {
     student: `/reports/student/${id}`,
@@ -70,4 +75,17 @@ export async function getReport(type, id) {
 
   const { data } = await api.get(pathMap[type]);
   return data.report;
+}
+
+export async function getPrintableReport(type, id) {
+  const pathMap = {
+    student: `/reports/student/${id}/print`,
+    group: `/reports/group/${id}/print`,
+    task: `/reports/task/${id}/print`,
+    final: `/reports/final-grades/${id}/print`,
+    instrument: `/reports/instruments/${id}/print`,
+  };
+
+  const { data } = await api.get(pathMap[type], { responseType: 'text' });
+  return data;
 }

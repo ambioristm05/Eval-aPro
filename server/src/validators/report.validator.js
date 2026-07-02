@@ -10,6 +10,16 @@ export const studentReportSchema = z.object({
   query: z.object({}).optional()
 });
 
+export const studentReportPermissionSchema = z.object({
+  body: z.object({
+    enabled: z.coerce.boolean()
+  }),
+  params: z.object({
+    studentId: mongoIdSchema
+  }),
+  query: z.object({}).optional()
+});
+
 export const groupReportSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({

@@ -1,10 +1,13 @@
-import { Award, FileText, MessageSquareText, Target } from 'lucide-react';
+import { Award, FileText, MessageSquareText, Printer, Target } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { getPrintableReport } from '../../services/resourceService.js';
 import {
   getStudentFinalGrade,
   getStudentResults,
 } from '../../services/studentService.js';
+import { useAuthStore } from '../../stores/authStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { openPrintableHtml } from '../../utils/printReport.js';
 
 function useStudentResults() {
   const [results, setResults] = useState([]);
@@ -128,10 +131,30 @@ export function StudentEvaluationsRealPage() {
 
 export function StudentResultsRealPage() {
   const { results, finalGrade, error, isLoading } = useStudentResults();
+  const user = useAuthStore((state) => state.user);
+  const [printError, setPrintError] = useState('');
+  const [isPrinting, setIsPrinting] = useState(false);
   const suggestionsCount = results.reduce(
     (total, result) => total + (result.suggestions?.length ?? 0) + (result.improvements?.length ?? 0),
     0
   );
+  const canPrintReport = results.some((result) => result.studentReportEnabled);
+
+  const handlePrintReport = async () => {
+    if (!user?.id && !user?._id) return;
+
+    setPrintError('');
+    setIsPrinting(true);
+
+    try {
+      const html = await getPrintableReport('student', user.id ?? user._id);
+      openPrintableHtml(html);
+    } catch (requestError) {
+      setPrintError(getErrorMessage(requestError));
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   return (
     <section className="management-page">
@@ -145,6 +168,7 @@ export function StudentResultsRealPage() {
       </div>
 
       {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {printError ? <p className="form-message form-message-error">{printError}</p> : null}
 
       <div className="metric-grid">
         <article className="metric-card">
@@ -160,6 +184,28 @@ export function StudentResultsRealPage() {
           <div><strong>{isLoading ? '...' : suggestionsCount}</strong><span>Sugerencias</span></div>
         </article>
       </div>
+
+      <section className="dashboard-panel">
+        <div className="panel-heading panel-heading-row">
+          <div>
+            <h2>Reporte imprimible</h2>
+            <p>
+              {canPrintReport
+                ? 'El evaluador habilito la impresion de tu reporte.'
+                : 'Disponible cuando el evaluador habilite la impresion.'}
+            </p>
+          </div>
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={handlePrintReport}
+            disabled={!canPrintReport || isPrinting}
+          >
+            <Printer size={18} aria-hidden="true" />
+            {isPrinting ? 'Abriendo...' : 'Imprimir reporte'}
+          </button>
+        </div>
+      </section>
 
       <div className="result-timeline">
         {results.map((result) => (
