@@ -11,7 +11,7 @@ const taskPopulate = [
   { path: 'evaluator', select: 'name email role' },
   { path: 'group', select: 'name status evaluator' },
   { path: 'students', select: 'name email role status' },
-  { path: 'instrument', select: 'title type status maxScore' }
+  { path: 'instrument', select: 'title type status maxScore criteria indicators' }
 ];
 
 function taskScope(req) {

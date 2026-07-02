@@ -22,6 +22,7 @@ const statusLabels = {
 };
 
 function getId(resource) {
+  if (typeof resource === 'string') return resource;
   return resource?.id ?? resource?._id ?? '';
 }
 
@@ -35,6 +36,20 @@ function getTaskTitle(evaluation) {
 
 function getInstrumentTitle(evaluation) {
   return evaluation.instrument?.title ?? 'Instrumento';
+}
+
+function getStudentGroupIds(student) {
+  return (student.groups ?? []).map(getId).filter(Boolean);
+}
+
+function studentCanBeEvaluatedForTask(student, task) {
+  if (!task) return true;
+
+  const studentId = getId(student);
+  const directStudentIds = (task.students ?? []).map(getId).filter(Boolean);
+  const taskGroupId = getId(task.group);
+
+  return directStudentIds.includes(studentId) || (taskGroupId && getStudentGroupIds(student).includes(taskGroupId));
 }
 
 function getInstrumentItems(instrument) {
@@ -57,6 +72,12 @@ function getInstrumentItems(instrument) {
   }));
 }
 
+function findExistingEvaluation(evaluations, studentId, taskId) {
+  return evaluations.find(
+    (evaluation) => getId(evaluation.student) === studentId && getId(evaluation.task) === taskId,
+  );
+}
+
 function EvaluatorEvaluationsPage() {
   const [evaluations, setEvaluations] = useState([]);
   const [students, setStudents] = useState([]);
@@ -72,6 +93,10 @@ function EvaluatorEvaluationsPage() {
   const selectedTask = tasks.find((task) => getId(task) === draft.taskId);
   const selectedInstrument = selectedTask?.instrument ?? null;
   const instrumentItems = useMemo(() => getInstrumentItems(selectedInstrument), [selectedInstrument]);
+  const eligibleStudents = useMemo(
+    () => students.filter((student) => studentCanBeEvaluatedForTask(student, selectedTask)),
+    [students, selectedTask]
+  );
 
   const maxScore = instrumentItems.reduce((total, item) => total + item.maxScore, 0);
   const score = instrumentItems.reduce((total, item) => total + Number(scores[item.id] || 0), 0);
@@ -137,9 +162,42 @@ function EvaluatorEvaluationsPage() {
   }, []);
 
   useEffect(() => {
-    const nextScores = Object.fromEntries(instrumentItems.map((item) => [item.id, 0]));
+    if (!eligibleStudents.length) return;
+
+    const currentStudentIsEligible = eligibleStudents.some((student) => getId(student) === draft.studentId);
+    if (!currentStudentIsEligible) {
+      setDraft((current) => ({ ...current, studentId: getId(eligibleStudents[0]) }));
+    }
+  }, [draft.studentId, eligibleStudents]);
+
+  useEffect(() => {
+    const existingEvaluation = findExistingEvaluation(evaluations, draft.studentId, draft.taskId);
+    const scoreByItem = new Map(
+      (existingEvaluation?.answers ?? []).map((answer) => [
+        getId(answer.criterion) || getId(answer.indicator),
+        Number(answer.score || 0),
+      ])
+    );
+    const nextScores = Object.fromEntries(
+      instrumentItems.map((item) => [item.id, scoreByItem.get(item.id) ?? 0])
+    );
+
     setScores(nextScores);
-  }, [instrumentItems]);
+
+    if (existingEvaluation) {
+      setDraft((current) => ({
+        ...current,
+        feedback: existingEvaluation.feedback ?? '',
+        suggestions: (existingEvaluation.suggestions ?? []).join('\n'),
+      }));
+    } else {
+      setDraft((current) => ({
+        ...current,
+        feedback: '',
+        suggestions: '',
+      }));
+    }
+  }, [draft.studentId, draft.taskId, evaluations, instrumentItems]);
 
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
@@ -164,6 +222,12 @@ function EvaluatorEvaluationsPage() {
       return;
     }
 
+    const selectedStudent = students.find((student) => getId(student) === draft.studentId);
+    if (!selectedStudent || !studentCanBeEvaluatedForTask(selectedStudent, selectedTask)) {
+      setError('Selecciona un estudiante asignado a esta tarea o a su grupo.');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -176,20 +240,36 @@ function EvaluatorEvaluationsPage() {
         .split('\n')
         .map((item) => item.trim())
         .filter(Boolean);
-      const created = await createResource('evaluations', {
+      const payload = {
         student: draft.studentId,
         task: draft.taskId,
         answers,
         feedback: draft.feedback,
         suggestions,
         status: targetStatus === 'published' ? 'completed' : targetStatus,
-      });
+      };
+      const existingEvaluation = findExistingEvaluation(evaluations, draft.studentId, draft.taskId);
+      const saved = existingEvaluation
+        ? await updateResource('evaluations', getId(existingEvaluation), {
+            answers: payload.answers,
+            feedback: payload.feedback,
+            suggestions: payload.suggestions,
+            status: payload.status,
+          })
+        : await createResource('evaluations', payload);
+      const evaluationId = getId(saved.evaluation);
 
       if (targetStatus === 'published') {
-        await publishEvaluation(getId(created.evaluation));
+        await publishEvaluation(evaluationId);
       }
 
-      setMessage(targetStatus === 'published' ? 'Resultado publicado correctamente.' : 'Evaluacion guardada.');
+      setMessage(
+        targetStatus === 'published'
+          ? 'Resultado publicado correctamente.'
+          : existingEvaluation
+            ? 'Evaluacion actualizada.'
+            : 'Evaluacion guardada.'
+      );
       setDraft((current) => ({ ...current, feedback: '', suggestions: '' }));
       await loadEvaluations();
     } catch (requestError) {
@@ -280,7 +360,7 @@ function EvaluatorEvaluationsPage() {
             <label>
               Estudiante
               <select name="studentId" value={draft.studentId} onChange={handleDraftChange}>
-                {students.map((student) => (
+                {eligibleStudents.map((student) => (
                   <option value={getId(student)} key={getId(student)}>
                     {student.name}
                   </option>
@@ -301,6 +381,12 @@ function EvaluatorEvaluationsPage() {
               Instrumento
               <input value={selectedInstrument?.title ?? 'Sin instrumento'} readOnly />
             </label>
+
+            {eligibleStudents.length === 0 ? (
+              <p className="form-message form-message-error">
+                La tarea seleccionada no tiene estudiantes asignados directamente ni por grupo.
+              </p>
+            ) : null}
 
             <div className="score-list">
               {instrumentItems.map((item) => (
