@@ -7,11 +7,23 @@ import { errorHandler, notFound } from './middlewares/error.middleware.js';
 import apiRoutes from './routes/index.js';
 
 export const app = express();
+const allowedOrigins = env.clientUrl.split(',').map((origin) => origin.trim()).filter(Boolean);
 
 app.use(helmet());
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const isConfiguredOrigin = allowedOrigins.includes(origin);
+      const isLocalDevelopmentOrigin =
+        env.nodeEnv === 'development' && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+
+      callback(null, isConfiguredOrigin || isLocalDevelopmentOrigin);
+    },
     credentials: true
   })
 );

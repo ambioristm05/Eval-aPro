@@ -125,8 +125,17 @@ function EvaluatorTasksPage() {
   );
 
   const loadTasks = async () => {
-    const data = await listResource('tasks', { limit: 100 });
-    setTasks(data.tasks ?? []);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = await listResource('tasks', { limit: 100 });
+      setTasks(data.tasks ?? []);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -137,7 +146,7 @@ function EvaluatorTasksPage() {
       setError('');
 
       try {
-        const [tasksData, groupsData, studentsData, instrumentsData] = await Promise.all([
+        const [tasksResult, groupsResult, studentsResult, instrumentsResult] = await Promise.allSettled([
           listResource('tasks', { limit: 100 }),
           listResource('groups', { status: 'active', limit: 100 }),
           listResource('students', { status: 'active', limit: 100 }),
@@ -145,10 +154,19 @@ function EvaluatorTasksPage() {
         ]);
 
         if (!isMounted) return;
-        setTasks(tasksData.tasks ?? []);
-        setGroups(groupsData.groups ?? []);
-        setStudents(studentsData.students ?? []);
-        setInstruments(instrumentsData.instruments ?? []);
+
+        if (tasksResult.status === 'fulfilled') setTasks(tasksResult.value.tasks ?? []);
+        if (groupsResult.status === 'fulfilled') setGroups(groupsResult.value.groups ?? []);
+        if (studentsResult.status === 'fulfilled') setStudents(studentsResult.value.students ?? []);
+        if (instrumentsResult.status === 'fulfilled') setInstruments(instrumentsResult.value.instruments ?? []);
+
+        const failedResult = [tasksResult, groupsResult, studentsResult, instrumentsResult].find(
+          (result) => result.status === 'rejected'
+        );
+
+        if (failedResult) {
+          setError(getErrorMessage(failedResult.reason));
+        }
       } catch (requestError) {
         if (!isMounted) return;
         setError(getErrorMessage(requestError));
@@ -285,7 +303,14 @@ function EvaluatorTasksPage() {
         </div>
       </div>
 
-      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {error ? (
+        <div className="form-message form-message-error">
+          <span>{error}</span>
+          <button className="button button-secondary" type="button" onClick={loadTasks} disabled={isLoading}>
+            Reintentar tareas
+          </button>
+        </div>
+      ) : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
 
       <div className="metric-grid" aria-label="Resumen de tareas">

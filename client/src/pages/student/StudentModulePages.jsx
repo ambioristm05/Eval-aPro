@@ -36,10 +36,24 @@ export function StudentTasksPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = await getStudentTasks();
+      setTasks(data.tasks ?? []);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchTasks() {
+    async function fetchInitialTasks() {
       setIsLoading(true);
       setError('');
 
@@ -55,7 +69,7 @@ export function StudentTasksPage() {
       }
     }
 
-    fetchTasks();
+    fetchInitialTasks();
 
     return () => {
       isMounted = false;
@@ -97,7 +111,14 @@ export function StudentTasksPage() {
         </div>
       </div>
 
-      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {error ? (
+        <div className="form-message form-message-error">
+          <span>{error}</span>
+          <button className="button button-secondary" type="button" onClick={fetchTasks} disabled={isLoading}>
+            Reintentar
+          </button>
+        </div>
+      ) : null}
 
       <div className="metric-grid" aria-label="Resumen de tareas">
         <article className="metric-card">
