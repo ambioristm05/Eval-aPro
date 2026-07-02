@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { USER_ROLES } from '../constants/user.constants.js';
 import {
+  createStudent,
   deleteMyAccount,
   deleteStudent,
   getStudentById,
@@ -13,6 +14,7 @@ import { authorize } from '../middlewares/role.middleware.js';
 import { checkUserStatus } from '../middlewares/status.middleware.js';
 import { validateRequest } from '../middlewares/validate.middleware.js';
 import {
+  createStudentSchema,
   deleteMyAccountSchema,
   deleteStudentSchema,
   listStudentsSchema,
@@ -26,6 +28,13 @@ const router = Router();
 router.use(protect, checkUserStatus);
 
 router.delete('/me', validateRequest(deleteMyAccountSchema), deleteMyAccount);
+
+router.post(
+  '/students',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(createStudentSchema),
+  createStudent
+);
 
 router.get(
   '/students',

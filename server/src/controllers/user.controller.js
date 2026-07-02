@@ -84,6 +84,56 @@ async function findManageableStudent(req, id) {
   return student;
 }
 
+export const createStudent = asyncHandler(async (req, res) => {
+  const { name, email, password, group: groupId } = req.validated.body;
+
+  const existingUser = await User.exists({ email });
+  if (existingUser) {
+    throw new AppError('Ya existe una cuenta con este email', 409);
+  }
+
+  let group = null;
+
+  if (groupId) {
+    const groupFilter = { _id: groupId };
+    if (req.user.role === USER_ROLES.EVALUATOR) {
+      groupFilter.evaluator = req.user._id;
+    }
+
+    group = await Group.findOne(groupFilter);
+    if (!group) {
+      throw new AppError('Grupo no encontrado', 404);
+    }
+  }
+
+  if (req.user.role === USER_ROLES.EVALUATOR && !group) {
+    throw new AppError('Debes seleccionar un grupo para crear estudiantes', 400);
+  }
+
+  const student = await User.create({
+    name,
+    email,
+    password,
+    role: USER_ROLES.STUDENT,
+    status: USER_STATUSES.ACTIVE,
+    groups: group ? [group._id] : [],
+    createdBy: req.user._id
+  });
+
+  if (group) {
+    await Group.findByIdAndUpdate(group._id, {
+      $addToSet: { students: student._id }
+    });
+  }
+
+  const populatedStudent = await User.findById(student._id).populate({
+    path: 'groups',
+    select: 'name status evaluator'
+  });
+
+  res.status(201).json({ student: populatedStudent });
+});
+
 export const getStudents = asyncHandler(async (req, res) => {
   const { page, limit } = req.validated.query;
   const filter = await buildStudentFilter(req);

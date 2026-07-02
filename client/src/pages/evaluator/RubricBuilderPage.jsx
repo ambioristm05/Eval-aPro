@@ -342,84 +342,67 @@ function RubricBuilderPage() {
           </button>
         </div>
 
-        <div className="rubric-table-wrap">
-          <table className="rubric-table">
-            <thead>
-              <tr>
-                <th>Criterio</th>
+        <div className="rubric-matrix">
+          {criteria.map((criterion) => (
+            <article className="rubric-criterion-card" key={criterion.id}>
+              <div className="rubric-criterion-header">
+                <label>
+                  Criterio
+                  <input
+                    value={criterion.name}
+                    onChange={(event) => updateCriterion(criterion.id, 'name', event.target.value)}
+                  />
+                </label>
+                <label>
+                  Maximo
+                  <input
+                    type="number"
+                    min="0"
+                    value={criterion.maxScore}
+                    onChange={(event) => updateCriterion(criterion.id, 'maxScore', event.target.value)}
+                  />
+                </label>
+                <div className="resource-actions">
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => duplicateCriterion(criterion)}
+                    title="Duplicar criterio"
+                    aria-label={`Duplicar ${criterion.name}`}
+                  >
+                    <Copy size={17} aria-hidden="true" />
+                  </button>
+                  <button
+                    className="icon-button danger"
+                    type="button"
+                    onClick={() => removeCriterion(criterion.id)}
+                    disabled={criteria.length <= 1}
+                    title="Eliminar criterio"
+                    aria-label={`Eliminar ${criterion.name}`}
+                  >
+                    <Trash2 size={17} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="rubric-level-grid">
                 {levels.map((level) => (
-                  <th key={level.id}>
-                    {level.name}
-                    <span>{level.score} pts</span>
-                  </th>
+                  <label className="rubric-level-cell" key={level.id}>
+                    <span>
+                      {level.name}
+                      <strong>{level.score} pts</strong>
+                    </span>
+                    <textarea
+                      value={criterion.descriptions[level.id] ?? ''}
+                      rows="3"
+                      aria-label={`${criterion.name} en nivel ${level.name}`}
+                      onChange={(event) => updateDescription(criterion.id, level.id, event.target.value)}
+                    />
+                  </label>
                 ))}
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {criteria.map((criterion) => (
-                <tr key={criterion.id}>
-                  <td>
-                    <label>
-                      Nombre
-                      <input
-                        value={criterion.name}
-                        onChange={(event) =>
-                          updateCriterion(criterion.id, 'name', event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Maximo
-                      <input
-                        type="number"
-                        min="0"
-                        value={criterion.maxScore}
-                        onChange={(event) =>
-                          updateCriterion(criterion.id, 'maxScore', event.target.value)
-                        }
-                      />
-                    </label>
-                  </td>
-                  {levels.map((level) => (
-                    <td key={level.id}>
-                      <textarea
-                        value={criterion.descriptions[level.id] ?? ''}
-                        rows="4"
-                        aria-label={`${criterion.name} en nivel ${level.name}`}
-                        onChange={(event) =>
-                          updateDescription(criterion.id, level.id, event.target.value)
-                        }
-                      />
-                    </td>
-                  ))}
-                  <td>
-                    <div className="resource-actions">
-                      <button
-                        className="icon-button"
-                        type="button"
-                        onClick={() => duplicateCriterion(criterion)}
-                        title="Duplicar criterio"
-                        aria-label={`Duplicar ${criterion.name}`}
-                      >
-                        <Copy size={17} aria-hidden="true" />
-                      </button>
-                      <button
-                        className="icon-button danger"
-                        type="button"
-                        onClick={() => removeCriterion(criterion.id)}
-                        disabled={criteria.length <= 1}
-                        title="Eliminar criterio"
-                        aria-label={`Eliminar ${criterion.name}`}
-                      >
-                        <Trash2 size={17} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </section>

@@ -38,3 +38,18 @@ export async function removeStudentFromGroup(groupId, studentId) {
   const { data } = await api.delete(`/groups/${groupId}/students/${studentId}`);
   return data;
 }
+
+export async function suspendStudent(studentId, reason) {
+  const { data } = await api.patch(`/users/${studentId}/suspend`, { reason });
+  return data;
+}
+
+export async function reactivateStudent(studentId, reason = '') {
+  const { data } = await api.patch(`/users/${studentId}/reactivate`, { reason });
+  return data;
+}
+
+export async function deleteStudent(studentId, reason) {
+  const { data } = await api.delete(`/users/${studentId}`, { data: { reason } });
+  return data;
+}

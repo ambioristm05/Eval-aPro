@@ -2,6 +2,25 @@ import { z } from 'zod';
 import { USER_STATUSES } from '../constants/user.constants.js';
 
 const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const passwordSchema = z
+  .string()
+  .min(8, 'La contrasena debe tener al menos 8 caracteres')
+  .max(72, 'La contrasena no puede exceder 72 caracteres');
+
+export const createStudentSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'El nombre debe tener al menos 2 caracteres')
+      .max(100, 'El nombre no puede exceder 100 caracteres'),
+    email: z.string().trim().email('Email invalido').toLowerCase(),
+    password: passwordSchema,
+    group: mongoIdSchema.optional()
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
 
 export const listStudentsSchema = z.object({
   body: z.object({}).optional(),
