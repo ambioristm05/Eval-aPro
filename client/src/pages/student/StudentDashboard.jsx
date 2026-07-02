@@ -62,7 +62,7 @@ function StudentDashboard() {
     <DashboardShell
       eyebrow="Panel del estudiante"
       title="Mi avance"
-      description="Consulta tareas asignadas, resultados publicados, sugerencias de mejora y la nota acumulada cuando esten disponibles."
+      description="Consulta tareas asignadas, resultados publicados, sugerencias de mejora y la nota acumulada cuando estén disponibles."
       stats={[
         { label: 'Tareas asignadas', value: isLoading ? '...' : String(tasks.length), icon: BookOpenCheck },
         { label: 'Evaluaciones', value: isLoading ? '...' : String(results.length), icon: Target },
@@ -83,7 +83,7 @@ function StudentDashboard() {
         },
         {
           title: 'Leer sugerencias',
-          description: 'Retroalimentacion personalizada para mejorar.',
+          description: 'Retroalimentación personalizada para mejorar.',
           icon: MessageSquareText,
           href: '/student/suggestions',
         },

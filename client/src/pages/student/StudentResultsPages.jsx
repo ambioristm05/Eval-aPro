@@ -121,7 +121,7 @@ export function StudentEvaluationsRealPage() {
           <EmptyResults
             isLoading={isLoading}
             title="No hay evaluaciones publicadas"
-            text="Cuando tu evaluador publique resultados apareceran aqui."
+            text="Cuando tu evaluador publique resultados aparecerán aquí."
           />
         ) : null}
       </div>
@@ -163,7 +163,7 @@ export function StudentResultsRealPage() {
         <div>
           <p className="eyebrow">Estudiante</p>
           <h1>Resultados</h1>
-          <p className="dashboard-description">Revisa notas publicadas, progreso acumulado y retroalimentacion.</p>
+          <p className="dashboard-description">Revisa notas publicadas, progreso acumulado y retroalimentación.</p>
         </div>
       </div>
 
@@ -213,7 +213,7 @@ export function StudentResultsRealPage() {
             <div className="panel-heading panel-heading-row">
               <div>
                 <h2>{getTaskTitle(result)}</h2>
-                <p>{result.feedback || 'Sin retroalimentacion general registrada.'}</p>
+                <p>{result.feedback || 'Sin retroalimentación general registrada.'}</p>
               </div>
               <span className="count-pill">{result.score}/{result.maxScore}</span>
             </div>
@@ -227,7 +227,7 @@ export function StudentResultsRealPage() {
           <EmptyResults
             isLoading={isLoading}
             title="No hay resultados publicados"
-            text="Tus calificaciones apareceran despues de que el evaluador las publique."
+            text="Tus calificaciones aparecerán después de que el evaluador las publique."
           />
         ) : null}
       </div>
@@ -272,7 +272,7 @@ export function StudentSuggestionsRealPage() {
         <div>
           <p className="eyebrow">Estudiante</p>
           <h1>Sugerencias de mejora</h1>
-          <p className="dashboard-description">Retroalimentacion accionable para reforzar tu avance.</p>
+          <p className="dashboard-description">Retroalimentación accionable para reforzar tu avance.</p>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ export function StudentSuggestionsRealPage() {
               <EmptyResults
                 isLoading={isLoading}
                 title="Sin sugerencias publicadas"
-                text="Cuando haya retroalimentacion de mejora se mostrara aqui."
+                text="Cuando haya retroalimentación de mejora se mostrará aquí."
               />
             ) : null}
           </div>

@@ -15,8 +15,8 @@ function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, sta
       <div className="module-page-grid">
         <section className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Funciones previstas</h2>
-            <p>Base del módulo antes de conectar datos reales.</p>
+            <h2>Funciones disponibles</h2>
+            <p>Información y acciones principales de esta sección.</p>
           </div>
           <div className="feature-list">
             {primaryItems.map((item) => (
@@ -31,7 +31,7 @@ function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, sta
         <aside className="dashboard-panel">
           <div className="panel-heading">
             <h2>Estado</h2>
-            <p>Avance de esta sección dentro del MVP.</p>
+            <p>Resumen operativo de esta sección.</p>
           </div>
           <div className="progress-list">
             {statusItems.map((item) => (

@@ -145,7 +145,7 @@ export function StudentTasksPage() {
           </span>
           <div>
             <strong>{isLoading ? '...' : `${totalWeight}%`}</strong>
-            <span>Ponderacion</span>
+            <span>Ponderación</span>
           </div>
         </article>
       </div>
