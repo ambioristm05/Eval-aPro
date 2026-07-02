@@ -58,3 +58,16 @@ export async function publishEvaluation(evaluationId) {
   const { data } = await api.patch(`/evaluations/${evaluationId}/publish`);
   return data;
 }
+
+export async function getReport(type, id) {
+  const pathMap = {
+    student: `/reports/student/${id}`,
+    group: `/reports/group/${id}`,
+    task: `/reports/task/${id}`,
+    final: `/reports/final-grades/${id}`,
+    instrument: `/reports/instruments/${id}`,
+  };
+
+  const { data } = await api.get(pathMap[type]);
+  return data.report;
+}

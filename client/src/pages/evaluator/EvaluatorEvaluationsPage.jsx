@@ -4,6 +4,7 @@ import {
   createResource,
   listResource,
   publishEvaluation,
+  updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
@@ -198,6 +199,28 @@ function EvaluatorEvaluationsPage() {
     }
   };
 
+  const changeEvaluationStatus = async (evaluationId, targetStatus) => {
+    setError('');
+    setMessage('');
+    setIsSaving(true);
+
+    try {
+      if (targetStatus === 'published') {
+        await publishEvaluation(evaluationId);
+        setMessage('Resultado publicado correctamente.');
+      } else {
+        await updateResource('evaluations', evaluationId, { status: targetStatus });
+        setMessage('Estado de evaluacion actualizado.');
+      }
+
+      await loadEvaluations();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <section className="management-page">
       <div className="module-hero">
@@ -359,6 +382,30 @@ function EvaluatorEvaluationsPage() {
                     <span>{evaluation.percentage}%</span>
                   </div>
                 </div>
+                {evaluation.status !== 'published' ? (
+                  <div className="resource-actions" aria-label={`Acciones para ${getStudentName(evaluation)}`}>
+                    {evaluation.status === 'draft' ? (
+                      <button
+                        className="button button-secondary"
+                        type="button"
+                        onClick={() => changeEvaluationStatus(getId(evaluation), 'completed')}
+                        disabled={isSaving}
+                      >
+                        <Save size={17} aria-hidden="true" />
+                        Completar
+                      </button>
+                    ) : null}
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      onClick={() => changeEvaluationStatus(getId(evaluation), 'published')}
+                      disabled={isSaving}
+                    >
+                      <Send size={17} aria-hidden="true" />
+                      Publicar
+                    </button>
+                  </div>
+                ) : null}
               </article>
             ))}
 

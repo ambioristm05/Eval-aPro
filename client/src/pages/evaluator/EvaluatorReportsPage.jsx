@@ -1,46 +1,187 @@
 import { Download, Printer } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { calculateAverage, mockEvaluations, mockStudents } from '../../data/mockAcademicData.js';
+import { useEffect, useMemo, useState } from 'react';
+import { getReport, listResource } from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
+
+const reportTitles = {
+  student: 'Reporte individual',
+  group: 'Reporte por grupo',
+  task: 'Reporte por tarea',
+  final: 'Reporte final',
+  instrument: 'Reporte por instrumento',
+};
+
+function getId(resource) {
+  return resource?.id ?? resource?._id ?? '';
+}
+
+function getStudentName(evaluation) {
+  return evaluation.student?.name ?? 'Estudiante';
+}
+
+function getTaskTitle(evaluation) {
+  return evaluation.task?.title ?? 'Tarea';
+}
+
+function getInstrumentTitle(evaluation) {
+  return evaluation.instrument?.title ?? 'Instrumento';
+}
 
 function EvaluatorReportsPage() {
   const [reportType, setReportType] = useState('student');
-  const [studentName, setStudentName] = useState('Ana Martinez');
+  const [students, setStudents] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [instruments, setInstruments] = useState([]);
+  const [selectedIds, setSelectedIds] = useState({
+    student: '',
+    group: '',
+    task: '',
+    final: '',
+    instrument: '',
+  });
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const reportEvaluations = useMemo(() => {
-    if (reportType === 'student') {
-      return mockEvaluations.filter((evaluation) => evaluation.student === studentName);
+  const activeOptions = useMemo(() => {
+    if (reportType === 'student') return students;
+    if (reportType === 'group' || reportType === 'final') return groups;
+    if (reportType === 'task') return tasks;
+    if (reportType === 'instrument') return instruments;
+    return [];
+  }, [groups, instruments, reportType, students, tasks]);
+
+  const selectedId = reportType === 'final' ? selectedIds.final || selectedIds.group : selectedIds[reportType];
+  const evaluations = report?.evaluations ?? [];
+  const summaryValue = report?.summary?.finalGrade ?? report?.summary?.average ?? 0;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchCatalogs() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const [studentsData, groupsData, tasksData, instrumentsData] = await Promise.all([
+          listResource('students', { limit: 100 }),
+          listResource('groups', { limit: 100 }),
+          listResource('tasks', { limit: 100 }),
+          listResource('instruments', { limit: 100 }),
+        ]);
+
+        if (!isMounted) return;
+
+        const nextStudents = studentsData.students ?? [];
+        const nextGroups = groupsData.groups ?? [];
+        const nextTasks = tasksData.tasks ?? [];
+        const nextInstruments = instrumentsData.instruments ?? [];
+
+        setStudents(nextStudents);
+        setGroups(nextGroups);
+        setTasks(nextTasks);
+        setInstruments(nextInstruments);
+        setSelectedIds({
+          student: nextStudents[0] ? getId(nextStudents[0]) : '',
+          group: nextGroups[0] ? getId(nextGroups[0]) : '',
+          final: nextGroups[0] ? getId(nextGroups[0]) : '',
+          task: nextTasks[0] ? getId(nextTasks[0]) : '',
+          instrument: nextInstruments[0] ? getId(nextInstruments[0]) : '',
+        });
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     }
-    return mockEvaluations;
-  }, [reportType, studentName]);
 
-  const average = calculateAverage(reportEvaluations);
+    fetchCatalogs();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchReport() {
+      if (!selectedId) {
+        setReport(null);
+        return;
+      }
+
+      setError('');
+
+      try {
+        const nextReport = await getReport(reportType, selectedId);
+        if (!isMounted) return;
+        setReport(nextReport);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setReport(null);
+        setError(getErrorMessage(requestError));
+      }
+    }
+
+    fetchReport();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reportType, selectedId]);
+
+  const handleReportTypeChange = (event) => {
+    const nextType = event.target.value;
+    setReportType(nextType);
+  };
+
+  const handleSelectedIdChange = (event) => {
+    const value = event.target.value;
+    setSelectedIds((current) => ({
+      ...current,
+      [reportType]: value,
+      ...(reportType === 'group' ? { final: value } : {}),
+      ...(reportType === 'final' ? { group: value } : {}),
+    }));
+  };
 
   return (
     <section className="management-page">
       <div className="module-hero no-print">
-        <span className="module-hero-icon"><Printer size={28} aria-hidden="true" /></span>
+        <span className="module-hero-icon">
+          <Printer size={28} aria-hidden="true" />
+        </span>
         <div>
           <p className="eyebrow">Evaluador</p>
           <h1>Reportes</h1>
           <p className="dashboard-description">
-            Genera vistas imprimibles de resultados individuales, grupos y nota final.
+            Genera vistas imprimibles de resultados individuales, grupos, tareas e instrumentos.
           </p>
         </div>
       </div>
 
+      {error ? <p className="form-message form-message-error no-print">{error}</p> : null}
+
       <div className="dashboard-panel no-print">
         <div className="toolbar toolbar-wide">
-          <select className="filter-select" value={reportType} onChange={(event) => setReportType(event.target.value)}>
+          <select className="filter-select" value={reportType} onChange={handleReportTypeChange}>
             <option value="student">Individual</option>
             <option value="group">Por grupo</option>
+            <option value="task">Por tarea</option>
             <option value="final">Final de notas</option>
+            <option value="instrument">Por instrumento</option>
           </select>
-          <select className="filter-select" value={studentName} onChange={(event) => setStudentName(event.target.value)} disabled={reportType !== 'student'}>
-            {mockStudents.map((student) => (
-              <option value={student.name} key={student.id}>{student.name}</option>
+          <select className="filter-select" value={selectedId} onChange={handleSelectedIdChange} disabled={!activeOptions.length}>
+            {activeOptions.map((option) => (
+              <option value={getId(option)} key={getId(option)}>
+                {option.name ?? option.title}
+              </option>
             ))}
           </select>
-          <button className="button button-primary" type="button" onClick={() => window.print()}>
+          <button className="button button-primary" type="button" onClick={() => window.print()} disabled={!report}>
             <Printer size={18} aria-hidden="true" />
             Imprimir
           </button>
@@ -51,44 +192,72 @@ function EvaluatorReportsPage() {
         <header className="print-header">
           <div>
             <p className="eyebrow">EvaluaPro</p>
-            <h1>{reportType === 'student' ? 'Reporte individual' : reportType === 'group' ? 'Reporte por grupo' : 'Reporte final'}</h1>
-            <p>{new Date().toLocaleDateString('es-DO')}</p>
+            <h1>{reportTitles[reportType]}</h1>
+            <p>{report?.generatedAt ? new Date(report.generatedAt).toLocaleDateString('es-DO') : new Date().toLocaleDateString('es-DO')}</p>
           </div>
-          <strong>{average}%</strong>
+          <strong>{summaryValue}%</strong>
         </header>
 
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Estudiante</th>
-              <th>Tarea</th>
-              <th>Instrumento</th>
-              <th>Nota</th>
-              <th>Porcentaje</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportEvaluations.map((evaluation) => (
-              <tr key={evaluation.id}>
-                <td>{evaluation.student}</td>
-                <td>{evaluation.task}</td>
-                <td>{evaluation.instrument}</td>
-                <td>{evaluation.score}/{evaluation.maxScore}</td>
-                <td>{evaluation.percentage}%</td>
+        {reportType === 'final' ? (
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Estudiante</th>
+                <th>Nota final</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(report?.grades ?? []).map((grade) => (
+                <tr key={getId(grade.student)}>
+                  <td>{grade.student?.name ?? 'Estudiante'}</td>
+                  <td>{grade.finalGrade}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Estudiante</th>
+                <th>Tarea</th>
+                <th>Instrumento</th>
+                <th>Nota</th>
+                <th>Porcentaje</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evaluations.map((evaluation) => (
+                <tr key={getId(evaluation)}>
+                  <td>{getStudentName(evaluation)}</td>
+                  <td>{getTaskTitle(evaluation)}</td>
+                  <td>{getInstrumentTitle(evaluation)}</td>
+                  <td>{evaluation.score}/{evaluation.maxScore}</td>
+                  <td>{evaluation.percentage}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {isLoading ? (
+          <div className="report-notes">
+            <p>Cargando datos reales...</p>
+          </div>
+        ) : null}
 
         <div className="report-notes">
           <h2>Retroalimentacion</h2>
-          {reportEvaluations.map((evaluation) => (
-            <p key={`${evaluation.id}-feedback`}><strong>{evaluation.task}:</strong> {evaluation.feedback}</p>
+          {evaluations.map((evaluation) => (
+            <p key={`${getId(evaluation)}-feedback`}>
+              <strong>{getTaskTitle(evaluation)}:</strong> {evaluation.feedback || 'Sin retroalimentacion registrada.'}
+            </p>
           ))}
+          {!evaluations.length && reportType !== 'final' ? <p>No hay evaluaciones publicadas para este reporte.</p> : null}
         </div>
       </section>
 
-      <button className="floating-print no-print" type="button" onClick={() => window.print()} title="Imprimir">
+      <button className="floating-print no-print" type="button" onClick={() => window.print()} title="Imprimir" disabled={!report}>
         <Download size={20} aria-hidden="true" />
       </button>
     </section>
