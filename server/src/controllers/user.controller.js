@@ -220,12 +220,9 @@ export const reactivateStudent = asyncHandler(async (req, res) => {
   const student = await findManageableStudent(req, req.validated.params.id);
   const { reason } = req.validated.body;
 
-  if (student.status === USER_STATUSES.DELETED) {
-    throw new AppError('No puedes reactivar un estudiante eliminado', 409);
-  }
-
   student.status = USER_STATUSES.ACTIVE;
   student.suspendedAt = undefined;
+  student.deletedAt = undefined;
   student.statusReason = reason || '';
   student.actionBy = req.user._id;
 

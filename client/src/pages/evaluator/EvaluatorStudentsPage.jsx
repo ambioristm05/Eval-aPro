@@ -372,7 +372,6 @@ function EvaluatorStudentsPage() {
                       onClick={() => updateStudentStatus(getId(student), 'active')}
                       title="Reactivar"
                       aria-label={`Reactivar ${student.name}`}
-                      disabled={student.status === 'deleted'}
                     >
                       <RotateCcw size={17} aria-hidden="true" />
                     </button>
