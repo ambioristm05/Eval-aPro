@@ -98,8 +98,7 @@ export const updateMyProfileSchema = z.object({
         .trim()
         .min(2, 'El nombre debe tener al menos 2 caracteres')
         .max(100, 'El nombre no puede exceder 100 caracteres')
-        .optional(),
-      email: z.string().trim().email('Email invalido').toLowerCase().optional()
+        .optional()
     })
     .refine((body) => Object.keys(body).length > 0, {
       message: 'Debes enviar al menos un campo para actualizar'
@@ -109,10 +108,16 @@ export const updateMyProfileSchema = z.object({
 });
 
 export const changeMyPasswordSchema = z.object({
-  body: z.object({
-    currentPassword: z.string().min(1, 'La contrasena actual es requerida'),
-    newPassword: passwordSchema
-  }),
+  body: z
+    .object({
+      currentPassword: z.string().min(1, 'La contrasena actual es requerida'),
+      newPassword: passwordSchema,
+      confirmNewPassword: z.string().min(1, 'Confirma la nueva contrasena')
+    })
+    .refine((body) => body.newPassword === body.confirmNewPassword, {
+      message: 'La confirmacion no coincide con la nueva contrasena',
+      path: ['confirmNewPassword']
+    }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
 });

@@ -1,5 +1,6 @@
-import { Save, Trash2, UserRound } from 'lucide-react';
+import { ArrowLeft, KeyRound, Pencil, Save, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   changeMyPassword,
   deleteMyAccount,
@@ -15,7 +16,17 @@ function getGroupNames(user) {
   return groups.map((group) => group.name).join(', ');
 }
 
-function ProfilePage({ role }) {
+function getStatusLabel(status) {
+  const labels = {
+    active: 'Activa',
+    suspended: 'Suspendida',
+    deleted: 'Eliminada',
+  };
+
+  return labels[status] ?? status ?? 'Sin estado';
+}
+
+function ProfilePage({ role, mode = 'view' }) {
   const storeUser = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
@@ -27,6 +38,7 @@ function ProfilePage({ role }) {
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
+    confirmNewPassword: '',
   });
   const [deleteForm, setDeleteForm] = useState({
     confirmation: '',
@@ -39,6 +51,10 @@ function ProfilePage({ role }) {
   const [isSaving, setIsSaving] = useState(false);
 
   const groupNames = useMemo(() => getGroupNames(user), [user]);
+  const roleLabel = role === 'evaluator' ? 'Evaluador' : 'Estudiante';
+  const profilePath = `/${role}/profile`;
+  const editPath = `/${role}/profile/edit`;
+  const deletePath = `/${role}/profile/delete`;
 
   useEffect(() => {
     let isMounted = true;
@@ -95,7 +111,6 @@ function ProfilePage({ role }) {
     try {
       const updatedUser = await updateMyProfile({
         name: profile.name,
-        email: profile.email,
       });
       setLocalUser(updatedUser);
       setUser(updatedUser);
@@ -111,11 +126,17 @@ function ProfilePage({ role }) {
     event.preventDefault();
     setError('');
     setMessage('');
+
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      setError('La confirmacion no coincide con la nueva contrasena.');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
       await changeMyPassword(passwordForm);
-      setPasswordForm({ currentPassword: '', newPassword: '' });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
       setMessage('Contrasena actualizada correctamente.');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -148,15 +169,186 @@ function ProfilePage({ role }) {
     }
   };
 
+  const renderViewMode = () => (
+    <div className="management-grid">
+      <section className="dashboard-panel">
+        <div className="panel-heading panel-heading-row">
+          <div>
+            <h2>Datos personales</h2>
+            <p>Informacion principal del usuario logueado.</p>
+          </div>
+          <Link className="button button-primary" to={editPath}>
+            <Pencil size={18} aria-hidden="true" />
+            Modificar perfil
+          </Link>
+        </div>
+        <div className="progress-list">
+          <div>
+            <span>Nombre</span>
+            <strong>{isLoading ? 'Cargando...' : user?.name ?? 'Sin nombre'}</strong>
+          </div>
+          <div>
+            <span>Correo</span>
+            <strong>{isLoading ? 'Cargando...' : user?.email ?? 'Sin correo'}</strong>
+          </div>
+          <div>
+            <span>Rol</span>
+            <strong>{roleLabel}</strong>
+          </div>
+          <div>
+            <span>Estado</span>
+            <strong>{getStatusLabel(user?.status)}</strong>
+          </div>
+          {role === 'student' ? (
+            <div>
+              <span>Grupo</span>
+              <strong>{groupNames}</strong>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <aside className="dashboard-panel">
+        <div className="panel-heading">
+          <h2>Seguridad</h2>
+          <p>Los cambios sensibles se realizan desde la vista de modificacion.</p>
+        </div>
+        <Link className="button button-secondary" to={editPath}>
+          <KeyRound size={18} aria-hidden="true" />
+          Cambiar contrasena
+        </Link>
+      </aside>
+    </div>
+  );
+
+  const renderEditMode = () => (
+    <div className="management-grid">
+      <section className="dashboard-panel">
+        <div className="panel-heading"><h2>Modificar perfil</h2><p>El correo de la cuenta no se puede modificar.</p></div>
+        <form className="stacked-form compact-form" onSubmit={saveProfile}>
+          <label>Nombre<input name="name" value={profile.name} onChange={handleProfileChange} disabled={isLoading} /></label>
+          <label>Correo<input name="email" type="email" value={profile.email} disabled readOnly /></label>
+          {role === 'student' ? (
+            <label>Grupo<input name="group" value={groupNames} disabled readOnly /></label>
+          ) : null}
+          <div className="form-actions">
+            <button className="button button-primary" type="submit" disabled={isSaving || isLoading}>
+              <Save size={18} aria-hidden="true" />
+              {isSaving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            <Link className="button button-secondary" to={profilePath}>
+              <ArrowLeft size={18} aria-hidden="true" />
+              Volver al perfil
+            </Link>
+          </div>
+        </form>
+      </section>
+
+      <aside className="dashboard-panel">
+        <div className="panel-heading"><h2>Cambiar contrasena</h2><p>Confirma la nueva contrasena antes de actualizar.</p></div>
+        <form className="stacked-form compact-form" onSubmit={updatePassword}>
+          <label>
+            Contrasena actual
+            <input
+              name="currentPassword"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+          </label>
+          <label>
+            Nueva contrasena
+            <input
+              name="newPassword"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+          </label>
+          <label>
+            Confirmar nueva contrasena
+            <input
+              name="confirmNewPassword"
+              type="password"
+              value={passwordForm.confirmNewPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+          </label>
+          <button className="button button-secondary" type="submit" disabled={isSaving}>
+            Actualizar contrasena
+          </button>
+        </form>
+
+        {role === 'student' ? (
+          <div className="danger-zone">
+            <h3>Eliminar cuenta</h3>
+            <p>Esta accion esta separada para evitar eliminaciones accidentales.</p>
+            <Link className="button danger-button" to={deletePath}>
+              <Trash2 size={18} aria-hidden="true" />
+              Ir a eliminar cuenta
+            </Link>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  );
+
+  const renderDeleteMode = () => (
+    <div className="management-grid">
+      <section className="dashboard-panel">
+        <div className="panel-heading">
+          <h2>Eliminar cuenta</h2>
+          <p>La eliminacion es logica y cierra la sesion automaticamente.</p>
+        </div>
+        <div className="danger-zone">
+          <input
+            name="confirmation"
+            value={deleteForm.confirmation}
+            placeholder="Escribe ELIMINAR"
+            onChange={handleDeleteChange}
+          />
+          <input
+            name="password"
+            type="password"
+            value={deleteForm.password}
+            placeholder="Contrasena actual"
+            onChange={handleDeleteChange}
+          />
+          <input
+            name="reason"
+            value={deleteForm.reason}
+            placeholder="Motivo opcional"
+            onChange={handleDeleteChange}
+          />
+          <div className="form-actions">
+            <button className="button danger-button" type="button" onClick={deleteAccount} disabled={isSaving}>
+              <Trash2 size={18} aria-hidden="true" />
+              Eliminar mi cuenta
+            </button>
+            <Link className="button button-secondary" to={editPath}>
+              <ArrowLeft size={18} aria-hidden="true" />
+              Volver
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+
   return (
     <section className="management-page">
       <div className="module-hero">
         <span className="module-hero-icon"><UserRound size={28} aria-hidden="true" /></span>
         <div>
-          <p className="eyebrow">{role === 'evaluator' ? 'Evaluador' : 'Estudiante'}</p>
-          <h1>Perfil</h1>
+          <p className="eyebrow">{roleLabel}</p>
+          <h1>{mode === 'edit' ? 'Modificar perfil' : mode === 'delete' ? 'Eliminar cuenta' : 'Perfil'}</h1>
           <p className="dashboard-description">
-            Gestiona datos basicos, seguridad de la cuenta y preferencias visibles del usuario.
+            {mode === 'view'
+              ? 'Consulta la informacion de la cuenta con la que iniciaste sesion.'
+              : 'Gestiona cambios de cuenta desde una vista dedicada.'}
           </p>
         </div>
       </div>
@@ -164,81 +356,7 @@ function ProfilePage({ role }) {
       {error ? <p className="form-message form-message-error">{error}</p> : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
 
-      <div className="management-grid">
-        <section className="dashboard-panel">
-          <div className="panel-heading"><h2>Datos personales</h2><p>Informacion principal de la cuenta.</p></div>
-          <form className="stacked-form compact-form" onSubmit={saveProfile}>
-            <label>Nombre<input name="name" value={profile.name} onChange={handleProfileChange} disabled={isLoading} /></label>
-            <label>Email<input name="email" type="email" value={profile.email} onChange={handleProfileChange} disabled={isLoading} /></label>
-            {role === 'student' ? (
-              <label>Grupo<input name="group" value={groupNames} disabled readOnly /></label>
-            ) : null}
-            <button className="button button-primary" type="submit" disabled={isSaving || isLoading}>
-              <Save size={18} aria-hidden="true" />
-              {isSaving ? 'Guardando...' : 'Guardar perfil'}
-            </button>
-          </form>
-        </section>
-
-        <aside className="dashboard-panel">
-          <div className="panel-heading"><h2>Seguridad</h2><p>Cambio de contrasena y acciones sensibles.</p></div>
-          <form className="stacked-form compact-form" onSubmit={updatePassword}>
-            <label>
-              Contrasena actual
-              <input
-                name="currentPassword"
-                type="password"
-                value={passwordForm.currentPassword}
-                onChange={handlePasswordChange}
-                required
-              />
-            </label>
-            <label>
-              Nueva contrasena
-              <input
-                name="newPassword"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={handlePasswordChange}
-                required
-              />
-            </label>
-            <button className="button button-secondary" type="submit" disabled={isSaving}>
-              Actualizar contrasena
-            </button>
-          </form>
-
-          {role === 'student' ? (
-            <div className="danger-zone">
-              <h3>Eliminar cuenta</h3>
-              <p>La eliminacion es logica y cierra la sesion automaticamente.</p>
-              <input
-                name="confirmation"
-                value={deleteForm.confirmation}
-                placeholder="Escribe ELIMINAR"
-                onChange={handleDeleteChange}
-              />
-              <input
-                name="password"
-                type="password"
-                value={deleteForm.password}
-                placeholder="Contrasena actual"
-                onChange={handleDeleteChange}
-              />
-              <input
-                name="reason"
-                value={deleteForm.reason}
-                placeholder="Motivo opcional"
-                onChange={handleDeleteChange}
-              />
-              <button className="button danger-button" type="button" onClick={deleteAccount} disabled={isSaving}>
-                <Trash2 size={18} aria-hidden="true" />
-                Eliminar mi cuenta
-              </button>
-            </div>
-          ) : null}
-        </aside>
-      </div>
+      {mode === 'edit' ? renderEditMode() : mode === 'delete' ? renderDeleteMode() : renderViewMode()}
     </section>
   );
 }

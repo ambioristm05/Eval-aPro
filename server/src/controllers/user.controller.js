@@ -258,16 +258,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 });
 
 export const updateMyProfile = asyncHandler(async (req, res) => {
-  const { name, email } = req.validated.body;
-
-  if (email && email !== req.user.email) {
-    const existingUser = await User.exists({ email, _id: { $ne: req.user._id } });
-    if (existingUser) {
-      throw new AppError('Ya existe una cuenta con este email', 409);
-    }
-
-    req.user.email = email;
-  }
+  const { name } = req.validated.body;
 
   if (name !== undefined) req.user.name = name;
 

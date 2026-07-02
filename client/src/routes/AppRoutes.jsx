@@ -62,6 +62,7 @@ function AppRoutes() {
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
             <Route path="evaluator/profile" element={<ProfilePage role="evaluator" />} />
+            <Route path="evaluator/profile/edit" element={<ProfilePage role="evaluator" mode="edit" />} />
           </Route>
           <Route element={<RoleRoute allowedRoles={['student']} />}>
             <Route path="student" element={<StudentDashboard />} />
@@ -70,6 +71,8 @@ function AppRoutes() {
             <Route path="student/results" element={<StudentResultsRealPage />} />
             <Route path="student/suggestions" element={<StudentSuggestionsRealPage />} />
             <Route path="student/profile" element={<ProfilePage role="student" />} />
+            <Route path="student/profile/edit" element={<ProfilePage role="student" mode="edit" />} />
+            <Route path="student/profile/delete" element={<ProfilePage role="student" mode="delete" />} />
           </Route>
         </Route>
       </Route>
