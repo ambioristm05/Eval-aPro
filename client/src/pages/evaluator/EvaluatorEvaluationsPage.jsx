@@ -334,7 +334,7 @@ function EvaluatorEvaluationsPage() {
             </label>
           </form>
 
-          <div className="form-actions">
+          <div className="form-actions evaluation-form-actions">
             <button
               className="button button-secondary"
               type="button"
