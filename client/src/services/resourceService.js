@@ -53,3 +53,8 @@ export async function deleteStudent(studentId, reason) {
   const { data } = await api.delete(`/users/${studentId}`, { data: { reason } });
   return data;
 }
+
+export async function publishEvaluation(evaluationId) {
+  const { data } = await api.patch(`/evaluations/${evaluationId}/publish`);
+  return data;
+}

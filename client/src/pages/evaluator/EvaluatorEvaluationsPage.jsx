@@ -1,31 +1,79 @@
 import { FileText, Save, Search, Send, Star } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { mockEvaluations, mockInstruments, mockStudents, mockTasks } from '../../data/mockAcademicData.js';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  createResource,
+  listResource,
+  publishEvaluation,
+} from '../../services/resourceService.js';
+import { getErrorMessage } from '../../utils/errors.js';
 
 const defaultDraft = {
-  studentId: 'student-ana',
-  taskId: 'task-reading-analysis',
-  instrumentId: 'instrument-reading-rubric',
+  studentId: '',
+  taskId: '',
   feedback: '',
   suggestions: '',
-  status: 'draft',
 };
 
+const statusLabels = {
+  draft: 'Borrador',
+  completed: 'Completada',
+  published: 'Publicada',
+};
+
+function getId(resource) {
+  return resource?.id ?? resource?._id ?? '';
+}
+
+function getStudentName(evaluation) {
+  return evaluation.student?.name ?? 'Estudiante';
+}
+
+function getTaskTitle(evaluation) {
+  return evaluation.task?.title ?? 'Tarea';
+}
+
+function getInstrumentTitle(evaluation) {
+  return evaluation.instrument?.title ?? 'Instrumento';
+}
+
+function getInstrumentItems(instrument) {
+  if (!instrument) return [];
+
+  if (instrument.criteria?.length) {
+    return instrument.criteria.map((criterion) => ({
+      id: getId(criterion),
+      label: criterion.name,
+      maxScore: Number(criterion.maxScore || 0),
+      answerKey: 'criterion',
+    }));
+  }
+
+  return (instrument.indicators ?? []).map((indicator) => ({
+    id: getId(indicator),
+    label: indicator.text,
+    maxScore: Number(indicator.score || 0),
+    answerKey: 'indicator',
+  }));
+}
+
 function EvaluatorEvaluationsPage() {
-  const [evaluations, setEvaluations] = useState(mockEvaluations);
+  const [evaluations, setEvaluations] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [draft, setDraft] = useState(defaultDraft);
-  const [scores, setScores] = useState({ c1: 4, c2: 4, c3: 4, c4: 4 });
+  const [scores, setScores] = useState({});
   const [query, setQuery] = useState('');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const selectedStudent = mockStudents.find((student) => student.id === draft.studentId);
-  const selectedTask = mockTasks.find((task) => task.id === draft.taskId);
-  const selectedInstrument = mockInstruments.find((instrument) => instrument.id === draft.instrumentId);
+  const selectedTask = tasks.find((task) => getId(task) === draft.taskId);
+  const selectedInstrument = selectedTask?.instrument ?? null;
+  const instrumentItems = useMemo(() => getInstrumentItems(selectedInstrument), [selectedInstrument]);
 
-  const maxScore = selectedInstrument.criteria.reduce((total, criterion) => total + criterion.maxScore, 0);
-  const score = selectedInstrument.criteria.reduce(
-    (total, criterion) => total + Number(scores[criterion.id] || 0),
-    0,
-  );
+  const maxScore = instrumentItems.reduce((total, item) => total + item.maxScore, 0);
+  const score = instrumentItems.reduce((total, item) => total + Number(scores[item.id] || 0), 0);
   const percentage = maxScore ? Math.round((score / maxScore) * 100) : 0;
 
   const filteredEvaluations = useMemo(() => {
@@ -34,54 +82,120 @@ function EvaluatorEvaluationsPage() {
 
     return evaluations.filter(
       (evaluation) =>
-        evaluation.student.toLowerCase().includes(term) ||
-        evaluation.task.toLowerCase().includes(term) ||
-        evaluation.instrument.toLowerCase().includes(term),
+        getStudentName(evaluation).toLowerCase().includes(term) ||
+        getTaskTitle(evaluation).toLowerCase().includes(term) ||
+        getInstrumentTitle(evaluation).toLowerCase().includes(term),
     );
   }, [evaluations, query]);
+
+  const loadEvaluations = async () => {
+    const data = await listResource('evaluations', { limit: 100 });
+    setEvaluations(data.evaluations ?? []);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchInitialData() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const [evaluationsData, studentsData, tasksData] = await Promise.all([
+          listResource('evaluations', { limit: 100 }),
+          listResource('students', { limit: 100 }),
+          listResource('tasks', { limit: 100 }),
+        ]);
+
+        if (!isMounted) return;
+
+        const nextStudents = studentsData.students ?? [];
+        const nextTasks = tasksData.tasks ?? [];
+
+        setEvaluations(evaluationsData.evaluations ?? []);
+        setStudents(nextStudents);
+        setTasks(nextTasks);
+        setDraft((current) => ({
+          ...current,
+          studentId: current.studentId || (nextStudents[0] ? getId(nextStudents[0]) : ''),
+          taskId: current.taskId || (nextTasks[0] ? getId(nextTasks[0]) : ''),
+        }));
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const nextScores = Object.fromEntries(instrumentItems.map((item) => [item.id, 0]));
+    setScores(nextScores);
+  }, [instrumentItems]);
 
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
     setDraft((current) => ({ ...current, [name]: value }));
+  };
 
-    if (name === 'instrumentId') {
-      const instrument = mockInstruments.find((item) => item.id === value);
-      const nextScores = Object.fromEntries(instrument.criteria.map((criterion) => [criterion.id, 0]));
-      setScores(nextScores);
+  const handleScoreChange = (itemId, value) => {
+    setScores((current) => ({ ...current, [itemId]: Number(value) }));
+  };
+
+  const saveEvaluation = async (targetStatus) => {
+    setError('');
+    setMessage('');
+
+    if (!draft.studentId || !draft.taskId) {
+      setError('Selecciona un estudiante y una tarea.');
+      return;
     }
-  };
 
-  const handleScoreChange = (criterionId, value) => {
-    setScores((current) => ({ ...current, [criterionId]: Number(value) }));
-  };
+    if (!selectedInstrument) {
+      setError('La tarea seleccionada no tiene instrumento asignado.');
+      return;
+    }
 
-  const saveEvaluation = (status) => {
-    const nextEvaluation = {
-      id: `evaluation-${Date.now()}`,
-      student: selectedStudent.name,
-      group: selectedStudent.group,
-      task: selectedTask.title,
-      instrument: selectedInstrument.title,
-      score,
-      maxScore,
-      percentage,
-      status,
-      evaluatedAt: new Date().toISOString().slice(0, 10),
-      feedback: draft.feedback || 'Sin retroalimentacion registrada.',
-      strengths: ['Registro generado desde el formulario de evaluacion.'],
-      improvements: ['Revisar comentarios del evaluador.'],
-      suggestions: draft.suggestions
+    setIsSaving(true);
+
+    try {
+      const answers = instrumentItems.map((item) => ({
+        [item.answerKey]: item.id,
+        score: Number(scores[item.id] || 0),
+        observation: '',
+      }));
+      const suggestions = draft.suggestions
         .split('\n')
         .map((item) => item.trim())
-        .filter(Boolean),
-      criteria: selectedInstrument.criteria.map((criterion) => ({
-        name: criterion.name,
-        score: Number(scores[criterion.id] || 0),
-        maxScore: criterion.maxScore,
-      })),
-    };
+        .filter(Boolean);
+      const created = await createResource('evaluations', {
+        student: draft.studentId,
+        task: draft.taskId,
+        answers,
+        feedback: draft.feedback,
+        suggestions,
+        status: targetStatus === 'published' ? 'completed' : targetStatus,
+      });
 
-    setEvaluations((current) => [nextEvaluation, ...current]);
+      if (targetStatus === 'published') {
+        await publishEvaluation(getId(created.evaluation));
+      }
+
+      setMessage(targetStatus === 'published' ? 'Resultado publicado correctamente.' : 'Evaluacion guardada.');
+      setDraft((current) => ({ ...current, feedback: '', suggestions: '' }));
+      await loadEvaluations();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -99,18 +213,36 @@ function EvaluatorEvaluationsPage() {
         </div>
       </div>
 
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
+      {message ? <p className="form-message form-message-success">{message}</p> : null}
+
       <div className="metric-grid">
         <article className="metric-card">
-          <span className="metric-icon"><FileText size={20} aria-hidden="true" /></span>
-          <div><strong>{evaluations.length}</strong><span>Evaluaciones</span></div>
+          <span className="metric-icon">
+            <FileText size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{evaluations.length}</strong>
+            <span>Evaluaciones</span>
+          </div>
         </article>
         <article className="metric-card">
-          <span className="metric-icon"><Send size={20} aria-hidden="true" /></span>
-          <div><strong>{evaluations.filter((item) => item.status === 'published').length}</strong><span>Publicadas</span></div>
+          <span className="metric-icon">
+            <Send size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{evaluations.filter((item) => item.status === 'published').length}</strong>
+            <span>Publicadas</span>
+          </div>
         </article>
         <article className="metric-card">
-          <span className="metric-icon"><Star size={20} aria-hidden="true" /></span>
-          <div><strong>{percentage}%</strong><span>Nota actual</span></div>
+          <span className="metric-icon">
+            <Star size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{percentage}%</strong>
+            <span>Nota actual</span>
+          </div>
         </article>
       </div>
 
@@ -118,47 +250,47 @@ function EvaluatorEvaluationsPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>Aplicar evaluacion</h2>
-            <p>Selecciona estudiante, tarea e instrumento.</p>
+            <p>Selecciona estudiante y tarea. El instrumento se toma de la tarea.</p>
           </div>
 
           <form className="stacked-form compact-form">
             <label>
               Estudiante
               <select name="studentId" value={draft.studentId} onChange={handleDraftChange}>
-                {mockStudents.map((student) => (
-                  <option value={student.id} key={student.id}>{student.name}</option>
+                {students.map((student) => (
+                  <option value={getId(student)} key={getId(student)}>
+                    {student.name}
+                  </option>
                 ))}
               </select>
             </label>
             <label>
               Tarea
               <select name="taskId" value={draft.taskId} onChange={handleDraftChange}>
-                {mockTasks.map((task) => (
-                  <option value={task.id} key={task.id}>{task.title}</option>
+                {tasks.map((task) => (
+                  <option value={getId(task)} key={getId(task)}>
+                    {task.title}
+                  </option>
                 ))}
               </select>
             </label>
             <label>
               Instrumento
-              <select name="instrumentId" value={draft.instrumentId} onChange={handleDraftChange}>
-                {mockInstruments.map((instrument) => (
-                  <option value={instrument.id} key={instrument.id}>{instrument.title}</option>
-                ))}
-              </select>
+              <input value={selectedInstrument?.title ?? 'Sin instrumento'} readOnly />
             </label>
 
             <div className="score-list">
-              {selectedInstrument.criteria.map((criterion) => (
-                <label key={criterion.id}>
-                  {criterion.name}
+              {instrumentItems.map((item) => (
+                <label key={item.id}>
+                  {item.label}
                   <input
                     type="number"
                     min="0"
-                    max={criterion.maxScore}
-                    value={scores[criterion.id] ?? 0}
-                    onChange={(event) => handleScoreChange(criterion.id, event.target.value)}
+                    max={item.maxScore}
+                    value={scores[item.id] ?? 0}
+                    onChange={(event) => handleScoreChange(item.id, event.target.value)}
                   />
-                  <span>{criterion.maxScore} pts max.</span>
+                  <span>{item.maxScore} pts max.</span>
                 </label>
               ))}
             </div>
@@ -180,11 +312,21 @@ function EvaluatorEvaluationsPage() {
           </form>
 
           <div className="form-actions">
-            <button className="button button-secondary" type="button" onClick={() => saveEvaluation('draft')}>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => saveEvaluation('draft')}
+              disabled={isSaving}
+            >
               <Save size={18} aria-hidden="true" />
               Guardar borrador
             </button>
-            <button className="button button-primary" type="button" onClick={() => saveEvaluation('published')}>
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => saveEvaluation('published')}
+              disabled={isSaving}
+            >
               <Send size={18} aria-hidden="true" />
               Publicar resultado
             </button>
@@ -202,21 +344,30 @@ function EvaluatorEvaluationsPage() {
           </label>
           <div className="resource-list spaced-list">
             {filteredEvaluations.map((evaluation) => (
-              <article className="resource-item" key={evaluation.id}>
+              <article className="resource-item" key={getId(evaluation)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
-                    <h3>{evaluation.student}</h3>
-                    <span className={`status-badge status-${evaluation.status}`}>{evaluation.status}</span>
+                    <h3>{getStudentName(evaluation)}</h3>
+                    <span className={`status-badge status-${evaluation.status}`}>
+                      {statusLabels[evaluation.status] ?? evaluation.status}
+                    </span>
                   </div>
-                  <p>{evaluation.task}</p>
+                  <p>{getTaskTitle(evaluation)}</p>
                   <div className="resource-meta">
-                    <span>{evaluation.instrument}</span>
+                    <span>{getInstrumentTitle(evaluation)}</span>
                     <span>{evaluation.score}/{evaluation.maxScore}</span>
                     <span>{evaluation.percentage}%</span>
                   </div>
                 </div>
               </article>
             ))}
+
+            {filteredEvaluations.length === 0 ? (
+              <div className="inline-empty">
+                <h3>{isLoading ? 'Cargando evaluaciones...' : 'No hay evaluaciones'}</h3>
+                <p>{isLoading ? 'Espera un momento.' : 'Crea una evaluacion para verla en el historial.'}</p>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>
