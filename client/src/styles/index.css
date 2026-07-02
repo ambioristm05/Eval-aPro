@@ -142,7 +142,7 @@ textarea {
 }
 
 .main-content {
-  width: min(1120px, calc(100% - 2rem));
+  width: 80vw;
   margin: 0 auto;
   padding: clamp(1.5rem, 5vw, 4rem) 0;
 }
@@ -1450,6 +1450,10 @@ a.action-item:focus-visible {
 
   .module-hero {
     grid-template-columns: 1fr;
+  }
+
+  .main-content {
+    width: calc(100% - 2rem);
   }
 
   .action-row,
