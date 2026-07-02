@@ -7,6 +7,7 @@ import {
   Save,
   Search,
   Trash2,
+  Users,
   Weight,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -22,6 +23,7 @@ const emptyForm = {
   title: '',
   description: '',
   group: '',
+  students: [],
   instrument: '',
   status: 'pending',
   startDate: '',
@@ -53,11 +55,29 @@ function getInstrumentName(task) {
   return task.instrument?.title ?? 'Sin instrumento';
 }
 
+function getStudentName(student) {
+  return student.name ?? student.email ?? 'Estudiante sin nombre';
+}
+
+function getStudentGroupIds(student) {
+  return (student.groups ?? []).map(getId).filter(Boolean);
+}
+
+function studentBelongsToGroup(student, groupId) {
+  if (!groupId) return true;
+  return getStudentGroupIds(student).includes(groupId);
+}
+
+function getAssignedStudentsCount(task) {
+  return task.students?.length ?? 0;
+}
+
 function buildTaskPayload(formData) {
   return {
     title: formData.title.trim(),
     description: formData.description.trim(),
     group: formData.group || undefined,
+    students: formData.students,
     instrument: formData.instrument || undefined,
     status: formData.status,
     startDate: formData.startDate || undefined,
@@ -69,6 +89,7 @@ function buildTaskPayload(formData) {
 function EvaluatorTasksPage() {
   const [tasks, setTasks] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [students, setStudents] = useState([]);
   const [instruments, setInstruments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -98,6 +119,10 @@ function EvaluatorTasksPage() {
   const activeTasks = tasks.filter((task) => ['pending', 'in_progress'].includes(task.status)).length;
   const completedTasks = tasks.filter((task) => task.status === 'completed').length;
   const totalWeight = tasks.reduce((total, task) => total + Number(task.weight || 0), 0);
+  const assignableStudents = useMemo(
+    () => students.filter((student) => studentBelongsToGroup(student, formData.group)),
+    [students, formData.group]
+  );
 
   const loadTasks = async () => {
     const data = await listResource('tasks', { limit: 100 });
@@ -112,15 +137,17 @@ function EvaluatorTasksPage() {
       setError('');
 
       try {
-        const [tasksData, groupsData, instrumentsData] = await Promise.all([
+        const [tasksData, groupsData, studentsData, instrumentsData] = await Promise.all([
           listResource('tasks', { limit: 100 }),
           listResource('groups', { status: 'active', limit: 100 }),
+          listResource('students', { status: 'active', limit: 100 }),
           listResource('instruments', { limit: 100 }),
         ]);
 
         if (!isMounted) return;
         setTasks(tasksData.tasks ?? []);
         setGroups(groupsData.groups ?? []);
+        setStudents(studentsData.students ?? []);
         setInstruments(instrumentsData.instruments ?? []);
       } catch (requestError) {
         if (!isMounted) return;
@@ -139,11 +166,34 @@ function EvaluatorTasksPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    setFormData((current) => {
+      if (name !== 'group') return { ...current, [name]: value };
+
+      return {
+        ...current,
+        group: value,
+        students: current.students.filter((studentId) => {
+          const student = students.find((item) => getId(item) === studentId);
+          return student ? studentBelongsToGroup(student, value) : false;
+        }),
+      };
+    });
+  };
+
+  const handleStudentToggle = (studentId) => {
+    setFormData((current) => {
+      const isSelected = current.students.includes(studentId);
+      return {
+        ...current,
+        students: isSelected
+          ? current.students.filter((currentId) => currentId !== studentId)
+          : [...current.students, studentId],
+      };
+    });
   };
 
   const resetForm = () => {
-    setFormData(emptyForm);
+    setFormData({ ...emptyForm, students: [] });
     setEditingId(null);
   };
 
@@ -183,6 +233,7 @@ function EvaluatorTasksPage() {
       title: task.title,
       description: task.description ?? '',
       group: task.group ? getId(task.group) : '',
+      students: (task.students ?? []).map(getId).filter(Boolean),
       instrument: task.instrument ? getId(task.instrument) : '',
       status: task.status,
       startDate: toInputDate(task.startDate),
@@ -320,6 +371,39 @@ function EvaluatorTasksPage() {
                 </select>
               </label>
             </div>
+            <div className="assignment-selector">
+              <div className="assignment-header">
+                <span>Estudiantes asignados</span>
+                <strong>{formData.students.length}</strong>
+              </div>
+              <div className="assignment-list" aria-label="Seleccionar estudiantes para esta tarea">
+                {assignableStudents.map((student) => {
+                  const studentId = getId(student);
+
+                  return (
+                    <label className="assignment-option" key={studentId}>
+                      <input
+                        type="checkbox"
+                        checked={formData.students.includes(studentId)}
+                        onChange={() => handleStudentToggle(studentId)}
+                      />
+                      <span>
+                        <strong>{getStudentName(student)}</strong>
+                        <small>{student.email}</small>
+                      </span>
+                    </label>
+                  );
+                })}
+
+                {assignableStudents.length === 0 ? (
+                  <p className="assignment-empty">
+                    {formData.group
+                      ? 'No hay estudiantes activos en este grupo.'
+                      : 'Crea estudiantes o vinculalos a un grupo para asignarlos.'}
+                  </p>
+                ) : null}
+              </div>
+            </div>
             <div className="form-two-columns">
               <label>
                 Inicio
@@ -414,6 +498,10 @@ function EvaluatorTasksPage() {
                   <div className="resource-meta">
                     <span>{getGroupName(task)}</span>
                     <span>{getInstrumentName(task)}</span>
+                    <span>
+                      <Users size={14} aria-hidden="true" />
+                      {getAssignedStudentsCount(task)}
+                    </span>
                     <span>{task.weight}%</span>
                     <span>{toInputDate(task.dueDate) || 'Sin entrega'}</span>
                   </div>
