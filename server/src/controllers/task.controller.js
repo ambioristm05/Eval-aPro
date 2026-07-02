@@ -78,7 +78,7 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
 
   const students = await User.find(studentFilter).select('_id');
   if (students.length !== uniqueStudentIds.length) {
-    throw new AppError('Uno o mas estudiantes no son validos para esta tarea', 400);
+    throw new AppError('Uno o más estudiantes no son válidos para esta tarea', 400);
   }
 
   return {

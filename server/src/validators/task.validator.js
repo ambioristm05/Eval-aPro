@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TASK_STATUSES } from '../constants/task.constants.js';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 const optionalDateSchema = z.coerce.date().optional();
 
 function validateDateRange(data) {
@@ -13,9 +13,9 @@ const taskBodyShape = {
   title: z
     .string()
     .trim()
-    .min(2, 'El titulo debe tener al menos 2 caracteres')
-    .max(150, 'El titulo no puede exceder 150 caracteres'),
-  description: z.string().trim().max(1000, 'La descripcion no puede exceder 1000 caracteres').default(''),
+    .min(2, 'El título debe tener al menos 2 caracteres')
+    .max(150, 'El título no puede exceder 150 caracteres'),
+  description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').default(''),
   group: mongoIdSchema.optional(),
   students: z.array(mongoIdSchema).default([]),
   instrument: mongoIdSchema.optional(),
@@ -59,7 +59,7 @@ export const updateTaskSchema = z.object({
   body: z
     .object({
       title: taskBodyShape.title.optional(),
-      description: z.string().trim().max(1000, 'La descripcion no puede exceder 1000 caracteres').optional(),
+      description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').optional(),
       status: z.enum(Object.values(TASK_STATUSES)).optional(),
       group: mongoIdSchema.optional(),
       students: z.array(mongoIdSchema).optional(),

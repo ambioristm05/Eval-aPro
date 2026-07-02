@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { EVALUATION_STATUSES } from '../constants/evaluation.constants.js';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 
 const answerSchema = z.object({
   criterion: mongoIdSchema.optional(),

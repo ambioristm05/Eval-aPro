@@ -327,18 +327,18 @@ function EvaluatorTasksPage() {
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
             <label>
-              Titulo
+              Título
               <input
                 type="text"
                 name="title"
                 value={formData.title}
-                placeholder="Ej. Presentacion oral"
+                placeholder="Ej. Presentación oral"
                 onChange={handleChange}
                 required
               />
             </label>
             <label>
-              Descripcion
+              Descripción
               <textarea
                 name="description"
                 value={formData.description}
@@ -494,7 +494,7 @@ function EvaluatorTasksPage() {
                       {statusLabels[task.status]}
                     </span>
                   </div>
-                  <p>{task.description || 'Sin descripcion registrada.'}</p>
+                  <p>{task.description || 'Sin descripción registrada.'}</p>
                   <div className="resource-meta">
                     <span>{getGroupName(task)}</span>
                     <span>{getInstrumentName(task)}</span>

@@ -128,7 +128,7 @@ function ProfilePage({ role, mode = 'view' }) {
     setMessage('');
 
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
-      setError('La confirmacion no coincide con la nueva contrasena.');
+      setError('La confirmación no coincide con la nueva contraseña.');
       return;
     }
 
@@ -137,7 +137,7 @@ function ProfilePage({ role, mode = 'view' }) {
     try {
       await changeMyPassword(passwordForm);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-      setMessage('Contrasena actualizada correctamente.');
+      setMessage('Contraseña actualizada correctamente.');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -175,7 +175,7 @@ function ProfilePage({ role, mode = 'view' }) {
         <div className="panel-heading panel-heading-row">
           <div>
             <h2>Datos personales</h2>
-            <p>Informacion principal del usuario logueado.</p>
+            <p>Información principal del usuario logueado.</p>
           </div>
           <Link className="button button-primary" to={editPath}>
             <Pencil size={18} aria-hidden="true" />
@@ -215,7 +215,7 @@ function ProfilePage({ role, mode = 'view' }) {
         </div>
         <Link className="button button-secondary" to={editPath}>
           <KeyRound size={18} aria-hidden="true" />
-          Cambiar contrasena
+          Cambiar contraseña
         </Link>
       </aside>
     </div>
@@ -245,10 +245,10 @@ function ProfilePage({ role, mode = 'view' }) {
       </section>
 
       <aside className="dashboard-panel">
-        <div className="panel-heading"><h2>Cambiar contrasena</h2><p>Confirma la nueva contrasena antes de actualizar.</p></div>
+        <div className="panel-heading"><h2>Cambiar contraseña</h2><p>Confirma la nueva contraseña antes de actualizar.</p></div>
         <form className="stacked-form compact-form" onSubmit={updatePassword}>
           <label>
-            Contrasena actual
+            Contraseña actual
             <input
               name="currentPassword"
               type="password"
@@ -258,7 +258,7 @@ function ProfilePage({ role, mode = 'view' }) {
             />
           </label>
           <label>
-            Nueva contrasena
+            Nueva contraseña
             <input
               name="newPassword"
               type="password"
@@ -268,7 +268,7 @@ function ProfilePage({ role, mode = 'view' }) {
             />
           </label>
           <label>
-            Confirmar nueva contrasena
+            Confirmar nueva contraseña
             <input
               name="confirmNewPassword"
               type="password"
@@ -278,14 +278,14 @@ function ProfilePage({ role, mode = 'view' }) {
             />
           </label>
           <button className="button button-secondary" type="submit" disabled={isSaving}>
-            Actualizar contrasena
+            Actualizar contraseña
           </button>
         </form>
 
         {role === 'student' ? (
           <div className="danger-zone">
             <h3>Eliminar cuenta</h3>
-            <p>Esta accion esta separada para evitar eliminaciones accidentales.</p>
+            <p>Esta acción está separada para evitar eliminaciones accidentales.</p>
             <Link className="button danger-button" to={deletePath}>
               <Trash2 size={18} aria-hidden="true" />
               Ir a eliminar cuenta
@@ -301,7 +301,7 @@ function ProfilePage({ role, mode = 'view' }) {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h2>Eliminar cuenta</h2>
-          <p>La eliminacion es logica y cierra la sesion automaticamente.</p>
+          <p>La eliminación es lógica y cierra la sesión automáticamente.</p>
         </div>
         <div className="danger-zone">
           <input
@@ -314,7 +314,7 @@ function ProfilePage({ role, mode = 'view' }) {
             name="password"
             type="password"
             value={deleteForm.password}
-            placeholder="Contrasena actual"
+            placeholder="Contraseña actual"
             onChange={handleDeleteChange}
           />
           <input
@@ -347,7 +347,7 @@ function ProfilePage({ role, mode = 'view' }) {
           <h1>{mode === 'edit' ? 'Modificar perfil' : mode === 'delete' ? 'Eliminar cuenta' : 'Perfil'}</h1>
           <p className="dashboard-description">
             {mode === 'view'
-              ? 'Consulta la informacion de la cuenta con la que iniciaste sesion.'
+              ? 'Consulta la información de la cuenta con la que iniciaste sesión.'
               : 'Gestiona cambios de cuenta desde una vista dedicada.'}
           </p>
         </div>

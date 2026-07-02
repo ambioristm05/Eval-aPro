@@ -19,23 +19,23 @@ const initialLevels = [
 const initialCriteria = [
   {
     id: 'criterion-comprehension',
-    name: 'Comprension del tema',
+    name: 'Comprensión del tema',
     maxScore: 5,
     descriptions: {
       'level-excellent': 'Comprende el tema con profundidad y conecta ideas clave.',
       'level-good': 'Comprende el tema y explica la mayoria de ideas relevantes.',
-      'level-acceptable': 'Comprende aspectos basicos, pero le falta desarrollo.',
+      'level-acceptable': 'Comprende aspectos básicos, pero le falta desarrollo.',
       'level-improve': 'Presenta confusiones importantes sobre el tema.',
     },
   },
   {
     id: 'criterion-organization',
-    name: 'Organizacion',
+    name: 'Organización',
     maxScore: 5,
     descriptions: {
       'level-excellent': 'Ordena ideas con secuencia clara y transiciones efectivas.',
       'level-good': 'Mantiene una estructura comprensible durante la entrega.',
-      'level-acceptable': 'La organizacion es irregular, aunque se entiende la idea central.',
+      'level-acceptable': 'La organización es irregular, aunque se entiende la idea central.',
       'level-improve': 'No presenta una estructura clara para seguir el contenido.',
     },
   },
@@ -47,8 +47,8 @@ function createId(prefix) {
 
 function RubricBuilderPage() {
   const [rubric, setRubric] = useState({
-    title: 'Rubrica analitica de lectura',
-    description: 'Instrumento para valorar comprension, organizacion y argumentacion.',
+    title: 'Rúbrica analítica de lectura',
+    description: 'Instrumento para valorar comprensión, organización y argumentación.',
     status: 'draft',
   });
   const [levels, setLevels] = useState(initialLevels);
@@ -187,7 +187,7 @@ function RubricBuilderPage() {
         indicators: [],
       });
 
-      setSavedMessage('Rubrica guardada en la base de datos.');
+      setSavedMessage('Rúbrica guardada en la base de datos.');
       window.setTimeout(() => setSavedMessage(''), 2600);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -204,15 +204,15 @@ function RubricBuilderPage() {
         </span>
         <div>
           <p className="eyebrow">Instrumentos</p>
-          <h1>Constructor de rubricas</h1>
+          <h1>Constructor de rúbricas</h1>
           <p className="dashboard-description">
-            Define criterios, niveles de desempeno, puntajes y descripciones para una
-            rubrica analitica reutilizable.
+            Define criterios, niveles de desempeño, puntajes y descripciones para una
+            rúbrica analítica reutilizable.
           </p>
         </div>
       </div>
 
-      <div className="metric-grid" aria-label="Resumen de rubrica">
+      <div className="metric-grid" aria-label="Resumen de rúbrica">
         <article className="metric-card">
           <span className="metric-icon">
             <ClipboardCheck size={20} aria-hidden="true" />
@@ -245,17 +245,17 @@ function RubricBuilderPage() {
       <div className="builder-layout">
         <aside className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Ficha de la rubrica</h2>
+            <h2>Ficha de la rúbrica</h2>
             <p>Datos generales del instrumento.</p>
           </div>
 
           <form className="stacked-form compact-form">
             <label>
-              Titulo
+              Título
               <input name="title" value={rubric.title} onChange={handleRubricChange} />
             </label>
             <label>
-              Descripcion
+              Descripción
               <textarea
                 name="description"
                 value={rubric.description}
@@ -286,7 +286,7 @@ function RubricBuilderPage() {
         <section className="dashboard-panel">
           <div className="panel-heading panel-heading-row">
             <div>
-              <h2>Niveles de desempeno</h2>
+              <h2>Niveles de desempeño</h2>
               <p>Define nombres y puntajes disponibles para cada criterio.</p>
             </div>
             <button className="button button-secondary" type="button" onClick={addLevel}>
@@ -334,7 +334,7 @@ function RubricBuilderPage() {
         <div className="panel-heading panel-heading-row">
           <div>
             <h2>Criterios y descripciones</h2>
-            <p>Completa la matriz de evaluacion por nivel de desempeno.</p>
+            <p>Completa la matriz de evaluación por nivel de desempeño.</p>
           </div>
           <button className="button button-primary" type="button" onClick={addCriterion}>
             <Plus size={18} aria-hidden="true" />

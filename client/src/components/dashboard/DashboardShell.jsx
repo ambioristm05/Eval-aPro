@@ -33,7 +33,7 @@ function DashboardShell({ eyebrow, title, description, stats, actions, children 
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>Acciones principales</h2>
-            <p>Modulos que se activaran en los proximos pasos.</p>
+            <p>Módulos que se activaran en los proximos pasos.</p>
           </div>
           <div className="action-list">
             {actions.map((action) => {

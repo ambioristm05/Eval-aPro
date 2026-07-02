@@ -22,7 +22,7 @@ function EvaluatorRegisterPage() {
     async function checkInvitation() {
       if (!token) {
         setStatus('invalid');
-        setError('La invitacion no incluye un token valido.');
+        setError('La invitación no incluye un token válido.');
         return;
       }
 
@@ -56,7 +56,7 @@ function EvaluatorRegisterPage() {
     setError('');
 
     if (formData.password.length < 8) {
-      setError('La contrasena debe tener al menos 8 caracteres.');
+      setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -80,7 +80,7 @@ function EvaluatorRegisterPage() {
         <h1>Crear cuenta de evaluador</h1>
 
         {status === 'validating' ? (
-          <p className="form-message">Validando invitacion...</p>
+          <p className="form-message">Validando invitación...</p>
         ) : null}
 
         {status === 'invalid' ? (
@@ -103,7 +103,7 @@ function EvaluatorRegisterPage() {
               />
             </label>
             <label>
-              Correo electronico
+              Correo electrónico
               <input
                 type="email"
                 name="email"
@@ -114,12 +114,12 @@ function EvaluatorRegisterPage() {
               />
             </label>
             <label>
-              Contrasena
+              Contraseña
               <input
                 type="password"
                 name="password"
                 value={formData.password}
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
                 onChange={handleChange}
                 required

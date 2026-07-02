@@ -96,7 +96,7 @@ function renderContext(report) {
   if (report.group?.status) chips.push(['Estado del grupo', report.group.status]);
   if (report.task?.dueDate) chips.push(['Entrega', formatDate(report.task.dueDate)]);
   if (report.instrument?.type) chips.push(['Tipo', report.instrument.type]);
-  if (report.instrument?.maxScore) chips.push(['Puntuacion maxima', report.instrument.maxScore]);
+  if (report.instrument?.maxScore) chips.push(['Puntuación máxima', report.instrument.maxScore]);
 
   if (!chips.length) return '';
 
@@ -407,7 +407,7 @@ export function renderReportHtml(report) {
       <body>
         <header>
           <div>
-            <div class="brand">EvaluaPro</div>
+            <div class="brand">EvalúaPro</div>
             <h1>${escapeHtml(labelForType(plainReport.type))}</h1>
             <div class="subtitle">${escapeHtml(title)}</div>
           </div>
@@ -425,7 +425,7 @@ export function renderReportHtml(report) {
             ? `<section><h2>Evaluaciones publicadas</h2>${renderEvaluations(plainReport.evaluations)}</section>`
             : ''
         }
-        <footer>Reporte generado automaticamente por EvaluaPro.</footer>
+        <footer>Reporte generado automáticamente por EvalúaPro.</footer>
       </body>
     </html>`;
 }

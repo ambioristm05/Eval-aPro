@@ -10,12 +10,12 @@ const moduleCards = [
   {
     icon: FileText,
     title: 'Instrumentos',
-    text: 'Base preparada para rubricas, listas de cotejo y escalas.',
+    text: 'Base preparada para rúbricas, listas de cotejo y escalas.',
   },
   {
     icon: Printer,
     title: 'Reportes',
-    text: 'La estructura deja listo el camino para impresion y PDF.',
+    text: 'La estructura deja listo el camino para impresión y PDF.',
   },
 ];
 
@@ -23,10 +23,10 @@ function PublicHomePage() {
   return (
     <section className="home-grid">
       <div className="intro-panel">
-        <p className="eyebrow">Gestion academica digital</p>
-        <h1>EvaluaPro</h1>
+        <p className="eyebrow">Gestion académica digital</p>
+        <h1>EvalúaPro</h1>
         <p className="lead">
-          Organiza tareas, instrumentos de evaluacion, resultados y reportes en
+          Organiza tareas, instrumentos de evaluación, resultados y reportes en
           un flujo pensado para profesores y participantes.
         </p>
         <div className="action-row">
@@ -40,7 +40,7 @@ function PublicHomePage() {
         </div>
       </div>
 
-      <div className="module-list" aria-label="Modulos iniciales">
+      <div className="module-list" aria-label="Módulos iniciales">
         {moduleCards.map((item) => {
           const Icon = item.icon;
 

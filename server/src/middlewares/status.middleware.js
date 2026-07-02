@@ -7,11 +7,11 @@ export function checkUserStatus(req, res, next) {
   }
 
   if (BLOCKED_USER_STATUSES.includes(req.user.status)) {
-    throw new AppError('Tu cuenta no esta activa', 403);
+    throw new AppError('Tu cuenta no está activa', 403);
   }
 
   if (req.user.status === USER_STATUSES.PENDING) {
-    throw new AppError('Tu cuenta esta pendiente de aprobacion', 403);
+    throw new AppError('Tu cuenta está pendiente de aprobación', 403);
   }
 
   next();

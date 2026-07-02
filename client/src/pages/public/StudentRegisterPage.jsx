@@ -23,7 +23,7 @@ function StudentRegisterPage() {
     setError('');
 
     if (formData.password.length < 8) {
-      setError('La contrasena debe tener al menos 8 caracteres.');
+      setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -43,7 +43,7 @@ function StudentRegisterPage() {
   return (
     <section className="form-page">
       <div className="form-panel">
-        <p className="eyebrow">Registro publico</p>
+        <p className="eyebrow">Registro público</p>
         <h1>Crear cuenta de estudiante</h1>
         <form className="stacked-form" onSubmit={handleSubmit}>
           <label>
@@ -60,7 +60,7 @@ function StudentRegisterPage() {
             />
           </label>
           <label>
-            Correo electronico
+            Correo electrónico
             <input
               type="email"
               name="email"
@@ -72,12 +72,12 @@ function StudentRegisterPage() {
             />
           </label>
           <label>
-            Contrasena
+            Contraseña
             <input
               type="password"
               name="password"
               value={formData.password}
-              placeholder="Minimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
               onChange={handleChange}
               required

@@ -9,7 +9,7 @@ export function EvaluatorGroupsPage() {
       description="Base para crear clases, organizar estudiantes y segmentar evaluaciones por grupo."
       icon={moduleIcons.GraduationCap}
       primaryItems={[
-        { title: 'Crear grupo', description: 'Registrar nombre, descripcion y estado de la clase.' },
+        { title: 'Crear grupo', description: 'Registrar nombre, descripción y estado de la clase.' },
         { title: 'Vincular estudiantes', description: 'Agregar participantes al grupo correspondiente.' },
         { title: 'Filtrar grupos', description: 'Buscar clases activas, archivadas o pendientes.' },
       ]}
@@ -27,17 +27,17 @@ export function EvaluatorStudentsPage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Estudiantes"
-      description="Modulo para revisar perfiles academicos, estados de cuenta y vinculacion con grupos."
+      description="Módulo para revisar perfiles académicos, estados de cuenta y vinculacion con grupos."
       icon={moduleIcons.Users}
       primaryItems={[
         { title: 'Listado filtrable', description: 'Buscar por nombre, correo, grupo o estado.' },
-        { title: 'Suspender estudiante', description: 'Bloquear acceso sin borrar historial academico.' },
-        { title: 'Eliminar logicamente', description: 'Marcar como eliminado conservando evaluaciones.' },
+        { title: 'Suspender estudiante', description: 'Bloquear acceso sin borrar historial académico.' },
+        { title: 'Eliminar lógicamente', description: 'Marcar como eliminado conservando evaluaciones.' },
       ]}
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
         { label: 'Acciones de estado', value: 'Pendiente' },
-        { label: 'Confirmaciones', value: 'Pendiente' },
+        { label: 'Confirmaciónes', value: 'Pendiente' },
       ]}
     />
   );
@@ -51,7 +51,7 @@ export function EvaluatorTasksPage() {
       description="Base para gestionar actividades evaluables con fechas, estados, grupos y ponderacion."
       icon={moduleIcons.NotebookTabs}
       primaryItems={[
-        { title: 'Crear tarea', description: 'Definir titulo, descripcion, fechas y peso.' },
+        { title: 'Crear tarea', description: 'Definir título, descripción, fechas y peso.' },
         { title: 'Asignar participantes', description: 'Seleccionar grupos o estudiantes especificos.' },
         { title: 'Cambiar estado', description: 'Pendiente, en progreso, completada o cancelada.' },
       ]}
@@ -69,12 +69,12 @@ export function EvaluatorInstrumentsPage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Instrumentos"
-      description="Modulo para crear rubricas, listas de cotejo, escalas y otros formularios evaluativos."
+      description="Módulo para crear rúbricas, listas de cotejo, escalas y otros formularios evaluativos."
       icon={moduleIcons.ClipboardCheck}
       primaryItems={[
-        { title: 'Rubrica analitica', description: 'Criterios, niveles de desempeno y puntuaciones.' },
-        { title: 'Lista de cotejo', description: 'Indicadores con opciones si, no o parcial.' },
-        { title: 'Estados', description: 'Borrador, activo o archivado segun el uso.' },
+        { title: 'Rúbrica analítica', description: 'Criterios, niveles de desempeño y puntuaciónes.' },
+        { title: 'Lista de cotejo', description: 'Indicadores con opciones sí, no o parcial.' },
+        { title: 'Estados', description: 'Borrador, activo o archivado según el uso.' },
       ]}
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
@@ -94,13 +94,13 @@ export function EvaluatorEvaluationsPage() {
       icon={moduleIcons.FileText}
       primaryItems={[
         { title: 'Aplicar instrumento', description: 'Evaluar estudiante por criterios o indicadores.' },
-        { title: 'Guardar borrador', description: 'Continuar una evaluacion antes de finalizarla.' },
+        { title: 'Guardar borrador', description: 'Continuar una evaluación antes de finalizarla.' },
         { title: 'Publicar resultado', description: 'Mostrar nota y sugerencias al estudiante.' },
       ]}
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
         { label: 'Calculo de nota', value: 'Pendiente' },
-        { label: 'Publicacion', value: 'Pendiente' },
+        { label: 'Publicación', value: 'Pendiente' },
       ]}
     />
   );
@@ -111,7 +111,7 @@ export function EvaluatorReportsPage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Reportes"
-      description="Modulo para imprimir o exportar instrumentos, resultados individuales, grupos y notas finales."
+      description="Módulo para imprimir o exportar instrumentos, resultados individuales, grupos y notas finales."
       icon={moduleIcons.Printer}
       primaryItems={[
         { title: 'Reporte individual', description: 'Historial y resultados de un estudiante.' },
@@ -121,7 +121,7 @@ export function EvaluatorReportsPage() {
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
         { label: 'CSS print', value: 'Pendiente' },
-        { label: 'Exportacion', value: 'Pendiente' },
+        { label: 'Exportación', value: 'Pendiente' },
       ]}
     />
   );
@@ -132,17 +132,17 @@ export function EvaluatorProfilePage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Perfil"
-      description="Vista preparada para datos personales, especialidad, cambio de contrasena e instrumentos creados."
+      description="Vista preparada para datos personales, especialidad, cambio de contraseña e instrumentos creados."
       icon={moduleIcons.UserRound}
       primaryItems={[
-        { title: 'Datos basicos', description: 'Nombre, correo, foto opcional y especialidad.' },
-        { title: 'Seguridad', description: 'Cambio de contrasena y gestion de sesion.' },
-        { title: 'Resumen academico', description: 'Grupos e instrumentos creados por el evaluador.' },
+        { title: 'Datos básicos', description: 'Nombre, correo, foto opcional y especialidad.' },
+        { title: 'Seguridad', description: 'Cambio de contraseña y gestion de sesión.' },
+        { title: 'Resumen académico', description: 'Grupos e instrumentos creados por el evaluador.' },
       ]}
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
-        { label: 'Edicion', value: 'Pendiente' },
-        { label: 'Validacion', value: 'Pendiente' },
+        { label: 'Edición', value: 'Pendiente' },
+        { label: 'Validación', value: 'Pendiente' },
       ]}
     />
   );

@@ -101,8 +101,8 @@ export const updateStudentReportPermission = asyncHandler(async (req, res) => {
 
   res.json({
     message: enabled
-      ? 'Impresion de reporte habilitada para el estudiante.'
-      : 'Impresion de reporte deshabilitada para el estudiante.',
+      ? 'Impresión de reporte habilitada para el estudiante.'
+      : 'Impresión de reporte deshabilitada para el estudiante.',
     studentReportEnabled: enabled,
     updated: result.modifiedCount ?? result.nModified ?? 0,
     matched: result.matchedCount ?? result.n ?? 0

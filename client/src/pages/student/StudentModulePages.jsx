@@ -172,7 +172,7 @@ export function StudentTasksPage() {
                     {statusLabels[task.status] ?? task.status}
                   </span>
                 </div>
-                <p>{task.description || 'Sin descripcion registrada.'}</p>
+                <p>{task.description || 'Sin descripción registrada.'}</p>
                 <div className="resource-meta">
                   <span>{getGroupName(task)}</span>
                   <span>{getInstrumentName(task)}</span>

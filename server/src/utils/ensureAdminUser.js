@@ -4,7 +4,7 @@ import { User } from '../models/User.js';
 
 export async function ensureAdminUser() {
   if (!env.adminEmail || !env.adminPassword) {
-    console.log('Admin inicial omitido: ADMIN_EMAIL o ADMIN_PASSWORD no estan configurados.');
+    console.log('Admin inicial omitido: ADMIN_EMAIL o ADMIN_PASSWORD no están configurados.');
     return null;
   }
 

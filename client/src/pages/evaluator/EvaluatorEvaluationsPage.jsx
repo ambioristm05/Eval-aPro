@@ -267,8 +267,8 @@ function EvaluatorEvaluationsPage() {
         targetStatus === 'published'
           ? 'Resultado publicado correctamente.'
           : existingEvaluation
-            ? 'Evaluacion actualizada.'
-            : 'Evaluacion guardada.'
+            ? 'Evaluación actualizada.'
+            : 'Evaluación guardada.'
       );
       setDraft((current) => ({ ...current, feedback: '', suggestions: '' }));
       await loadEvaluations();
@@ -290,7 +290,7 @@ function EvaluatorEvaluationsPage() {
         setMessage('Resultado publicado correctamente.');
       } else {
         await updateResource('evaluations', evaluationId, { status: targetStatus });
-        setMessage('Estado de evaluacion actualizado.');
+        setMessage('Estado de evaluación actualizado.');
       }
 
       await loadEvaluations();
@@ -311,7 +311,7 @@ function EvaluatorEvaluationsPage() {
           <p className="eyebrow">Evaluador</p>
           <h1>Evaluaciones</h1>
           <p className="dashboard-description">
-            Aplica instrumentos, calcula notas, guarda borradores y publica resultados.
+            Aplica instrumentos, calcula notas, guarda borradores y pública resultados.
           </p>
         </div>
       </div>
@@ -352,7 +352,7 @@ function EvaluatorEvaluationsPage() {
       <div className="management-grid">
         <section className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Aplicar evaluacion</h2>
+            <h2>Aplicar evaluación</h2>
             <p>Selecciona estudiante y tarea. El instrumento se toma de la tarea.</p>
           </div>
 
@@ -449,7 +449,7 @@ function EvaluatorEvaluationsPage() {
           </div>
           <label className="search-field">
             <Search size={18} aria-hidden="true" />
-            <input value={query} placeholder="Buscar evaluacion" onChange={(event) => setQuery(event.target.value)} />
+            <input value={query} placeholder="Buscar evaluación" onChange={(event) => setQuery(event.target.value)} />
           </label>
           <div className="resource-list spaced-list">
             {filteredEvaluations.map((evaluation) => (
@@ -498,7 +498,7 @@ function EvaluatorEvaluationsPage() {
             {filteredEvaluations.length === 0 ? (
               <div className="inline-empty">
                 <h3>{isLoading ? 'Cargando evaluaciones...' : 'No hay evaluaciones'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Crea una evaluacion para verla en el historial.'}</p>
+                <p>{isLoading ? 'Espera un momento.' : 'Crea una evaluación para verla en el historial.'}</p>
               </div>
             ) : null}
           </div>

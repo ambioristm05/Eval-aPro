@@ -31,10 +31,10 @@ const emptyForm = {
 };
 
 const typeLabels = {
-  rubric: 'Rubrica',
+  rubric: 'Rúbrica',
   checklist: 'Lista de cotejo',
   rating_scale: 'Escala',
-  observation_guide: 'Guia',
+  observation_guide: 'Guía',
   questionnaire: 'Cuestionario',
 };
 
@@ -246,7 +246,7 @@ function EvaluatorInstrumentsPage() {
           <p className="eyebrow">Evaluador</p>
           <h1>Instrumentos</h1>
           <p className="dashboard-description">
-            Organiza rubricas, listas de cotejo, escalas y guias antes de construir sus
+            Organiza rúbricas, listas de cotejo, escalas y guias antes de construir sus
             criterios detallados.
           </p>
         </div>
@@ -294,18 +294,18 @@ function EvaluatorInstrumentsPage() {
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
             <label>
-              Titulo
+              Título
               <input
                 type="text"
                 name="title"
                 value={formData.title}
-                placeholder="Ej. Rubrica de presentacion"
+                placeholder="Ej. Rúbrica de presentación"
                 onChange={handleChange}
                 required
               />
             </label>
             <label>
-              Descripcion
+              Descripción
               <textarea
                 name="description"
                 value={formData.description}
@@ -318,10 +318,10 @@ function EvaluatorInstrumentsPage() {
               <label>
                 Tipo
                 <select name="type" value={formData.type} onChange={handleChange}>
-                  <option value="rubric">Rubrica</option>
+                  <option value="rubric">Rúbrica</option>
                   <option value="checklist">Lista de cotejo</option>
-                  <option value="rating_scale">Escala de valoracion</option>
-                  <option value="observation_guide">Guia de observacion</option>
+                  <option value="rating_scale">Escala de valoración</option>
+                  <option value="observation_guide">Guía de observación</option>
                   <option value="questionnaire">Cuestionario</option>
                 </select>
               </label>
@@ -336,7 +336,7 @@ function EvaluatorInstrumentsPage() {
             </div>
             <div className="form-two-columns">
               <label>
-                Puntuacion maxima
+                Puntuación máxima
                 <input
                   type="number"
                   name="maxScore"
@@ -373,8 +373,8 @@ function EvaluatorInstrumentsPage() {
           <div className="builder-shortcut">
             <ClipboardCheck size={22} aria-hidden="true" />
             <div>
-              <h3>Constructor de rubricas</h3>
-              <p>Crea criterios, niveles y descripciones por desempeno.</p>
+              <h3>Constructor de rúbricas</h3>
+              <p>Crea criterios, niveles y descripciones por desempeño.</p>
             </div>
             <Link className="button button-secondary" to="/evaluator/instruments/rubric-builder">
               Abrir
@@ -397,7 +397,7 @@ function EvaluatorInstrumentsPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Listado</h2>
-              <p>Busca por nombre, descripcion o tipo y filtra el estado.</p>
+              <p>Busca por nombre, descripción o tipo y filtra el estado.</p>
             </div>
             <span className="count-pill">{filteredInstruments.length}</span>
           </div>
@@ -419,7 +419,7 @@ function EvaluatorInstrumentsPage() {
               aria-label="Filtrar por tipo"
             >
               <option value="all">Tipos</option>
-              <option value="rubric">Rubricas</option>
+              <option value="rubric">Rúbricas</option>
               <option value="checklist">Listas</option>
               <option value="rating_scale">Escalas</option>
               <option value="observation_guide">Guias</option>
@@ -454,7 +454,7 @@ function EvaluatorInstrumentsPage() {
                         {statusLabels[instrument.status]}
                       </span>
                     </div>
-                    <p>{instrument.description || 'Sin descripcion registrada.'}</p>
+                    <p>{instrument.description || 'Sin descripción registrada.'}</p>
                     <div className="resource-meta">
                       <span>{typeLabels[instrument.type]}</span>
                       <span>{getCriteriaCount(instrument)} criterios</span>

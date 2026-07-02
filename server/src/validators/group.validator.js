@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { GROUP_STATUSES } from '../constants/group.constants.js';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 
 export const createGroupSchema = z.object({
   body: z.object({
@@ -10,7 +10,7 @@ export const createGroupSchema = z.object({
       .trim()
       .min(2, 'El nombre debe tener al menos 2 caracteres')
       .max(100, 'El nombre no puede exceder 100 caracteres'),
-    description: z.string().trim().max(500, 'La descripcion no puede exceder 500 caracteres').default('')
+    description: z.string().trim().max(500, 'La descripción no puede exceder 500 caracteres').default('')
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
@@ -44,7 +44,7 @@ export const updateGroupSchema = z.object({
         .min(2, 'El nombre debe tener al menos 2 caracteres')
         .max(100, 'El nombre no puede exceder 100 caracteres')
         .optional(),
-      description: z.string().trim().max(500, 'La descripcion no puede exceder 500 caracteres').optional(),
+      description: z.string().trim().max(500, 'La descripción no puede exceder 500 caracteres').optional(),
       status: z.enum(Object.values(GROUP_STATUSES)).optional()
     })
     .refine((body) => Object.keys(body).length > 0, {

@@ -7,7 +7,7 @@ export function authorize(...allowedRoles) {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      throw new AppError('No tienes permiso para esta accion', 403);
+      throw new AppError('No tienes permiso para esta acción', 403);
     }
 
     next();

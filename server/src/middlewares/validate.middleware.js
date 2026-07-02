@@ -8,7 +8,7 @@ export function validateRequest(schema) {
 
     if (!result.success) {
       return res.status(400).json({
-        message: 'Datos invalidos',
+        message: 'Datos inválidos',
         details: result.error.flatten()
       });
     }

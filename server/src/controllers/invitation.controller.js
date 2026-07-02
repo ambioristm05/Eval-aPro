@@ -22,15 +22,15 @@ async function findValidInvitation(token) {
   const invitation = await Invitation.findOne({ token: hashedToken }).select('+token');
 
   if (!invitation) {
-    throw new AppError('Invitacion invalida', 404);
+    throw new AppError('Invitación inválida', 404);
   }
 
   if (invitation.used) {
-    throw new AppError('La invitacion ya fue utilizada', 409);
+    throw new AppError('La invitación ya fue utilizada', 409);
   }
 
   if (invitation.expiresAt <= new Date()) {
-    throw new AppError('La invitacion expiro', 410);
+    throw new AppError('La invitación expiró', 410);
   }
 
   return invitation;

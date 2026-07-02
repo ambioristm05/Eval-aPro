@@ -13,7 +13,7 @@ import { getErrorMessage } from '../../utils/errors.js';
 const initialIndicators = [
   {
     id: 'indicator-introduction',
-    text: 'Presenta una introduccion clara al tema.',
+    text: 'Presenta una introducción clara al tema.',
     score: 2,
     required: true,
     observation: 'Verificar que contextualice el proposito de la actividad.',
@@ -46,7 +46,7 @@ function createId(prefix) {
 
 function ChecklistBuilderPage() {
   const [checklist, setChecklist] = useState({
-    title: 'Lista de cotejo para exposicion',
+    title: 'Lista de cotejo para exposición',
     description: 'Indicadores observables para revisar entregas y presentaciones.',
     status: 'draft',
   });
@@ -84,7 +84,7 @@ function ChecklistBuilderPage() {
   const addOption = () => {
     setOptions((current) => [
       ...current,
-      { id: createId('option'), label: 'Nueva opcion', scoreFactor: 0 },
+      { id: createId('option'), label: 'Nueva opción', scoreFactor: 0 },
     ]);
   };
 
@@ -222,11 +222,11 @@ function ChecklistBuilderPage() {
 
           <form className="stacked-form compact-form">
             <label>
-              Titulo
+              Título
               <input name="title" value={checklist.title} onChange={handleChecklistChange} />
             </label>
             <label>
-              Descripcion
+              Descripción
               <textarea
                 name="description"
                 value={checklist.description}
@@ -258,11 +258,11 @@ function ChecklistBuilderPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Opciones de respuesta</h2>
-              <p>Configura etiquetas y factor de puntaje por opcion.</p>
+              <p>Configura etiquetas y factor de puntaje por opción.</p>
             </div>
             <button className="button button-secondary" type="button" onClick={addOption}>
               <Plus size={18} aria-hidden="true" />
-              Opcion
+              Opción
             </button>
           </div>
 
@@ -292,8 +292,8 @@ function ChecklistBuilderPage() {
                   type="button"
                   onClick={() => removeOption(option.id)}
                   disabled={options.length <= 2}
-                  title="Eliminar opcion"
-                  aria-label={`Eliminar opcion ${option.label}`}
+                  title="Eliminar opción"
+                  aria-label={`Eliminar opción ${option.label}`}
                 >
                   <Trash2 size={17} aria-hidden="true" />
                 </button>
@@ -353,7 +353,7 @@ function ChecklistBuilderPage() {
                   </label>
                 </div>
                 <label>
-                  Observacion
+                  Observación
                   <input
                     value={indicator.observation}
                     placeholder="Nota interna para el evaluador"

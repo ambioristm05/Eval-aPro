@@ -12,7 +12,7 @@ function RoleNav() {
   const links = roleNavigation[user.role] ?? [];
 
   return (
-    <nav className="role-nav" aria-label="Navegacion del rol">
+    <nav className="role-nav" aria-label="Navegación del rol">
       {links.map((link) => {
         const Icon = link.icon;
 

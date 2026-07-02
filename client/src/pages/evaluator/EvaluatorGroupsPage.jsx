@@ -321,7 +321,7 @@ function EvaluatorGroupsPage() {
           <section className="dashboard-panel">
             <div className="panel-heading">
               <h2>{editingId ? 'Editar grupo' : 'Crear grupo'}</h2>
-              <p>Define la informacion basica de la clase.</p>
+              <p>Define la información básica de la clase.</p>
             </div>
 
             <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -331,13 +331,13 @@ function EvaluatorGroupsPage() {
                   type="text"
                   name="name"
                   value={formData.name}
-                  placeholder="Ej. Comunicacion oral 3ro A"
+                  placeholder="Ej. Comunicación oral 3ro A"
                   onChange={handleChange}
                   required
                 />
               </label>
               <label>
-                Descripcion
+                Descripción
                 <textarea
                   name="description"
                   value={formData.description}
@@ -373,7 +373,7 @@ function EvaluatorGroupsPage() {
           <section className="dashboard-panel">
             <div className="panel-heading">
               <h2>Vincular estudiante</h2>
-              <p>Selecciona un estudiante activo registrado y agregalo al grupo.</p>
+              <p>Selecciona un estudiante activo registrado y agrégalo al grupo.</p>
             </div>
 
             <form className="stacked-form compact-form" onSubmit={handleLinkStudent}>
@@ -434,7 +434,7 @@ function EvaluatorGroupsPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Listado</h2>
-              <p>Busca por nombre o descripcion y filtra por estado.</p>
+              <p>Busca por nombre o descripción y filtra por estado.</p>
             </div>
             <span className="count-pill">{filteredGroups.length}</span>
           </div>
@@ -471,7 +471,7 @@ function EvaluatorGroupsPage() {
                       {statusLabels[group.status]}
                     </span>
                   </div>
-                  <p>{group.description || 'Sin descripcion registrada.'}</p>
+                  <p>{group.description || 'Sin descripción registrada.'}</p>
                   <div className="resource-meta">
                     <span>{getStudentCount(group)} estudiantes</span>
                   </div>

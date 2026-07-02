@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 
 export const listMyResultsSchema = z.object({
   body: z.object({}).optional(),

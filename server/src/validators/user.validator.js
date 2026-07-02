@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { USER_STATUSES } from '../constants/user.constants.js';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 const passwordSchema = z
   .string()
-  .min(8, 'La contrasena debe tener al menos 8 caracteres')
-  .max(72, 'La contrasena no puede exceder 72 caracteres');
+  .min(8, 'La contraseña debe tener al menos 8 caracteres')
+  .max(72, 'La contraseña no puede exceder 72 caracteres');
 
 export const createStudentSchema = z.object({
   body: z.object({
@@ -14,7 +14,7 @@ export const createStudentSchema = z.object({
       .trim()
       .min(2, 'El nombre debe tener al menos 2 caracteres')
       .max(100, 'El nombre no puede exceder 100 caracteres'),
-    email: z.string().trim().email('Email invalido').toLowerCase(),
+    email: z.string().trim().email('Email inválido').toLowerCase(),
     password: passwordSchema,
     group: mongoIdSchema.optional()
   }),
@@ -48,8 +48,8 @@ export const suspendStudentSchema = z.object({
     reason: z
       .string()
       .trim()
-      .min(3, 'La razon debe tener al menos 3 caracteres')
-      .max(300, 'La razon no puede exceder 300 caracteres')
+      .min(3, 'La razón debe tener al menos 3 caracteres')
+      .max(300, 'La razón no puede exceder 300 caracteres')
   }),
   params: z.object({
     id: mongoIdSchema
@@ -59,7 +59,7 @@ export const suspendStudentSchema = z.object({
 
 export const reactivateStudentSchema = z.object({
   body: z.object({
-    reason: z.string().trim().max(300, 'La razon no puede exceder 300 caracteres').optional()
+    reason: z.string().trim().max(300, 'La razón no puede exceder 300 caracteres').optional()
   }),
   params: z.object({
     id: mongoIdSchema
@@ -72,8 +72,8 @@ export const deleteStudentSchema = z.object({
     reason: z
       .string()
       .trim()
-      .min(3, 'La razon debe tener al menos 3 caracteres')
-      .max(300, 'La razon no puede exceder 300 caracteres')
+      .min(3, 'La razón debe tener al menos 3 caracteres')
+      .max(300, 'La razón no puede exceder 300 caracteres')
   }),
   params: z.object({
     id: mongoIdSchema
@@ -83,8 +83,8 @@ export const deleteStudentSchema = z.object({
 
 export const deleteMyAccountSchema = z.object({
   body: z.object({
-    password: z.string().min(1, 'La contrasena es requerida'),
-    reason: z.string().trim().max(300, 'La razon no puede exceder 300 caracteres').optional()
+    password: z.string().min(1, 'La contraseña es requerida'),
+    reason: z.string().trim().max(300, 'La razón no puede exceder 300 caracteres').optional()
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
@@ -110,12 +110,12 @@ export const updateMyProfileSchema = z.object({
 export const changeMyPasswordSchema = z.object({
   body: z
     .object({
-      currentPassword: z.string().min(1, 'La contrasena actual es requerida'),
+      currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
       newPassword: passwordSchema,
-      confirmNewPassword: z.string().min(1, 'Confirma la nueva contrasena')
+      confirmNewPassword: z.string().min(1, 'Confirma la nueva contraseña')
     })
     .refine((body) => body.newPassword === body.confirmNewPassword, {
-      message: 'La confirmacion no coincide con la nueva contrasena',
+      message: 'La confirmación no coincide con la nueva contraseña',
       path: ['confirmNewPassword']
     }),
   params: z.object({}).optional(),

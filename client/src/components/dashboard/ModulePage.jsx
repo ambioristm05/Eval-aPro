@@ -16,7 +16,7 @@ function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, sta
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>Funciones previstas</h2>
-            <p>Base del modulo antes de conectar datos reales.</p>
+            <p>Base del módulo antes de conectar datos reales.</p>
           </div>
           <div className="feature-list">
             {primaryItems.map((item) => (
@@ -31,7 +31,7 @@ function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, sta
         <aside className="dashboard-panel">
           <div className="panel-heading">
             <h2>Estado</h2>
-            <p>Avance de esta seccion dentro del MVP.</p>
+            <p>Avance de esta sección dentro del MVP.</p>
           </div>
           <div className="progress-list">
             {statusItems.map((item) => (

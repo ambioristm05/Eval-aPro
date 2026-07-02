@@ -110,7 +110,7 @@ export async function buildStudentReport(req, studentId) {
 
   if (!student) throw new AppError('Estudiante no encontrado', 404);
   if (req.user.role === USER_ROLES.STUDENT && !evaluations.length) {
-    throw new AppError('El reporte imprimible aun no esta habilitado por el evaluador', 403);
+    throw new AppError('El reporte imprimible aún no está habilitado por el evaluador', 403);
   }
 
   return {

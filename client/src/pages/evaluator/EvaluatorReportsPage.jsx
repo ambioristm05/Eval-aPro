@@ -263,7 +263,7 @@ function EvaluatorReportsPage() {
               onClick={() => handlePrintPermission(!studentPrintEnabled)}
               disabled={!report || isUpdatingPermission || !evaluations.length}
             >
-              {studentPrintEnabled ? 'Bloquear impresion al estudiante' : 'Permitir impresion al estudiante'}
+              {studentPrintEnabled ? 'Bloquear impresión al estudiante' : 'Permitir impresión al estudiante'}
             </button>
             <span className={`status-badge ${studentPrintEnabled ? 'status-published' : 'status-pending'}`}>
               {studentPrintEnabled ? 'Permitido para estudiante' : 'No permitido'}
@@ -275,7 +275,7 @@ function EvaluatorReportsPage() {
       <section className="print-sheet">
         <header className="print-header">
           <div>
-            <p className="eyebrow">EvaluaPro</p>
+            <p className="eyebrow">EvalúaPro</p>
             <h1>{reportTitles[reportType]}</h1>
             <p>{report?.generatedAt ? new Date(report.generatedAt).toLocaleDateString('es-DO') : new Date().toLocaleDateString('es-DO')}</p>
           </div>

@@ -55,7 +55,7 @@ function formatGrade(finalGrade) {
 }
 
 function getTaskTitle(result) {
-  return result.task?.title ?? 'Tarea sin titulo';
+  return result.task?.title ?? 'Tarea sin título';
 }
 
 function getInstrumentTitle(result) {
@@ -89,7 +89,7 @@ export function StudentEvaluationsRealPage() {
         <div>
           <p className="eyebrow">Estudiante</p>
           <h1>Mis evaluaciones</h1>
-          <p className="dashboard-description">Consulta cada evaluacion publicada y su detalle por criterio.</p>
+          <p className="dashboard-description">Consulta cada evaluación publicada y su detalle por criterio.</p>
         </div>
       </div>
 
@@ -191,8 +191,8 @@ export function StudentResultsRealPage() {
             <h2>Reporte imprimible</h2>
             <p>
               {canPrintReport
-                ? 'El evaluador habilito la impresion de tu reporte.'
-                : 'Disponible cuando el evaluador habilite la impresion.'}
+                ? 'El evaluador habilitó la impresión de tu reporte.'
+                : 'Disponible cuando el evaluador habilite la impresión.'}
             </p>
           </div>
           <button
@@ -292,13 +292,13 @@ export function StudentSuggestionsRealPage() {
               <EmptyResults
                 isLoading={isLoading}
                 title="Sin puntos fuertes publicados"
-                text="Aun no hay criterios destacados en tus resultados."
+                text="Aún no hay criterios destacados en tus resultados."
               />
             ) : null}
           </div>
         </section>
         <section className="dashboard-panel">
-          <div className="panel-heading"><h2>Por mejorar</h2><p>Acciones sugeridas para proximas entregas.</p></div>
+          <div className="panel-heading"><h2>Por mejorar</h2><p>Acciones sugeridas para próximas entregas.</p></div>
           <div className="feature-list">
             {improvements.map((improvement) => (
               <article className="feature-item" key={improvement.id}>

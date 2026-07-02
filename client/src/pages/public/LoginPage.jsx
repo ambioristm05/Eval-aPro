@@ -53,10 +53,10 @@ function LoginPage() {
     <section className="form-page">
       <div className="form-panel">
         <p className="eyebrow">Acceso seguro</p>
-        <h1>Iniciar sesion</h1>
+        <h1>Iniciar sesión</h1>
         <form className="stacked-form" onSubmit={handleSubmit}>
           <label>
-            Correo electronico
+            Correo electrónico
             <input
               type="email"
               name="email"
@@ -68,7 +68,7 @@ function LoginPage() {
             />
           </label>
           <label>
-            Contrasena
+            Contraseña
             <input
               type="password"
               name="password"

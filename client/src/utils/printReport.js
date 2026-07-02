@@ -2,7 +2,7 @@ export function openPrintableHtml(html) {
   const printWindow = window.open('', '_blank');
 
   if (!printWindow) {
-    throw new Error('No se pudo abrir la ventana de impresion. Revisa el bloqueador de ventanas emergentes.');
+    throw new Error('No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.');
   }
 
   printWindow.document.open();

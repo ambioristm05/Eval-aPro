@@ -36,7 +36,7 @@ export const registerEvaluatorWithInvitation = asyncHandler(async (req, res) => 
   const invitation = await findValidInvitation(token);
 
   if (invitation.role !== USER_ROLES.EVALUATOR || invitation.email !== email) {
-    throw new AppError('La invitacion no corresponde a este email', 403);
+    throw new AppError('La invitación no corresponde a este email', 403);
   }
 
   const existingUser = await User.exists({ email });
@@ -69,7 +69,7 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   if (BLOCKED_USER_STATUSES.includes(user.status)) {
-    throw new AppError('Tu cuenta no esta activa', 403);
+    throw new AppError('Tu cuenta no está activa', 403);
   }
 
   res.json(buildAuthResponse(user));
@@ -83,6 +83,6 @@ export const getMe = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
   res.json({
-    message: 'Sesion cerrada correctamente'
+    message: 'Sesión cerrada correctamente'
   });
 });

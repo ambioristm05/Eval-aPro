@@ -243,7 +243,7 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   await student.save();
 
   res.json({
-    message: 'Estudiante eliminado logicamente',
+    message: 'Estudiante eliminado lógicamente',
     student
   });
 });
@@ -270,14 +270,14 @@ export const changeMyPassword = asyncHandler(async (req, res) => {
   const passwordMatches = await req.user.comparePassword(currentPassword);
 
   if (!passwordMatches) {
-    throw new AppError('Contrasena actual incorrecta', 401);
+    throw new AppError('Contraseña actual incorrecta', 401);
   }
 
   req.user.password = newPassword;
   await req.user.save();
 
   res.json({
-    message: 'Contrasena actualizada correctamente'
+    message: 'Contraseña actualizada correctamente'
   });
 });
 
@@ -290,7 +290,7 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
 
   const passwordMatches = await req.user.comparePassword(password);
   if (!passwordMatches) {
-    throw new AppError('Contrasena incorrecta', 401);
+    throw new AppError('Contraseña incorrecta', 401);
   }
 
   req.user.status = USER_STATUSES.DELETED;
@@ -301,6 +301,6 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
   await req.user.save();
 
   res.json({
-    message: 'Cuenta eliminada logicamente. Cierra la sesion localmente para completar el proceso.'
+    message: 'Cuenta eliminada lógicamente. Cierra la sesión localmente para completar el proceso.'
   });
 });

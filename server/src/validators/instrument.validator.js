@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { INSTRUMENT_STATUSES, INSTRUMENT_TYPES } from '../constants/instrument.constants.js';
 
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id invalido');
+const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 
 const levelSchema = z.object({
   name: z.string().trim().min(1, 'El nombre del nivel es requerido').max(80),
@@ -33,16 +33,16 @@ export const createInstrumentSchema = z.object({
       title: z
         .string()
         .trim()
-        .min(2, 'El titulo debe tener al menos 2 caracteres')
-        .max(150, 'El titulo no puede exceder 150 caracteres'),
-      description: z.string().trim().max(1000, 'La descripcion no puede exceder 1000 caracteres').default(''),
+        .min(2, 'El título debe tener al menos 2 caracteres')
+        .max(150, 'El título no puede exceder 150 caracteres'),
+      description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').default(''),
       type: z.enum(Object.values(INSTRUMENT_TYPES)),
       criteria: z.array(criterionSchema).default([]),
       indicators: z.array(indicatorSchema).default([]),
       status: z.enum(Object.values(INSTRUMENT_STATUSES)).default(INSTRUMENT_STATUSES.DRAFT)
     })
     .refine(validateInstrumentStructure, {
-      message: 'El instrumento necesita criterios o indicadores validos para su tipo'
+      message: 'El instrumento necesita criterios o indicadores válidos para su tipo'
     }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
@@ -74,10 +74,10 @@ export const updateInstrumentSchema = z.object({
       title: z
         .string()
         .trim()
-        .min(2, 'El titulo debe tener al menos 2 caracteres')
-        .max(150, 'El titulo no puede exceder 150 caracteres')
+        .min(2, 'El título debe tener al menos 2 caracteres')
+        .max(150, 'El título no puede exceder 150 caracteres')
         .optional(),
-      description: z.string().trim().max(1000, 'La descripcion no puede exceder 1000 caracteres').optional(),
+      description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').optional(),
       type: z.enum(Object.values(INSTRUMENT_TYPES)).optional(),
       criteria: z.array(criterionSchema).optional(),
       indicators: z.array(indicatorSchema).optional(),

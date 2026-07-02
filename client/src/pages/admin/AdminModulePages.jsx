@@ -19,10 +19,10 @@ export function AdminEvaluatorsPage() {
         },
         {
           title: 'Cambiar estado',
-          description: 'Suspender o reactivar profesores segun las reglas del sistema.',
+          description: 'Suspender o reactivar profesores según las reglas del sistema.',
         },
         {
-          title: 'Auditoria basica',
+          title: 'Auditoria básica',
           description: 'Registrar quien crea o modifica cuentas sensibles.',
         },
       ]}
@@ -60,7 +60,7 @@ export function AdminInvitationsPage() {
         expiresInDays: Number(formData.expiresInDays),
       });
       setInvitation(result);
-      setMessage('Invitacion creada correctamente.');
+      setMessage('Invitación creada correctamente.');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -75,7 +75,7 @@ export function AdminInvitationsPage() {
       await navigator.clipboard.writeText(invitation.registrationUrl);
       setMessage('Enlace copiado al portapapeles.');
     } catch {
-      setError('No se pudo copiar automaticamente. Copia el enlace manualmente.');
+      setError('No se pudo copiar automáticamente. Copia el enlace manualmente.');
     }
   };
 
@@ -89,7 +89,7 @@ export function AdminInvitationsPage() {
           <p className="eyebrow">Administracion</p>
           <h1>Invitaciones</h1>
           <p className="dashboard-description">
-            Genera enlaces de registro para evaluadores sin exponer un formulario publico.
+            Genera enlaces de registro para evaluadores sin exponer un formulario público.
           </p>
         </div>
       </div>
@@ -97,7 +97,7 @@ export function AdminInvitationsPage() {
       <div className="module-page-grid">
         <section className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Crear invitacion de evaluador</h2>
+            <h2>Crear invitación de evaluador</h2>
             <p>El enlace queda asociado al correo indicado y solo puede usarse una vez.</p>
           </div>
 
@@ -132,7 +132,7 @@ export function AdminInvitationsPage() {
 
             <button className="button button-primary" type="submit" disabled={isSubmitting}>
               <MailPlus size={18} aria-hidden="true" />
-              {isSubmitting ? 'Generando...' : 'Generar invitacion'}
+              {isSubmitting ? 'Generando...' : 'Generar invitación'}
             </button>
           </form>
 
@@ -155,15 +155,15 @@ export function AdminInvitationsPage() {
           </div>
           <div className="progress-list">
             <div>
-              <span>Registro publico profesor</span>
+              <span>Registro público profesor</span>
               <strong>Oculto</strong>
             </div>
             <div>
-              <span>Generacion de enlaces</span>
+              <span>Generación de enlaces</span>
               <strong>Activa</strong>
             </div>
             <div>
-              <span>Uso de invitacion</span>
+              <span>Uso de invitación</span>
               <strong>Un solo uso</strong>
             </div>
           </div>
@@ -177,16 +177,16 @@ export function AdminStatisticsPage() {
   return (
     <ModulePage
       eyebrow="Administracion"
-      title="Estadisticas generales"
+      title="Estadísticas generales"
       description="Resumen global para monitorear usuarios, evaluaciones, instrumentos y actividad del sistema."
       icon={moduleIcons.BarChart3}
       primaryItems={[
         {
           title: 'Usuarios por rol',
-          description: 'Distribucion entre administradores, evaluadores y estudiantes.',
+          description: 'Distribución entre administradores, evaluadores y estudiantes.',
         },
         {
-          title: 'Actividad academica',
+          title: 'Actividad académica',
           description: 'Cantidad de tareas, instrumentos y evaluaciones publicadas.',
         },
         {
@@ -196,7 +196,7 @@ export function AdminStatisticsPage() {
       ]}
       statusItems={[
         { label: 'Vista base', value: 'Lista' },
-        { label: 'Graficas', value: 'Pendiente' },
+        { label: 'Gráficas', value: 'Pendiente' },
         { label: 'Datos reales', value: 'Pendiente' },
       ]}
     />
@@ -207,21 +207,21 @@ export function AdminSettingsPage() {
   return (
     <ModulePage
       eyebrow="Administracion"
-      title="Configuracion"
+      title="Configuración"
       description="Ajustes generales de seguridad, permisos y comportamiento del sistema."
       icon={moduleIcons.Settings}
       primaryItems={[
         {
-          title: 'Politicas de acceso',
+          title: 'Políticas de acceso',
           description: 'Definir reglas para invitaciones y estados bloqueados.',
         },
         {
           title: 'Preferencias de reportes',
-          description: 'Preparar opciones de impresion y exportacion.',
+          description: 'Preparar opciones de impresión y exportación.',
         },
         {
-          title: 'Parametros academicos',
-          description: 'Base para criterios comunes del centro o institucion.',
+          title: 'Parámetros académicos',
+          description: 'Base para criterios comunes del centro o institución.',
         },
       ]}
       statusItems={[

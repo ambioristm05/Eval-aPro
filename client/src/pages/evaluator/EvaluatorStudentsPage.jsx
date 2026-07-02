@@ -131,7 +131,7 @@ function EvaluatorStudentsPage() {
     const normalizedEmail = formData.email.trim().toLowerCase();
 
     if (!normalizedName || !normalizedEmail || formData.password.length < 8) {
-      setError('Completa nombre, correo y una contrasena temporal de al menos 8 caracteres.');
+      setError('Completa nombre, correo y una contraseña temporal de al menos 8 caracteres.');
       return;
     }
 
@@ -179,8 +179,8 @@ function EvaluatorStudentsPage() {
       }
 
       if (status === 'deleted') {
-        await deleteStudent(studentId, 'Eliminado logicamente por el evaluador');
-        setMessage('Estudiante eliminado logicamente.');
+        await deleteStudent(studentId, 'Eliminado lógicamente por el evaluador');
+        setMessage('Estudiante eliminado lógicamente.');
       }
 
       await loadStudents();
@@ -242,7 +242,7 @@ function EvaluatorStudentsPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>Agregar estudiante</h2>
-            <p>Crea una cuenta de estudiante y vinculala a un grupo activo.</p>
+            <p>Crea una cuenta de estudiante y vincúlala a un grupo activo.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -259,7 +259,7 @@ function EvaluatorStudentsPage() {
               />
             </label>
             <label>
-              Correo electronico
+              Correo electrónico
               <input
                 type="email"
                 name="email"
@@ -271,12 +271,12 @@ function EvaluatorStudentsPage() {
               />
             </label>
             <label>
-              Contrasena temporal
+              Contraseña temporal
               <input
                 type="password"
                 name="password"
                 value={formData.password}
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
                 onChange={handleChange}
                 required
@@ -380,8 +380,8 @@ function EvaluatorStudentsPage() {
                     className="icon-button danger"
                     type="button"
                     onClick={() => updateStudentStatus(getId(student), 'deleted')}
-                    title="Eliminar logicamente"
-                    aria-label={`Eliminar logicamente ${student.name}`}
+                    title="Eliminar lógicamente"
+                    aria-label={`Eliminar lógicamente ${student.name}`}
                     disabled={student.status === 'deleted'}
                   >
                     {student.status === 'deleted' ? (

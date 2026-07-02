@@ -12,7 +12,7 @@ function EvaluatorDashboard() {
   return (
     <DashboardShell
       eyebrow="Panel del evaluador"
-      title="Gestion academica"
+      title="Gestion académica"
       description="Organiza grupos, tareas, instrumentos y evaluaciones desde un espacio preparado para el flujo del profesor."
       stats={[
         { label: 'Grupos', value: '0', icon: GraduationCap },
@@ -34,7 +34,7 @@ function EvaluatorDashboard() {
         },
         {
           title: 'Disenar instrumentos',
-          description: 'Preparar rubricas, listas de cotejo y escalas.',
+          description: 'Preparar rúbricas, listas de cotejo y escalas.',
           icon: ClipboardCheck,
           href: '/evaluator/instruments',
         },
@@ -49,13 +49,13 @@ function EvaluatorDashboard() {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Proximo flujo</h2>
-          <p>Orden recomendado para construir el modulo academico.</p>
+          <p>Orden recomendado para construir el módulo académico.</p>
         </div>
         <ol className="timeline-list">
           <li>Crear grupo o clase.</li>
           <li>Agregar o vincular estudiantes.</li>
           <li>Crear tarea e instrumento asociado.</li>
-          <li>Aplicar evaluacion y publicar resultados.</li>
+          <li>Aplicar evaluación y publicar resultados.</li>
         </ol>
         <div className="report-preview">
           <Printer size={28} aria-hidden="true" />

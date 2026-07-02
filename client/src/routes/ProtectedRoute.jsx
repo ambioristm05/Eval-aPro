@@ -7,7 +7,7 @@ function ProtectedRoute() {
   const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
 
   if (isBootstrapping) {
-    return <div className="route-loader">Cargando sesion...</div>;
+    return <div className="route-loader">Cargando sesión...</div>;
   }
 
   if (!user) {

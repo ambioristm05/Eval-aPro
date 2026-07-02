@@ -17,14 +17,14 @@ function Header() {
 
   return (
     <header className="site-header">
-      <Link to="/" className="brand" aria-label="Ir al inicio de EvaluaPro">
+      <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro">
         <span className="brand-mark">
           <ClipboardCheck size={22} aria-hidden="true" />
         </span>
-        <span>EvaluaPro</span>
+        <span>EvalúaPro</span>
       </Link>
 
-      <nav className="nav-links" aria-label="Navegacion principal">
+      <nav className="nav-links" aria-label="Navegación principal">
         {user ? (
           <>
             <span className="user-pill">{user.name}</span>
@@ -37,7 +37,7 @@ function Header() {
           <>
             <NavLink to="/login">
               <LogIn size={18} aria-hidden="true" />
-              Iniciar sesion
+              Iniciar sesión
             </NavLink>
             <NavLink to="/register/student">
               <UserPlus size={18} aria-hidden="true" />

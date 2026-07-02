@@ -136,7 +136,7 @@ async function getResultForUser(req, id) {
 
 export const getMyResults = asyncHandler(async (req, res) => {
   if (req.user.role !== USER_ROLES.STUDENT) {
-    throw new AppError('Este endpoint esta disponible solo para estudiantes', 403);
+    throw new AppError('Este endpoint está disponible solo para estudiantes', 403);
   }
 
   const { taskId, page, limit } = req.validated.query;
@@ -204,7 +204,7 @@ export const getResultByEvaluation = asyncHandler(async (req, res) => {
 
 export const getMyFinalGrade = asyncHandler(async (req, res) => {
   if (req.user.role !== USER_ROLES.STUDENT) {
-    throw new AppError('Este endpoint esta disponible solo para estudiantes', 403);
+    throw new AppError('Este endpoint está disponible solo para estudiantes', 403);
   }
 
   const evaluations = await Evaluation.find(resultScope(req))

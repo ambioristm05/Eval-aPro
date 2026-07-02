@@ -23,8 +23,8 @@ export const roleNavigation = {
     { label: 'Panel', to: '/admin', icon: LayoutDashboard },
     { label: 'Evaluadores', to: '/admin/evaluators', icon: UserCog },
     { label: 'Invitaciones', to: '/admin/invitations', icon: KeyRound },
-    { label: 'Estadisticas', to: '/admin/statistics', icon: BarChart3 },
-    { label: 'Configuracion', to: '/admin/settings', icon: Settings },
+    { label: 'Estadísticas', to: '/admin/statistics', icon: BarChart3 },
+    { label: 'Configuración', to: '/admin/settings', icon: Settings },
   ],
   evaluator: [
     { label: 'Panel', to: '/evaluator', icon: LayoutDashboard },

@@ -45,7 +45,7 @@ async function findEvaluationForUser(req, id) {
   }).populate(evaluationPopulate);
 
   if (!evaluation) {
-    throw new AppError('Evaluacion no encontrada', 404);
+    throw new AppError('Evaluación no encontrada', 404);
   }
 
   return evaluation;
@@ -79,7 +79,7 @@ async function ensureTaskAndStudentForEvaluator({ evaluatorId, taskId, studentId
   const assignedByGroup = task.group && (await Group.exists({ _id: task.group, students: student._id }));
 
   if (!assignedDirectly && !assignedByGroup) {
-    throw new AppError('El estudiante no esta asignado a esta tarea', 400);
+    throw new AppError('El estudiante no está asignado a esta tarea', 400);
   }
 
   const instrument = await Instrument.findOne({
@@ -109,7 +109,7 @@ export const createEvaluation = asyncHandler(async (req, res) => {
   });
 
   if (existingEvaluation) {
-    throw new AppError('Ya existe una evaluacion para este estudiante en esta tarea', 409);
+    throw new AppError('Ya existe una evaluación para este estudiante en esta tarea', 409);
   }
 
   const grades = calculateScoreFromAnswers(answers, instrument);
@@ -202,7 +202,7 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
   const instrument = await Instrument.findById(evaluation.instrument._id || evaluation.instrument);
 
   if (!instrument) {
-    throw new AppError('Instrumento no encontrado para recalcular la evaluacion', 404);
+    throw new AppError('Instrumento no encontrado para recalcular la evaluación', 404);
   }
 
   if (answers !== undefined) {
@@ -235,13 +235,13 @@ export const deleteEvaluation = asyncHandler(async (req, res) => {
   const evaluation = await findEvaluationForUser(req, req.validated.params.id);
 
   if (evaluation.status === EVALUATION_STATUSES.PUBLISHED) {
-    throw new AppError('No puedes eliminar una evaluacion publicada', 409);
+    throw new AppError('No puedes eliminar una evaluación publicada', 409);
   }
 
   await Evaluation.deleteOne({ _id: evaluation._id });
 
   res.json({
-    message: 'Evaluacion eliminada correctamente'
+    message: 'Evaluación eliminada correctamente'
   });
 });
 
