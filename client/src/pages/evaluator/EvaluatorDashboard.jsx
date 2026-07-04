@@ -74,7 +74,7 @@ function EvaluatorDashboard() {
     <DashboardShell
       eyebrow="Panel del evaluador"
       title="Gestión académica"
-      description="Organiza grupos, tareas, instrumentos y evaluaciones desde un espacio preparado para el flujo del profesor."
+      description="Administra grupos, estudiantes, tareas, instrumentos, evaluaciones y reportes desde un panel centralizado."
       stats={[
         { label: 'Grupos', value: isLoading ? '...' : String(totals.groups), icon: GraduationCap },
         { label: 'Estudiantes', value: isLoading ? '...' : String(totals.students), icon: Users },

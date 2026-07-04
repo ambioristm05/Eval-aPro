@@ -8,7 +8,7 @@ import { moduleIcons } from '../../utils/navigation.jsx';
 export function AdminEvaluatorsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Gestionar evaluadores"
       description="Espacio privado para crear, aprobar, suspender y revisar cuentas de profesores."
       icon={moduleIcons.UserCog}
@@ -176,7 +176,7 @@ export function AdminInvitationsPage() {
 export function AdminStatisticsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Estadísticas generales"
       description="Resumen global para monitorear usuarios, evaluaciones, instrumentos y actividad del sistema."
       icon={moduleIcons.BarChart3}
@@ -206,7 +206,7 @@ export function AdminStatisticsPage() {
 export function AdminSettingsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Configuración"
       description="Ajustes generales de seguridad, permisos y comportamiento del sistema."
       icon={moduleIcons.Settings}
@@ -221,7 +221,7 @@ export function AdminSettingsPage() {
         },
         {
           title: 'Parámetros académicos',
-          description: 'Base para criterios comunes del centro o institución.',
+          description: 'Criterios comunes del centro o institución.',
         },
       ]}
       statusItems={[

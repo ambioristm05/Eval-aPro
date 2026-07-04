@@ -5,8 +5,8 @@ function AdminDashboard() {
   return (
     <DashboardShell
       eyebrow="Panel administrativo"
-      title="Control del sistema"
-      description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y prepara la configuración general de EvalúaPro."
+      title="Administración general"
+      description="Supervisa la actividad de la plataforma, gestiona evaluadores, invitaciones, estadísticas y configuración."
       stats={[
         { label: 'Evaluadores', value: '0', icon: UserCog },
         { label: 'Invitaciones', value: '0', icon: KeyRound },
@@ -15,7 +15,7 @@ function AdminDashboard() {
       actions={[
         {
           title: 'Crear evaluador',
-          description: 'Alta manual de profesores desde un espacio privado.',
+          description: 'Alta manual de evaluadores desde un espacio privado.',
           icon: UserCog,
           href: '/admin/evaluators',
         },
@@ -36,7 +36,7 @@ function AdminDashboard() {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Vista general</h2>
-          <p>Los indicadores reales llegarán al conectar los módulos administrativos.</p>
+          <p>Resumen de usuarios, actividad académica y configuración principal del sistema.</p>
         </div>
         <div className="progress-list">
           <div>
@@ -44,7 +44,7 @@ function AdminDashboard() {
             <strong>Lista</strong>
           </div>
           <div>
-            <span>Registro público de profesor</span>
+            <span>Registro público de evaluador</span>
             <strong>Oculto</strong>
           </div>
           <div>
@@ -54,7 +54,7 @@ function AdminDashboard() {
         </div>
         <div className="report-preview">
           <BarChart3 size={28} aria-hidden="true" />
-          <p>Panel preparado para gráficas y reportes administrativos.</p>
+          <p>Las gráficas y reportes administrativos aparecerán aquí cuando estén disponibles.</p>
         </div>
       </aside>
     </DashboardShell>

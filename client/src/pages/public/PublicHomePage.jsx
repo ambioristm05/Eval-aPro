@@ -1,21 +1,21 @@
-import { ArrowRight, FileText, GraduationCap, Printer } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, ClipboardCheck, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const moduleCards = [
   {
-    icon: GraduationCap,
-    title: 'Panel por rol',
-    text: 'Admins, evaluadores y estudiantes entran a espacios separados.',
+    icon: ClipboardCheck,
+    title: 'Evaluaciones trazables',
+    text: 'Aplica rúbricas y listas de cotejo con criterios claros y resultados consistentes.',
   },
   {
-    icon: FileText,
-    title: 'Instrumentos',
-    text: 'Base preparada para rúbricas, listas de cotejo y escalas.',
+    icon: BookOpenCheck,
+    title: 'Seguimiento académico',
+    text: 'Consulta tareas, avances, resultados publicados y sugerencias de mejora desde un solo panel.',
   },
   {
     icon: Printer,
-    title: 'Reportes',
-    text: 'La estructura deja listo el camino para impresión y PDF.',
+    title: 'Reportes imprimibles',
+    text: 'Genera reportes listos para revisar, compartir o entregar cuando corresponda.',
   },
 ];
 
@@ -26,16 +26,16 @@ function PublicHomePage() {
         <p className="eyebrow">Gestión académica digital</p>
         <h1>EvalúaPro</h1>
         <p className="lead">
-          Organiza tareas, instrumentos de evaluación, resultados y reportes en
-          un flujo pensado para profesores y participantes.
+          Organiza grupos, tareas, instrumentos de evaluación, resultados y reportes
+          en una plataforma clara para evaluadores y estudiantes.
         </p>
         <div className="action-row">
           <Link className="button button-primary" to="/login">
-            Entrar
+            Iniciar sesión
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="button button-secondary" to="/register/student">
-            Crear cuenta
+            Crear cuenta de estudiante
           </Link>
         </div>
       </div>
