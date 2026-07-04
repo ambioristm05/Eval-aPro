@@ -73,7 +73,7 @@ function EvaluatorDashboard() {
   return (
     <DashboardShell
       eyebrow="Panel del evaluador"
-      title="Gestion académica"
+      title="Gestión académica"
       description="Organiza grupos, tareas, instrumentos y evaluaciones desde un espacio preparado para el flujo del profesor."
       stats={[
         { label: 'Grupos', value: isLoading ? '...' : String(totals.groups), icon: GraduationCap },
@@ -89,12 +89,12 @@ function EvaluatorDashboard() {
         },
         {
           title: 'Crear tareas',
-          description: 'Definir actividades evaluables con fechas y ponderacion.',
+          description: 'Definir actividades evaluables con fechas y ponderación.',
           icon: NotebookTabs,
           href: '/evaluator/tasks',
         },
         {
-          title: 'Disenar instrumentos',
+          title: 'Diseñar instrumentos',
           description: 'Preparar rúbricas, listas de cotejo y escalas.',
           icon: ClipboardCheck,
           href: '/evaluator/instruments',

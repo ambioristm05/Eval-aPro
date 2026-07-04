@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { app } from './app.js';
 import { connectDb } from './config/db.js';
 import { env } from './config/env.js';
+import { closePdfBrowser } from './utils/generatePDF.js';
 import { ensureAdminUser } from './utils/ensureAdminUser.js';
 
 let server;
@@ -23,13 +24,15 @@ async function bootstrap() {
 function shutdown(signal) {
   console.log(`${signal} recibido. Cerrando servidor...`);
 
+  const closeResources = () => Promise.all([closePdfBrowser(), mongoose.connection.close(false)]).finally(() => process.exit(0));
+
   if (!server) {
-    mongoose.connection.close(false).finally(() => process.exit(0));
+    closeResources();
     return;
   }
 
   server.close(() => {
-    mongoose.connection.close(false).finally(() => process.exit(0));
+    closeResources();
   });
 }
 
@@ -39,9 +42,11 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('unhandledRejection', (error) => {
   console.error(`Promesa rechazada sin manejar: ${error.message}`);
   if (server) {
-    server.close(() => process.exit(1));
+    server.close(() => {
+      closePdfBrowser().finally(() => process.exit(1));
+    });
   } else {
-    process.exit(1);
+    closePdfBrowser().finally(() => process.exit(1));
   }
 });
 

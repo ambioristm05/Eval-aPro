@@ -7,4 +7,5 @@ ignoredBuiltDependencies:
   - puppeteer
 allowBuilds:
   esbuild: true
+  mongodb-memory-server: true
   puppeteer: true

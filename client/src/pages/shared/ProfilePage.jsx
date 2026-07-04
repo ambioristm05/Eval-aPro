@@ -189,7 +189,7 @@ function ProfilePage({ role, mode = 'view' }) {
           </div>
           <div>
             <span>Correo</span>
-            <strong>{isLoading ? 'Cargando...' : user?.email ?? 'Sin correo'}</strong>
+            <strong className="plain-value">{isLoading ? 'Cargando...' : user?.email ?? 'Sin correo'}</strong>
           </div>
           <div>
             <span>Rol</span>
@@ -211,7 +211,7 @@ function ProfilePage({ role, mode = 'view' }) {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Seguridad</h2>
-          <p>Los cambios sensibles se realizan desde la vista de modificacion.</p>
+          <p>Los cambios sensibles se realizan desde la vista de modificación.</p>
         </div>
         <Link className="button button-secondary" to={editPath}>
           <KeyRound size={18} aria-hidden="true" />

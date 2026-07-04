@@ -13,7 +13,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   if (!token) throw new AppError('No autenticado', 401);
 
   const decoded = jwt.verify(token, env.jwtSecret);
-  const user = await User.findById(decoded.id).select('+password');
+  const user = await User.findById(decoded.id);
 
   if (!user) throw new AppError('Usuario no encontrado', 401);
   req.user = user;

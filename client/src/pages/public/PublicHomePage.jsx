@@ -23,7 +23,7 @@ function PublicHomePage() {
   return (
     <section className="home-grid">
       <div className="intro-panel">
-        <p className="eyebrow">Gestion académica digital</p>
+        <p className="eyebrow">Gestión académica digital</p>
         <h1>EvalúaPro</h1>
         <p className="lead">
           Organiza tareas, instrumentos de evaluación, resultados y reportes en
@@ -35,7 +35,7 @@ function PublicHomePage() {
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="button button-secondary" to="/register/student">
-            Crear cuenta estudiante
+            Crear cuenta
           </Link>
         </div>
       </div>

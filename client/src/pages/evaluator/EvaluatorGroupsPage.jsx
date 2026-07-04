@@ -528,7 +528,7 @@ function EvaluatorGroupsPage() {
             {filteredGroups.length === 0 ? (
               <div className="inline-empty">
                 <h3>{isLoading ? 'Cargando grupos...' : 'No hay grupos'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Ajusta la busqueda o crea un grupo nuevo.'}</p>
+                <p>{isLoading ? 'Espera un momento.' : 'Ajusta la búsqueda o crea un grupo nuevo.'}</p>
               </div>
             ) : null}
           </div>

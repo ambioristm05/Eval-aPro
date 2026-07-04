@@ -25,8 +25,8 @@ function getStudentName(evaluation) {
   return evaluation.student?.name ?? 'Estudiante';
 }
 
-function getTaskTitle(evaluation) {
-  return evaluation.task?.title ?? 'Tarea';
+function getTaskTitle(evaluation, report) {
+  return evaluation.task?.title ?? report?.task?.title ?? 'Tarea sin título';
 }
 
 function getInstrumentTitle(evaluation) {
@@ -256,19 +256,23 @@ function EvaluatorReportsPage() {
         </div>
 
         {reportType === 'student' ? (
-          <div className="form-actions">
-            <button
-              className={studentPrintEnabled ? 'button button-secondary' : 'button button-primary'}
-              type="button"
-              onClick={() => handlePrintPermission(!studentPrintEnabled)}
+          <label className="permission-toggle">
+            <input
+              type="checkbox"
+              checked={studentPrintEnabled}
+              onChange={(event) => handlePrintPermission(event.target.checked)}
               disabled={!report || isUpdatingPermission || !evaluations.length}
-            >
-              {studentPrintEnabled ? 'Bloquear impresión al estudiante' : 'Permitir impresión al estudiante'}
-            </button>
-            <span className={`status-badge ${studentPrintEnabled ? 'status-published' : 'status-pending'}`}>
-              {studentPrintEnabled ? 'Permitido para estudiante' : 'No permitido'}
+            />
+            <span className="permission-toggle-track" aria-hidden="true">
+              <span className="permission-toggle-thumb" />
             </span>
-          </div>
+            <span>
+              <strong>Impresión del estudiante</strong>
+              <small className={`permission-status ${studentPrintEnabled ? 'permission-status-allowed' : 'permission-status-denied'}`}>
+                {studentPrintEnabled ? 'Permitido' : 'No permitido'}
+              </small>
+            </span>
+          </label>
         ) : null}
       </div>
 
@@ -314,7 +318,7 @@ function EvaluatorReportsPage() {
               {evaluations.map((evaluation) => (
                 <tr key={getId(evaluation)}>
                   <td>{getStudentName(evaluation)}</td>
-                  <td>{getTaskTitle(evaluation)}</td>
+                  <td>{getTaskTitle(evaluation, report)}</td>
                   <td>{getInstrumentTitle(evaluation)}</td>
                   <td>{evaluation.score}/{evaluation.maxScore}</td>
                   <td>{evaluation.percentage}%</td>
@@ -331,10 +335,10 @@ function EvaluatorReportsPage() {
         ) : null}
 
         <div className="report-notes">
-          <h2>Retroalimentacion</h2>
+          <h2>Retroalimentación</h2>
           {evaluations.map((evaluation) => (
             <p key={`${getId(evaluation)}-feedback`}>
-              <strong>{getTaskTitle(evaluation)}:</strong> {evaluation.feedback || 'Sin retroalimentacion registrada.'}
+              <strong>{getTaskTitle(evaluation, report)}:</strong> {evaluation.feedback || 'Sin retroalimentación registrada.'}
             </p>
           ))}
           {!evaluations.length && reportType !== 'final' ? <p>No hay evaluaciones publicadas para este reporte.</p> : null}

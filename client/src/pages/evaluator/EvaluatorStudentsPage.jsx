@@ -70,17 +70,9 @@ function EvaluatorStudentsPage() {
   const deletedCount = students.filter((student) => student.status === 'deleted').length;
 
   const loadStudents = async () => {
-    const [visibleData, deletedData] = await Promise.all([
-      listResource('students', { limit: 100 }),
-      listResource('students', { status: 'deleted', limit: 100 }),
-    ]);
+    const data = await listResource('students', { includeDeleted: true, limit: 100 });
 
-    const mergedStudents = [...(visibleData.students ?? []), ...(deletedData.students ?? [])];
-    const uniqueStudents = Array.from(
-      new Map(mergedStudents.map((student) => [getId(student), student])).values(),
-    );
-
-    setStudents(uniqueStudents);
+    setStudents(data.students ?? []);
   };
 
   useEffect(() => {

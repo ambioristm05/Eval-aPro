@@ -1,5 +1,6 @@
 import {
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
   Pencil,
@@ -94,6 +95,7 @@ function EvaluatorTasksPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -122,6 +124,20 @@ function EvaluatorTasksPage() {
   const assignableStudents = useMemo(
     () => students.filter((student) => studentBelongsToGroup(student, formData.group)),
     [students, formData.group]
+  );
+  const filteredAssignableStudents = useMemo(() => {
+    const normalizedSearch = studentSearchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return assignableStudents;
+
+    return assignableStudents.filter(
+      (student) =>
+        getStudentName(student).toLowerCase().includes(normalizedSearch) ||
+        student.email.toLowerCase().includes(normalizedSearch)
+    );
+  }, [assignableStudents, studentSearchTerm]);
+  const selectedStudents = useMemo(
+    () => students.filter((student) => formData.students.includes(getId(student))),
+    [formData.students, students]
   );
 
   const loadTasks = async () => {
@@ -213,6 +229,7 @@ function EvaluatorTasksPage() {
   const resetForm = () => {
     setFormData({ ...emptyForm, students: [] });
     setEditingId(null);
+    setStudentSearchTerm('');
   };
 
   const handleSubmit = async (event) => {
@@ -298,7 +315,7 @@ function EvaluatorTasksPage() {
           <h1>Tareas</h1>
           <p className="dashboard-description">
             Crea actividades evaluables, asigna grupos e instrumentos, define fechas y prepara
-            la ponderacion para la nota final.
+            la ponderación para la nota final.
           </p>
         </div>
       </div>
@@ -338,7 +355,7 @@ function EvaluatorTasksPage() {
           </span>
           <div>
             <strong>{totalWeight}%</strong>
-            <span>Ponderacion</span>
+            <span>Ponderación</span>
           </div>
         </article>
       </div>
@@ -350,117 +367,175 @@ function EvaluatorTasksPage() {
             <p>Define la actividad evaluable y su valor dentro del periodo.</p>
           </div>
 
-          <form className="stacked-form compact-form" onSubmit={handleSubmit}>
-            <label>
-              Título
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                placeholder="Ej. Presentación oral"
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <label>
-              Descripción
-              <textarea
-                name="description"
-                value={formData.description}
-                placeholder="Instrucciones o alcance de la tarea"
-                rows="4"
-                onChange={handleChange}
-              />
-            </label>
-            <div className="form-two-columns">
-              <label>
-                Grupo
-                <select name="group" value={formData.group} onChange={handleChange}>
-                  <option value="">Sin grupo</option>
-                  {groups.map((group) => (
-                    <option key={getId(group)} value={getId(group)}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Instrumento
-                <select name="instrument" value={formData.instrument} onChange={handleChange}>
-                  <option value="">Sin instrumento</option>
-                  {instruments.map((instrument) => (
-                    <option key={getId(instrument)} value={getId(instrument)}>
-                      {instrument.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="assignment-selector">
-              <div className="assignment-header">
-                <span>Estudiantes asignados</span>
-                <strong>{formData.students.length}</strong>
+          <form className="stacked-form compact-form task-form" onSubmit={handleSubmit}>
+            <details className="form-section" open>
+              <summary>Datos básicos</summary>
+              <div className="form-section-body">
+                <label>
+                  Título
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    placeholder="Ej. Presentación oral"
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+                <label>
+                  Descripción
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    placeholder="Instrucciones o alcance de la tarea"
+                    rows="4"
+                    onChange={handleChange}
+                  />
+                </label>
               </div>
-              <div className="assignment-list" aria-label="Seleccionar estudiantes para esta tarea">
-                {assignableStudents.map((student) => {
-                  const studentId = getId(student);
+            </details>
 
-                  return (
-                    <label className="assignment-option" key={studentId}>
-                      <input
-                        type="checkbox"
-                        checked={formData.students.includes(studentId)}
-                        onChange={() => handleStudentToggle(studentId)}
-                      />
-                      <span>
-                        <strong>{getStudentName(student)}</strong>
-                        <small>{student.email}</small>
-                      </span>
-                    </label>
-                  );
-                })}
+            <details className="form-section" open>
+              <summary>Asignación</summary>
+              <div className="form-section-body">
+                <div className="form-two-columns">
+                  <label>
+                    Grupo
+                    <select name="group" value={formData.group} onChange={handleChange}>
+                      <option value="">Sin grupo</option>
+                      {groups.map((group) => (
+                        <option key={getId(group)} value={getId(group)}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Instrumento
+                    <select name="instrument" value={formData.instrument} onChange={handleChange}>
+                      <option value="">Sin instrumento</option>
+                      {instruments.map((instrument) => (
+                        <option key={getId(instrument)} value={getId(instrument)}>
+                          {instrument.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
-                {assignableStudents.length === 0 ? (
-                  <p className="assignment-empty">
-                    {formData.group
-                      ? 'No hay estudiantes activos en este grupo.'
-                      : 'Crea estudiantes o vinculalos a un grupo para asignarlos.'}
-                  </p>
-                ) : null}
+                <div className="assignment-selector">
+                  <div className="assignment-header">
+                    <span>Estudiantes asignados</span>
+                    <strong>{formData.students.length}</strong>
+                  </div>
+
+                  {selectedStudents.length ? (
+                    <div className="selected-student-chips" aria-label="Estudiantes seleccionados">
+                      {selectedStudents.map((student) => (
+                        <button
+                          className="student-chip"
+                          type="button"
+                          key={getId(student)}
+                          onClick={() => handleStudentToggle(getId(student))}
+                        >
+                          {getStudentName(student)}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <label className="search-field assignment-search">
+                    <Search size={18} aria-hidden="true" />
+                    <input
+                      type="search"
+                      value={studentSearchTerm}
+                      placeholder="Buscar estudiante"
+                      onChange={(event) => setStudentSearchTerm(event.target.value)}
+                    />
+                  </label>
+
+                  <div className="assignment-list" aria-label="Seleccionar estudiantes para esta tarea">
+                    {filteredAssignableStudents.map((student) => {
+                      const studentId = getId(student);
+                      const isSelected = formData.students.includes(studentId);
+
+                      return (
+                        <label className={`assignment-option${isSelected ? ' assignment-option-selected' : ''}`} key={studentId}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleStudentToggle(studentId)}
+                          />
+                          <span className="assignment-check" aria-hidden="true">
+                            <CheckCircle2 size={15} />
+                          </span>
+                          <span className="assignment-student">
+                            <strong>{getStudentName(student)}</strong>
+                            <small>{student.email}</small>
+                          </span>
+                        </label>
+                      );
+                    })}
+
+                    {assignableStudents.length === 0 ? (
+                      <p className="assignment-empty">
+                        {formData.group
+                          ? 'No hay estudiantes activos en este grupo.'
+                          : 'Crea estudiantes o vincúlalos a un grupo para asignarlos.'}
+                      </p>
+                    ) : null}
+
+                    {assignableStudents.length > 0 && filteredAssignableStudents.length === 0 ? (
+                      <p className="assignment-empty">No hay estudiantes que coincidan con la búsqueda.</p>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="form-two-columns">
-              <label>
-                Inicio
-                <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} />
-              </label>
-              <label>
-                Entrega
-                <input type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} />
-              </label>
-            </div>
-            <div className="form-two-columns">
-              <label>
-                Estado
-                <select name="status" value={formData.status} onChange={handleChange}>
-                  <option value="pending">Pendiente</option>
-                  <option value="in_progress">En progreso</option>
-                  <option value="completed">Completada</option>
-                  <option value="cancelled">Cancelada</option>
-                </select>
-              </label>
-              <label>
-                Peso %
-                <input
-                  type="number"
-                  name="weight"
-                  min="0"
-                  max="100"
-                  value={formData.weight}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+            </details>
+
+            <details className="form-section" open>
+              <summary>Fechas y ponderación</summary>
+              <div className="form-section-body">
+                <div className="form-two-columns">
+                  <label>
+                    Inicio
+                    <span className="date-field">
+                      <CalendarDays size={17} aria-hidden="true" />
+                      <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} />
+                    </span>
+                  </label>
+                  <label>
+                    Entrega
+                    <span className="date-field">
+                      <CalendarDays size={17} aria-hidden="true" />
+                      <input type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} />
+                    </span>
+                  </label>
+                </div>
+                <div className="form-two-columns">
+                  <label>
+                    Estado
+                    <select name="status" value={formData.status} onChange={handleChange}>
+                      <option value="pending">Pendiente</option>
+                      <option value="in_progress">En progreso</option>
+                      <option value="completed">Completada</option>
+                      <option value="cancelled">Cancelada</option>
+                    </select>
+                  </label>
+                  <label>
+                    Peso %
+                    <input
+                      type="number"
+                      name="weight"
+                      min="0"
+                      max="100"
+                      value={formData.weight}
+                      onChange={handleChange}
+                    />
+                  </label>
+                </div>
+              </div>
+            </details>
 
             <div className="form-actions">
               <button className="button button-primary" type="submit" disabled={isSubmitting}>
@@ -534,16 +609,17 @@ function EvaluatorTasksPage() {
 
                 <div className="resource-actions" aria-label={`Acciones para ${task.title}`}>
                   <button
-                    className="icon-button"
+                    className="icon-button labeled"
                     type="button"
                     onClick={() => handleEdit(task)}
                     title="Editar"
                     aria-label={`Editar ${task.title}`}
                   >
                     <Pencil size={17} aria-hidden="true" />
+                    <span>Editar</span>
                   </button>
                   <button
-                    className="icon-button"
+                    className="icon-button labeled"
                     type="button"
                     onClick={() => updateTaskStatus(getId(task), 'completed')}
                     title="Marcar completada"
@@ -551,15 +627,17 @@ function EvaluatorTasksPage() {
                     disabled={task.status === 'completed'}
                   >
                     <CheckCircle2 size={17} aria-hidden="true" />
+                    <span>Completar</span>
                   </button>
                   <button
-                    className="icon-button danger"
+                    className="icon-button danger labeled"
                     type="button"
                     onClick={() => handleDeleteTask(getId(task))}
                     title="Eliminar"
                     aria-label={`Eliminar ${task.title}`}
                   >
                     <Trash2 size={17} aria-hidden="true" />
+                    <span>Eliminar</span>
                   </button>
                 </div>
               </article>

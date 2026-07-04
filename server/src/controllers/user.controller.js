@@ -3,20 +3,21 @@ import { Group } from '../models/Group.js';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { writeAudit } from '../utils/audit.js';
 
 async function getEvaluatorGroupIds(evaluatorId) {
   return Group.find({ evaluator: evaluatorId }).distinct('_id');
 }
 
 async function buildStudentFilter(req) {
-  const { availableForGroup, groupId, search, status } = req.validated.query;
+  const { availableForGroup, groupId, includeDeleted, search, status } = req.validated.query;
   const filter = {
     role: USER_ROLES.STUDENT
   };
 
   if (status) {
     filter.status = status;
-  } else {
+  } else if (!includeDeleted) {
     filter.status = { $ne: USER_STATUSES.DELETED };
   }
 
@@ -89,6 +90,29 @@ async function getCurrentUserProfile(userId) {
     path: 'groups',
     select: 'name status evaluator'
   });
+}
+
+async function getCurrentUserWithPassword(userId) {
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    throw new AppError('Usuario no encontrado', 401);
+  }
+
+  return user;
+}
+
+function userStatusAuditSnapshot(user) {
+  return {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    deletedAt: user.deletedAt,
+    suspendedAt: user.suspendedAt,
+    statusReason: user.statusReason,
+    actionBy: user.actionBy
+  };
 }
 
 export const createStudent = asyncHandler(async (req, res) => {
@@ -201,6 +225,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
 export const suspendStudent = asyncHandler(async (req, res) => {
   const student = await findManageableStudent(req, req.validated.params.id);
   const { reason } = req.validated.body;
+  const before = userStatusAuditSnapshot(student);
 
   if (student.status === USER_STATUSES.DELETED) {
     throw new AppError('No puedes suspender un estudiante eliminado', 409);
@@ -212,6 +237,15 @@ export const suspendStudent = asyncHandler(async (req, res) => {
   student.actionBy = req.user._id;
 
   await student.save();
+  await writeAudit({
+    actor: req.user._id,
+    action: 'student.suspend',
+    entity: 'User',
+    entityId: student._id,
+    before,
+    after: userStatusAuditSnapshot(student),
+    metadata: { reason }
+  });
 
   res.json({ student });
 });
@@ -219,6 +253,7 @@ export const suspendStudent = asyncHandler(async (req, res) => {
 export const reactivateStudent = asyncHandler(async (req, res) => {
   const student = await findManageableStudent(req, req.validated.params.id);
   const { reason } = req.validated.body;
+  const before = userStatusAuditSnapshot(student);
 
   student.status = USER_STATUSES.ACTIVE;
   student.suspendedAt = undefined;
@@ -227,6 +262,15 @@ export const reactivateStudent = asyncHandler(async (req, res) => {
   student.actionBy = req.user._id;
 
   await student.save();
+  await writeAudit({
+    actor: req.user._id,
+    action: 'student.reactivate',
+    entity: 'User',
+    entityId: student._id,
+    before,
+    after: userStatusAuditSnapshot(student),
+    metadata: { reason }
+  });
 
   res.json({ student });
 });
@@ -234,6 +278,7 @@ export const reactivateStudent = asyncHandler(async (req, res) => {
 export const deleteStudent = asyncHandler(async (req, res) => {
   const student = await findManageableStudent(req, req.validated.params.id);
   const { reason } = req.validated.body;
+  const before = userStatusAuditSnapshot(student);
 
   student.status = USER_STATUSES.DELETED;
   student.deletedAt = new Date();
@@ -241,6 +286,15 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   student.actionBy = req.user._id;
 
   await student.save();
+  await writeAudit({
+    actor: req.user._id,
+    action: 'student.delete',
+    entity: 'User',
+    entityId: student._id,
+    before,
+    after: userStatusAuditSnapshot(student),
+    metadata: { reason }
+  });
 
   res.json({
     message: 'Estudiante eliminado lógicamente',
@@ -267,14 +321,15 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
 
 export const changeMyPassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.validated.body;
-  const passwordMatches = await req.user.comparePassword(currentPassword);
+  const user = await getCurrentUserWithPassword(req.user._id);
+  const passwordMatches = await user.comparePassword(currentPassword);
 
   if (!passwordMatches) {
     throw new AppError('Contraseña actual incorrecta', 401);
   }
 
-  req.user.password = newPassword;
-  await req.user.save();
+  user.password = newPassword;
+  await user.save();
 
   res.json({
     message: 'Contraseña actualizada correctamente'
@@ -288,17 +343,28 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
     throw new AppError('Solo los estudiantes pueden eliminar su propia cuenta desde este endpoint', 403);
   }
 
-  const passwordMatches = await req.user.comparePassword(password);
+  const user = await getCurrentUserWithPassword(req.user._id);
+  const before = userStatusAuditSnapshot(user);
+  const passwordMatches = await user.comparePassword(password);
   if (!passwordMatches) {
     throw new AppError('Contraseña incorrecta', 401);
   }
 
-  req.user.status = USER_STATUSES.DELETED;
-  req.user.deletedAt = new Date();
-  req.user.statusReason = reason || 'Cuenta eliminada por el estudiante';
-  req.user.actionBy = req.user._id;
+  user.status = USER_STATUSES.DELETED;
+  user.deletedAt = new Date();
+  user.statusReason = reason || 'Cuenta eliminada por el estudiante';
+  user.actionBy = user._id;
 
-  await req.user.save();
+  await user.save();
+  await writeAudit({
+    actor: user._id,
+    action: 'account.delete',
+    entity: 'User',
+    entityId: user._id,
+    before,
+    after: userStatusAuditSnapshot(user),
+    metadata: { reason: reason || 'Cuenta eliminada por el estudiante' }
+  });
 
   res.json({
     message: 'Cuenta eliminada lógicamente. Cierra la sesión localmente para completar el proceso.'

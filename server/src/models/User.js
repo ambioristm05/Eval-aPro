@@ -44,6 +44,14 @@ const userSchema = new mongoose.Schema(
     deletedAt: Date,
     suspendedAt: Date,
     statusReason: String,
+    passwordResetToken: {
+      type: String,
+      select: false
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false
+    },
     actionBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'

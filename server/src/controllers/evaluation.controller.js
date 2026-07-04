@@ -8,6 +8,7 @@ import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { writeAudit } from '../utils/audit.js';
 import { calculatePercentage } from '../utils/calculateGrades.js';
 
 const evaluationPopulate = [
@@ -35,6 +36,27 @@ function calculateScoreFromAnswers(answers = [], instrument) {
     score,
     maxScore,
     percentage: calculatePercentage(score, maxScore)
+  };
+}
+
+function idOf(value) {
+  return value?._id || value;
+}
+
+function evaluationAuditSnapshot(evaluation) {
+  return {
+    id: evaluation._id,
+    student: idOf(evaluation.student),
+    evaluator: idOf(evaluation.evaluator),
+    task: idOf(evaluation.task),
+    instrument: idOf(evaluation.instrument),
+    status: evaluation.status,
+    score: evaluation.score,
+    maxScore: evaluation.maxScore,
+    percentage: evaluation.percentage,
+    evaluatedAt: evaluation.evaluatedAt,
+    publishedAt: evaluation.publishedAt,
+    studentReportEnabled: evaluation.studentReportEnabled
   };
 }
 
@@ -200,6 +222,7 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
   const evaluation = await findEvaluationForUser(req, req.validated.params.id);
   const { answers, feedback, suggestions, status } = req.validated.body;
   const instrument = await Instrument.findById(evaluation.instrument._id || evaluation.instrument);
+  const before = evaluationAuditSnapshot(evaluation);
 
   if (!instrument) {
     throw new AppError('Instrumento no encontrado para recalcular la evaluación', 404);
@@ -226,6 +249,20 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
   }
 
   await evaluation.save();
+  await writeAudit({
+    actor: req.user._id,
+    action:
+      status === EVALUATION_STATUSES.PUBLISHED && before.status !== EVALUATION_STATUSES.PUBLISHED
+        ? 'evaluation.publish'
+        : 'evaluation.update',
+    entity: 'Evaluation',
+    entityId: evaluation._id,
+    before,
+    after: evaluationAuditSnapshot(evaluation),
+    metadata: {
+      changedFields: Object.keys(req.validated.body)
+    }
+  });
 
   const populatedEvaluation = await Evaluation.findById(evaluation._id).populate(evaluationPopulate);
   res.json({ evaluation: populatedEvaluation });
@@ -233,12 +270,21 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
 
 export const deleteEvaluation = asyncHandler(async (req, res) => {
   const evaluation = await findEvaluationForUser(req, req.validated.params.id);
+  const before = evaluationAuditSnapshot(evaluation);
 
   if (evaluation.status === EVALUATION_STATUSES.PUBLISHED) {
     throw new AppError('No puedes eliminar una evaluación publicada', 409);
   }
 
   await Evaluation.deleteOne({ _id: evaluation._id });
+  await writeAudit({
+    actor: req.user._id,
+    action: 'evaluation.delete',
+    entity: 'Evaluation',
+    entityId: evaluation._id,
+    before,
+    after: null
+  });
 
   res.json({
     message: 'Evaluación eliminada correctamente'
@@ -247,12 +293,21 @@ export const deleteEvaluation = asyncHandler(async (req, res) => {
 
 export const publishEvaluation = asyncHandler(async (req, res) => {
   const evaluation = await findEvaluationForUser(req, req.validated.params.id);
+  const before = evaluationAuditSnapshot(evaluation);
 
   evaluation.status = EVALUATION_STATUSES.PUBLISHED;
   evaluation.evaluatedAt = evaluation.evaluatedAt || new Date();
   evaluation.publishedAt = new Date();
 
   await evaluation.save();
+  await writeAudit({
+    actor: req.user._id,
+    action: 'evaluation.publish',
+    entity: 'Evaluation',
+    entityId: evaluation._id,
+    before,
+    after: evaluationAuditSnapshot(evaluation)
+  });
 
   const populatedEvaluation = await Evaluation.findById(evaluation._id).populate(evaluationPopulate);
   res.json({ evaluation: populatedEvaluation });

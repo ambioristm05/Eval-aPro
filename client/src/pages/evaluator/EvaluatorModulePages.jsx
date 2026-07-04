@@ -27,7 +27,7 @@ export function EvaluatorStudentsPage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Estudiantes"
-      description="Módulo para revisar perfiles académicos, estados de cuenta y vinculacion con grupos."
+      description="Módulo para revisar perfiles académicos, estados de cuenta y vinculación con grupos."
       icon={moduleIcons.Users}
       primaryItems={[
         { title: 'Listado filtrable', description: 'Buscar por nombre, correo, grupo o estado.' },
@@ -37,7 +37,7 @@ export function EvaluatorStudentsPage() {
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
         { label: 'Acciones de estado', value: 'Pendiente' },
-        { label: 'Confirmaciónes', value: 'Pendiente' },
+        { label: 'Confirmaciones', value: 'Pendiente' },
       ]}
     />
   );
@@ -48,11 +48,11 @@ export function EvaluatorTasksPage() {
     <ModulePage
       eyebrow="Evaluador"
       title="Tareas"
-      description="Base para gestionar actividades evaluables con fechas, estados, grupos y ponderacion."
+      description="Base para gestionar actividades evaluables con fechas, estados, grupos y ponderación."
       icon={moduleIcons.NotebookTabs}
       primaryItems={[
         { title: 'Crear tarea', description: 'Definir título, descripción, fechas y peso.' },
-        { title: 'Asignar participantes', description: 'Seleccionar grupos o estudiantes especificos.' },
+        { title: 'Asignar participantes', description: 'Seleccionar grupos o estudiantes específicos.' },
         { title: 'Cambiar estado', description: 'Pendiente, en progreso, completada o cancelada.' },
       ]}
       statusItems={[
@@ -72,7 +72,7 @@ export function EvaluatorInstrumentsPage() {
       description="Módulo para crear rúbricas, listas de cotejo, escalas y otros formularios evaluativos."
       icon={moduleIcons.ClipboardCheck}
       primaryItems={[
-        { title: 'Rúbrica analítica', description: 'Criterios, niveles de desempeño y puntuaciónes.' },
+        { title: 'Rúbrica analítica', description: 'Criterios, niveles de desempeño y puntuaciones.' },
         { title: 'Lista de cotejo', description: 'Indicadores con opciones sí, no o parcial.' },
         { title: 'Estados', description: 'Borrador, activo o archivado según el uso.' },
       ]}
@@ -99,7 +99,7 @@ export function EvaluatorEvaluationsPage() {
       ]}
       statusItems={[
         { label: 'Ruta privada', value: 'Lista' },
-        { label: 'Calculo de nota', value: 'Pendiente' },
+        { label: 'Cálculo de nota', value: 'Pendiente' },
         { label: 'Publicación', value: 'Pendiente' },
       ]}
     />
@@ -136,7 +136,7 @@ export function EvaluatorProfilePage() {
       icon={moduleIcons.UserRound}
       primaryItems={[
         { title: 'Datos básicos', description: 'Nombre, correo, foto opcional y especialidad.' },
-        { title: 'Seguridad', description: 'Cambio de contraseña y gestion de sesión.' },
+        { title: 'Seguridad', description: 'Cambio de contraseña y gestión de sesión.' },
         { title: 'Resumen académico', description: 'Grupos e instrumentos creados por el evaluador.' },
       ]}
       statusItems={[

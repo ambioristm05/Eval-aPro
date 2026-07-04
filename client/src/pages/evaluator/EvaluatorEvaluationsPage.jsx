@@ -31,7 +31,7 @@ function getStudentName(evaluation) {
 }
 
 function getTaskTitle(evaluation) {
-  return evaluation.task?.title ?? 'Tarea';
+  return evaluation.task?.title ?? 'Tarea sin título';
 }
 
 function getInstrumentTitle(evaluation) {
@@ -98,9 +98,13 @@ function EvaluatorEvaluationsPage() {
     [students, selectedTask]
   );
 
-  const maxScore = instrumentItems.reduce((total, item) => total + item.maxScore, 0);
-  const score = instrumentItems.reduce((total, item) => total + Number(scores[item.id] || 0), 0);
-  const percentage = maxScore ? Math.round((score / maxScore) * 100) : 0;
+  const publishedEvaluations = evaluations.filter((evaluation) => evaluation.status === 'published');
+  const publishedAverage = publishedEvaluations.length
+    ? Math.round(
+        publishedEvaluations.reduce((total, evaluation) => total + Number(evaluation.percentage || 0), 0) /
+          publishedEvaluations.length
+      )
+    : 0;
 
   const filteredEvaluations = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -311,7 +315,7 @@ function EvaluatorEvaluationsPage() {
           <p className="eyebrow">Evaluador</p>
           <h1>Evaluaciones</h1>
           <p className="dashboard-description">
-            Aplica instrumentos, calcula notas, guarda borradores y pública resultados.
+            Aplica instrumentos, calcula notas, guarda borradores y publica resultados.
           </p>
         </div>
       </div>
@@ -343,8 +347,8 @@ function EvaluatorEvaluationsPage() {
             <Star size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{percentage}%</strong>
-            <span>Nota actual</span>
+            <strong>{publishedAverage}%</strong>
+            <span>Promedio publicado</span>
           </div>
         </article>
       </div>
@@ -405,7 +409,7 @@ function EvaluatorEvaluationsPage() {
             </div>
 
             <label>
-              Retroalimentacion
+              Retroalimentación
               <textarea name="feedback" value={draft.feedback} rows="4" onChange={handleDraftChange} />
             </label>
             <label>
@@ -414,7 +418,7 @@ function EvaluatorEvaluationsPage() {
                 name="suggestions"
                 value={draft.suggestions}
                 rows="3"
-                placeholder="Una sugerencia por linea"
+                placeholder="Una sugerencia por línea"
                 onChange={handleDraftChange}
               />
             </label>

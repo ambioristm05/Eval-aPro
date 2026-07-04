@@ -71,7 +71,7 @@ function renderSummary(summary = {}) {
   ];
 
   if (finalGrade) {
-    cards.push(['Nota final', `${finalGrade.grade}%`], ['Metodo', finalGrade.method]);
+    cards.push(['Nota final', `${finalGrade.grade}%`], ['Método', finalGrade.method]);
   }
 
   return `
@@ -132,7 +132,7 @@ function renderEvaluations(evaluations = []) {
                   <strong>${escapeHtml(item.student?.name || 'No definido')}</strong>
                   <small>${escapeHtml(item.student?.email || '')}</small>
                 </td>
-                <td>${escapeHtml(item.task?.title || 'No definido')}</td>
+                <td>${escapeHtml(item.task?.title || 'Tarea sin título')}</td>
                 <td>${escapeHtml(item.instrument?.title || 'No definido')}</td>
                 <td>${escapeHtml(`${item.score ?? 0}/${item.maxScore ?? 0}`)}</td>
                 <td>${renderGrade(item.percentage)}</td>
@@ -156,7 +156,7 @@ function renderFinalGrades(grades = []) {
           <th>Estudiante</th>
           <th>Email</th>
           <th>Nota final</th>
-          <th>Metodo</th>
+          <th>Método</th>
           <th>Evaluaciones</th>
         </tr>
       </thead>
