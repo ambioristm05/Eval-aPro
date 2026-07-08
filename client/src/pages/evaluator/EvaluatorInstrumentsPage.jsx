@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import EmptyState from '../../components/common/EmptyState.jsx';
 import {
   createResource,
   deleteResource,
@@ -60,6 +62,13 @@ function getCriteriaCount(instrument) {
   return (instrument.criteria?.length ?? 0) + (instrument.indicators?.length ?? 0);
 }
 
+function getBuilderEditPath(instrument) {
+  const id = getId(instrument);
+  if (instrument.type === 'rubric') return `/evaluator/instruments/rubric-builder/${id}`;
+  if (instrument.type === 'checklist') return `/evaluator/instruments/checklist-builder/${id}`;
+  return null;
+}
+
 function buildInstrumentPayload(formData) {
   const count = Math.max(Number(formData.criteriaCount) || 1, 1);
   const maxScore = Math.max(Number(formData.maxScore) || 0, 0);
@@ -105,6 +114,8 @@ function EvaluatorInstrumentsPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const filteredInstruments = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -209,7 +220,9 @@ function EvaluatorInstrumentsPage() {
     });
   };
 
-  const updateInstrumentStatus = async (instrumentId, status) => {
+  const applyInstrumentStatus = async (instrument, status) => {
+    const instrumentId = getId(instrument);
+
     setError('');
     setMessage('');
 
@@ -222,7 +235,23 @@ function EvaluatorInstrumentsPage() {
     }
   };
 
-  const handleDeleteInstrument = async (instrumentId) => {
+  const updateInstrumentStatus = (instrument, status) => {
+    if (status !== 'archived') {
+      applyInstrumentStatus(instrument, status);
+      return;
+    }
+
+    setConfirmAction({
+      title: `Archivar ${instrument.title}`,
+      description: 'Podrás seguir consultándolo en el historial.',
+      confirmLabel: 'Archivar instrumento',
+      onConfirm: () => applyInstrumentStatus(instrument, status),
+    });
+  };
+
+  const deleteInstrument = async (instrument) => {
+    const instrumentId = getId(instrument);
+
     setError('');
     setMessage('');
 
@@ -236,6 +265,27 @@ function EvaluatorInstrumentsPage() {
     }
   };
 
+  const handleDeleteInstrument = (instrument) => {
+    setConfirmAction({
+      title: `Eliminar ${instrument.title}`,
+      description: 'Esta acción no se puede deshacer desde esta pantalla.',
+      confirmLabel: 'Eliminar instrumento',
+      onConfirm: () => deleteInstrument(instrument),
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   return (
     <section className="management-page">
       <div className="module-hero">
@@ -246,7 +296,7 @@ function EvaluatorInstrumentsPage() {
           <p className="eyebrow">Evaluador</p>
           <h1>Instrumentos</h1>
           <p className="dashboard-description">
-            Organiza rúbricas, listas de cotejo, escalas y guias antes de construir sus
+            Organiza rúbricas, listas de cotejo, escalas y guías antes de construir sus
             criterios detallados.
           </p>
         </div>
@@ -289,7 +339,7 @@ function EvaluatorInstrumentsPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>{editingId ? 'Editar instrumento' : 'Crear instrumento'}</h2>
-            <p>Define la ficha general antes del constructor especifico.</p>
+            <p>Define la ficha general antes del constructor específico.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -359,11 +409,17 @@ function EvaluatorInstrumentsPage() {
 
             <div className="form-actions">
               <button className="button button-primary" type="submit" disabled={isSubmitting}>
-                {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
+                {isSubmitting ? (
+                  <span className="button-spinner-ring" aria-hidden="true" />
+                ) : editingId ? (
+                  <Save size={18} aria-hidden="true" />
+                ) : (
+                  <Plus size={18} aria-hidden="true" />
+                )}
                 {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear instrumento'}
               </button>
               {editingId ? (
-                <button className="button button-secondary" type="button" onClick={resetForm}>
+                <button className="button button-ghost" type="button" onClick={resetForm}>
                   Cancelar
                 </button>
               ) : null}
@@ -422,7 +478,7 @@ function EvaluatorInstrumentsPage() {
               <option value="rubric">Rúbricas</option>
               <option value="checklist">Listas</option>
               <option value="rating_scale">Escalas</option>
-              <option value="observation_guide">Guias</option>
+              <option value="observation_guide">Guías</option>
               <option value="questionnaire">Cuestionarios</option>
             </select>
             <select
@@ -439,8 +495,23 @@ function EvaluatorInstrumentsPage() {
           </div>
 
           <div className="resource-list">
-            {filteredInstruments.map((instrument) => {
+            {isLoading ? (
+              <div className="skeleton-list" aria-label="Cargando instrumentos">
+                {[0, 1, 2].map((item) => (
+                  <div className="skeleton-card" key={item}>
+                    <span className="skeleton-line skeleton-line-title" />
+                    <span className="skeleton-line" />
+                    <div className="skeleton-chip-row">
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredInstruments.map((instrument) => {
               const TypeIcon = typeIcons[instrument.type];
+              const builderEditPath = getBuilderEditPath(instrument);
 
               return (
                 <article className="resource-item" key={getId(instrument)}>
@@ -463,19 +534,30 @@ function EvaluatorInstrumentsPage() {
                   </div>
 
                   <div className="resource-actions" aria-label={`Acciones para ${instrument.title}`}>
+                    {builderEditPath ? (
+                      <Link
+                        className="icon-button"
+                        to={builderEditPath}
+                        title="Editar en constructor"
+                        aria-label={`Editar ${instrument.title} en constructor`}
+                      >
+                        <Pencil size={17} aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <button
+                        className="icon-button"
+                        type="button"
+                        onClick={() => handleEdit(instrument)}
+                        title="Editar"
+                        aria-label={`Editar ${instrument.title}`}
+                      >
+                        <Pencil size={17} aria-hidden="true" />
+                      </button>
+                    )}
                     <button
                       className="icon-button"
                       type="button"
-                      onClick={() => handleEdit(instrument)}
-                      title="Editar"
-                      aria-label={`Editar ${instrument.title}`}
-                    >
-                      <Pencil size={17} aria-hidden="true" />
-                    </button>
-                    <button
-                      className="icon-button"
-                      type="button"
-                      onClick={() => updateInstrumentStatus(getId(instrument), 'archived')}
+                      onClick={() => updateInstrumentStatus(instrument, 'archived')}
                       title="Archivar"
                       aria-label={`Archivar ${instrument.title}`}
                       disabled={instrument.status === 'archived'}
@@ -485,7 +567,7 @@ function EvaluatorInstrumentsPage() {
                     <button
                       className="icon-button danger"
                       type="button"
-                      onClick={() => handleDeleteInstrument(getId(instrument))}
+                      onClick={() => handleDeleteInstrument(instrument)}
                       title="Eliminar"
                       aria-label={`Eliminar ${instrument.title}`}
                     >
@@ -496,15 +578,32 @@ function EvaluatorInstrumentsPage() {
               );
             })}
 
-            {filteredInstruments.length === 0 ? (
-              <div className="inline-empty">
-                <h3>{isLoading ? 'Cargando instrumentos...' : 'No hay instrumentos'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Ajusta los filtros o crea un instrumento nuevo.'}</p>
-              </div>
+            {!isLoading && filteredInstruments.length === 0 ? (
+              <EmptyState
+                title="No hay instrumentos"
+                description="Ajusta los filtros o crea un instrumento nuevo."
+                action={{
+                  label: 'Crear instrumento',
+                  onClick: () => {
+                    resetForm();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  },
+                }}
+              />
             ) : null}
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }

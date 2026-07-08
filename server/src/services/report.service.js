@@ -1,5 +1,6 @@
 import { EVALUATION_STATUSES } from '../constants/evaluation.constants.js';
 import { USER_ROLES } from '../constants/user.constants.js';
+import { Class as AcademicClass } from '../models/Class.js';
 import { Evaluation } from '../models/Evaluation.js';
 import { Group } from '../models/Group.js';
 import { Instrument } from '../models/Instrument.js';
@@ -11,7 +12,18 @@ import { calculateFinalGrade } from '../utils/calculateGrades.js';
 const evaluationPopulate = [
   { path: 'student', select: 'name email status' },
   { path: 'evaluator', select: 'name email role' },
-  { path: 'task', select: 'title weight dueDate status group' },
+  {
+    path: 'task',
+    select: 'title weight dueDate status group class',
+    populate: {
+      path: 'class',
+      select: 'name status order module course',
+      populate: [
+        { path: 'module', select: 'name status order course' },
+        { path: 'course', select: 'name status' }
+      ]
+    }
+  },
   { path: 'instrument', select: 'title type status maxScore' }
 ];
 
@@ -25,6 +37,38 @@ function publishedFilter(req) {
     status: EVALUATION_STATUSES.PUBLISHED,
     ...evaluatorScope(req)
   };
+}
+
+function hierarchyQuery(req) {
+  return req.validated?.query ?? {};
+}
+
+function hasHierarchyQuery(req) {
+  const { courseId, moduleId, classId } = hierarchyQuery(req);
+  return Boolean(courseId || moduleId || classId);
+}
+
+async function buildHierarchyTaskFilter(req) {
+  if (!hasHierarchyQuery(req)) return {};
+
+  const { courseId, moduleId, classId } = hierarchyQuery(req);
+  const classFilter = {
+    ...evaluatorScope(req)
+  };
+
+  if (courseId) classFilter.course = courseId;
+  if (moduleId) classFilter.module = moduleId;
+  if (classId) classFilter._id = classId;
+
+  const classIds = await AcademicClass.find(classFilter).distinct('_id');
+  if (!classIds.length) return { task: { $in: [] } };
+
+  const taskIds = await Task.find({
+    ...evaluatorScope(req),
+    class: { $in: classIds }
+  }).distinct('_id');
+
+  return { task: { $in: taskIds } };
 }
 
 async function findGroupForReport(req, groupId) {
@@ -103,9 +147,13 @@ export async function buildStudentReport(req, studentId) {
     evaluationFilter.studentReportEnabled = true;
   }
 
+  const hierarchyFilter = await buildHierarchyTaskFilter(req);
+
   const [student, evaluations] = await Promise.all([
     User.findOne(studentFilter).populate('groups', 'name status evaluator'),
-    Evaluation.find(evaluationFilter).populate(evaluationPopulate).sort({ publishedAt: -1, evaluatedAt: -1 })
+    Evaluation.find({ ...evaluationFilter, ...hierarchyFilter })
+      .populate(evaluationPopulate)
+      .sort({ publishedAt: -1, evaluatedAt: -1 })
   ]);
 
   if (!student) throw new AppError('Estudiante no encontrado', 404);
@@ -124,6 +172,7 @@ export async function buildStudentReport(req, studentId) {
       finalGrade: calculateFinalGrade(evaluations)
     },
     evaluations: evaluations.map(serializeEvaluation),
+    filters: hierarchyQuery(req),
     generatedAt: new Date().toISOString()
   };
 }
@@ -131,9 +180,11 @@ export async function buildStudentReport(req, studentId) {
 export async function buildGroupReport(req, groupId) {
   const group = await findGroupForReport(req, groupId);
   const studentIds = group.students.map((student) => student._id);
+  const hierarchyFilter = await buildHierarchyTaskFilter(req);
   const evaluations = await Evaluation.find({
     ...publishedFilter(req),
-    student: { $in: studentIds }
+    student: { $in: studentIds },
+    ...hierarchyFilter
   })
     .populate(evaluationPopulate)
     .sort({ publishedAt: -1, evaluatedAt: -1 });
@@ -155,6 +206,7 @@ export async function buildGroupReport(req, groupId) {
     summary: summarizeEvaluations(evaluations),
     students,
     evaluations: evaluations.map(serializeEvaluation),
+    filters: hierarchyQuery(req),
     generatedAt: new Date().toISOString()
   };
 }
@@ -180,9 +232,11 @@ export async function buildTaskReport(req, taskId) {
 export async function buildFinalGradesReport(req, groupId) {
   const group = await findGroupForReport(req, groupId);
   const studentIds = group.students.map((student) => student._id);
+  const hierarchyFilter = await buildHierarchyTaskFilter(req);
   const evaluations = await Evaluation.find({
     ...publishedFilter(req),
-    student: { $in: studentIds }
+    student: { $in: studentIds },
+    ...hierarchyFilter
   }).populate({ path: 'task', select: 'title weight dueDate' });
 
   const grades = group.students.map((student) => {
@@ -197,6 +251,7 @@ export async function buildFinalGradesReport(req, groupId) {
     type: 'final_grades',
     group,
     grades,
+    filters: hierarchyQuery(req),
     generatedAt: new Date().toISOString()
   };
 }
@@ -211,7 +266,8 @@ export async function buildInstrumentReport(req, instrumentId) {
 
   const evaluations = await Evaluation.find({
     ...publishedFilter(req),
-    instrument: instrument._id
+    instrument: instrument._id,
+    ...(await buildHierarchyTaskFilter(req))
   })
     .populate(evaluationPopulate)
     .sort({ publishedAt: -1, evaluatedAt: -1 });
@@ -221,6 +277,7 @@ export async function buildInstrumentReport(req, instrumentId) {
     instrument,
     summary: summarizeEvaluations(evaluations),
     evaluations: evaluations.map(serializeEvaluation),
+    filters: hierarchyQuery(req),
     generatedAt: new Date().toISOString()
   };
 }

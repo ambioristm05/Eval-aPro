@@ -10,12 +10,12 @@ const moduleCards = [
   {
     icon: FileText,
     title: 'Instrumentos',
-    text: 'Base preparada para rúbricas, listas de cotejo y escalas.',
+    text: 'Crea rúbricas, listas de cotejo y escalas para cada actividad.',
   },
   {
     icon: Printer,
     title: 'Reportes',
-    text: 'La estructura deja listo el camino para impresión y PDF.',
+    text: 'Genera vistas imprimibles y archivos PDF para compartir resultados.',
   },
 ];
 

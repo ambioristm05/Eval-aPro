@@ -86,7 +86,11 @@ function StudentRegisterPage() {
           </label>
           {error ? <p className="form-message form-message-error">{error}</p> : null}
           <button className="button button-primary" type="submit" disabled={isSubmitting}>
-            <UserPlus size={18} aria-hidden="true" />
+            {isSubmitting ? (
+              <span className="button-spinner-ring" aria-hidden="true" />
+            ) : (
+              <UserPlus size={18} aria-hidden="true" />
+            )}
             {isSubmitting ? 'Creando cuenta...' : 'Registrarme'}
           </button>
         </form>

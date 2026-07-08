@@ -1,5 +1,6 @@
 import {
   Archive,
+  CheckCircle2,
   GraduationCap,
   Link,
   Pencil,
@@ -11,6 +12,8 @@ import {
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import EmptyState from '../../components/common/EmptyState.jsx';
 import {
   addStudentToGroup,
   createResource,
@@ -39,6 +42,10 @@ function getStudentCount(group) {
   return Array.isArray(group.students) ? group.students.length : 0;
 }
 
+function getStudentName(student) {
+  return student.name ?? student.email ?? 'Estudiante sin nombre';
+}
+
 function EvaluatorGroupsPage() {
   const [groups, setGroups] = useState([]);
   const [availableStudents, setAvailableStudents] = useState([]);
@@ -54,6 +61,8 @@ function EvaluatorGroupsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const activeGroupsForSelect = useMemo(
     () => groups.filter((group) => group.status === 'active'),
@@ -76,6 +85,10 @@ function EvaluatorGroupsPage() {
 
   const activeGroups = groups.filter((group) => group.status === 'active').length;
   const totalStudents = groups.reduce((total, group) => total + getStudentCount(group), 0);
+  const selectedStudent = useMemo(
+    () => availableStudents.find((student) => getId(student) === selectedStudentId),
+    [availableStudents, selectedStudentId],
+  );
 
   const loadGroups = async () => {
     const data = await listResource('groups', { limit: 100 });
@@ -208,7 +221,7 @@ function EvaluatorGroupsPage() {
     });
   };
 
-  const handleToggleStatus = async (group) => {
+  const toggleGroupStatus = async (group) => {
     setError('');
     setMessage('');
 
@@ -223,7 +236,23 @@ function EvaluatorGroupsPage() {
     }
   };
 
-  const handleDelete = async (groupId) => {
+  const handleToggleStatus = (group) => {
+    if (group.status !== 'active') {
+      toggleGroupStatus(group);
+      return;
+    }
+
+    setConfirmAction({
+      title: `Archivar ${group.name}`,
+      description: 'Podrás reactivar este grupo más adelante.',
+      confirmLabel: 'Archivar grupo',
+      onConfirm: () => toggleGroupStatus(group),
+    });
+  };
+
+  const deleteGroup = async (group) => {
+    const groupId = getId(group);
+
     setError('');
     setMessage('');
 
@@ -234,6 +263,27 @@ function EvaluatorGroupsPage() {
       await loadGroups();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    }
+  };
+
+  const handleDelete = (group) => {
+    setConfirmAction({
+      title: `Eliminar ${group.name}`,
+      description: 'Esta acción no se puede deshacer desde esta pantalla.',
+      confirmLabel: 'Eliminar grupo',
+      onConfirm: () => deleteGroup(group),
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -341,7 +391,7 @@ function EvaluatorGroupsPage() {
                 <textarea
                   name="description"
                   value={formData.description}
-                  placeholder="Proposito del grupo o actividad principal"
+                  placeholder="Propósito del grupo o actividad principal"
                   rows="4"
                   onChange={handleChange}
                 />
@@ -358,11 +408,17 @@ function EvaluatorGroupsPage() {
 
               <div className="form-actions">
                 <button className="button button-primary" type="submit" disabled={isSubmitting}>
-                  {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
+                  {isSubmitting ? (
+                    <span className="button-spinner-ring" aria-hidden="true" />
+                  ) : editingId ? (
+                    <Save size={18} aria-hidden="true" />
+                  ) : (
+                    <Plus size={18} aria-hidden="true" />
+                  )}
                   {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear grupo'}
                 </button>
                 {editingId ? (
-                  <button className="button button-secondary" type="button" onClick={resetForm}>
+                  <button className="button button-ghost" type="button" onClick={resetForm}>
                     Cancelar
                   </button>
                 ) : null}
@@ -392,31 +448,67 @@ function EvaluatorGroupsPage() {
                 </select>
               </label>
 
-              <label>
-                Buscar estudiante disponible
-                <input
-                  type="search"
-                  value={studentSearch}
-                  placeholder="Nombre o correo"
-                  onChange={(event) => setStudentSearch(event.target.value)}
-                />
-              </label>
+              <div className="assignment-selector">
+                <div className="assignment-header">
+                  <span>Estudiante disponible</span>
+                  <strong>{availableStudents.length}</strong>
+                </div>
 
-              <label>
-                Estudiante
-                <select
-                  value={selectedStudentId}
-                  onChange={(event) => setSelectedStudentId(event.target.value)}
-                  required
-                  disabled={!availableStudents.length}
-                >
-                  {availableStudents.map((student) => (
-                    <option key={getId(student)} value={getId(student)}>
-                      {student.name} - {student.email}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                {selectedStudent ? (
+                  <div className="selected-student-chips" aria-label="Estudiante seleccionado">
+                    <button className="student-chip" type="button" onClick={() => setSelectedStudentId('')}>
+                      {getStudentName(selectedStudent)}
+                    </button>
+                  </div>
+                ) : null}
+
+                <label className="search-field assignment-search">
+                  <Search size={18} aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={studentSearch}
+                    placeholder="Nombre o correo"
+                    onChange={(event) => setStudentSearch(event.target.value)}
+                  />
+                </label>
+
+                <div className="assignment-list" aria-label="Seleccionar estudiante disponible">
+                  {availableStudents.map((student) => {
+                    const studentId = getId(student);
+                    const isSelected = selectedStudentId === studentId;
+
+                    return (
+                      <label className={`assignment-option${isSelected ? ' assignment-option-selected' : ''}`} key={studentId}>
+                        <input
+                          type="radio"
+                          name="selectedStudentId"
+                          checked={isSelected}
+                          onChange={() => setSelectedStudentId(studentId)}
+                        />
+                        <span className="assignment-check" aria-hidden="true">
+                          <CheckCircle2 size={15} />
+                        </span>
+                        <span className="assignment-student">
+                          <strong>{getStudentName(student)}</strong>
+                          <small>{student.email}</small>
+                        </span>
+                      </label>
+                    );
+                  })}
+
+                  {selectedGroupId && availableStudents.length === 0 ? (
+                    <p className="assignment-empty">
+                      {studentSearch
+                        ? 'No hay estudiantes disponibles que coincidan con la búsqueda.'
+                        : 'No hay estudiantes disponibles para vincular a este grupo.'}
+                    </p>
+                  ) : null}
+
+                  {!selectedGroupId ? (
+                    <p className="assignment-empty">Selecciona un grupo activo para buscar estudiantes disponibles.</p>
+                  ) : null}
+                </div>
+              </div>
 
               <button
                 className="button button-primary"
@@ -462,7 +554,20 @@ function EvaluatorGroupsPage() {
           </div>
 
           <div className="resource-list">
-            {filteredGroups.map((group) => (
+            {isLoading ? (
+              <div className="skeleton-list" aria-label="Cargando grupos">
+                {[0, 1, 2].map((item) => (
+                  <div className="skeleton-card" key={item}>
+                    <span className="skeleton-line skeleton-line-title" />
+                    <span className="skeleton-line" />
+                    <div className="skeleton-chip-row">
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredGroups.map((group) => (
               <article className="resource-item" key={getId(group)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
@@ -515,7 +620,7 @@ function EvaluatorGroupsPage() {
                   <button
                     className="icon-button danger"
                     type="button"
-                    onClick={() => handleDelete(getId(group))}
+                    onClick={() => handleDelete(group)}
                     title="Eliminar"
                     aria-label={`Eliminar ${group.name}`}
                   >
@@ -525,15 +630,32 @@ function EvaluatorGroupsPage() {
               </article>
             ))}
 
-            {filteredGroups.length === 0 ? (
-              <div className="inline-empty">
-                <h3>{isLoading ? 'Cargando grupos...' : 'No hay grupos'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Ajusta la búsqueda o crea un grupo nuevo.'}</p>
-              </div>
+            {!isLoading && filteredGroups.length === 0 ? (
+              <EmptyState
+                title="No hay grupos"
+                description="Ajusta la búsqueda o crea un grupo nuevo."
+                action={{
+                  label: 'Crear grupo',
+                  onClick: () => {
+                    resetForm();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  },
+                }}
+              />
             ) : null}
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }
