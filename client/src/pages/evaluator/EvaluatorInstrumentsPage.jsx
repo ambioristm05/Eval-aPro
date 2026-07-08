@@ -22,6 +22,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   title: '',
@@ -53,10 +54,6 @@ const typeIcons = {
   observation_guide: ListChecks,
   questionnaire: FileQuestion,
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function getCriteriaCount(instrument) {
   return (instrument.criteria?.length ?? 0) + (instrument.indicators?.length ?? 0);

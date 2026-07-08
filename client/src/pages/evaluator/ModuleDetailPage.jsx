@@ -11,6 +11,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
@@ -23,10 +24,6 @@ const statusLabels = {
   active: 'Activo',
   archived: 'Archivado',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function ModuleDetailPage() {
   const { courseId, moduleId } = useParams();
@@ -160,7 +157,7 @@ function ModuleDetailPage() {
 
     try {
       const data = await deleteResource('classes', getId(academicClass), options);
-      const linkedTasks = data.cascade?.tasksLinked ?? 0;
+      const linkedTasks = data.linkedTasks ?? 0;
       setMessage(
         linkedTasks
           ? `Clase archivada. Sus ${linkedTasks} tarea(s) asociada(s) siguen disponibles en modo solo lectura.`

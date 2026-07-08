@@ -10,6 +10,7 @@ import { Link, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import { createResource, getResource, updateResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const initialLevels = [
   { id: 'level-excellent', name: 'Excelente', score: 5 },
@@ -45,10 +46,6 @@ const initialCriteria = [
 
 function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-}
-
-function getId(resource, fallback) {
-  return resource?.id ?? resource?._id ?? fallback;
 }
 
 function buildRubricPayload(rubric, criteria, levels) {

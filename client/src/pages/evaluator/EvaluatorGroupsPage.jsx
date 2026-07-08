@@ -22,6 +22,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
@@ -33,10 +34,6 @@ const statusLabels = {
   active: 'Activo',
   archived: 'Archivado',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function getStudentCount(group) {
   return Array.isArray(group.students) ? group.students.length : 0;

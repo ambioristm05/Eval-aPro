@@ -26,6 +26,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   title: '',
@@ -43,10 +44,6 @@ const statusLabels = {
   pending: 'Por evaluar',
   completed: 'Evaluada',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function toInputDate(value) {
   if (!value) return '';
@@ -158,8 +155,13 @@ function ClassDetailPage() {
   );
 
   const loadTasks = async () => {
-    const data = await listClassTasks(classId, { limit: 100 });
-    setTasks(data.tasks ?? []);
+    try {
+      const data = await listClassTasks(classId, { limit: 100 });
+      setTasks(data.tasks ?? []);
+      setError('');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
   useEffect(() => {

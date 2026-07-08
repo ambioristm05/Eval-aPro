@@ -18,6 +18,7 @@ import {
   suspendStudent,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
@@ -31,10 +32,6 @@ const statusLabels = {
   suspended: 'Suspendido',
   deleted: 'Eliminado',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function getGroupNames(student) {
   if (!student.groups?.length) return 'Sin grupo';

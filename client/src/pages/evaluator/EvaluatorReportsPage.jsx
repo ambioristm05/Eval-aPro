@@ -9,6 +9,7 @@ import {
   updateStudentReportPermission,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 import { openPrintableHtml } from '../../utils/printReport.js';
 
 const reportTitles = {
@@ -18,16 +19,6 @@ const reportTitles = {
   final: 'Reporte final',
   instrument: 'Reporte por instrumento',
 };
-
-function getId(resource) {
-  return resource?.id ?? resource?._id ?? '';
-}
-
-function idEquals(value, target) {
-  if (!value || !target) return false;
-  const valueId = typeof value === 'string' ? value : getId(value);
-  return valueId === target;
-}
 
 function getStudentName(evaluation) {
   return evaluation.student?.name ?? 'Estudiante';
@@ -89,17 +80,12 @@ function EvaluatorReportsPage() {
     hierarchyFilter.courseId || hierarchyFilter.moduleId || hierarchyFilter.classId
   );
 
-  const filteredTasks = useMemo(() => {
-    if (!isHierarchyFilterActive) return tasks;
-
-    return tasks.filter((task) => {
-      const taskClass = task.class;
-      if (!taskClass) return false;
-      if (hierarchyFilter.classId) return idEquals(taskClass, hierarchyFilter.classId);
-      if (hierarchyFilter.moduleId) return idEquals(taskClass.module, hierarchyFilter.moduleId);
-      return idEquals(taskClass.course, hierarchyFilter.courseId);
-    });
-  }, [tasks, hierarchyFilter, isHierarchyFilterActive]);
+  // Cuando hay filtro de jerarquía activo, `hierarchyScopedTasks` trae la lista ya
+  // acotada por el servidor (ver el useEffect más abajo), evitando depender del
+  // recorte de 100 tareas de la carga inicial cuando el evaluador tiene más tareas
+  // que ese límite. `null` significa "sin filtro activo, usar el catálogo completo".
+  const [hierarchyScopedTasks, setHierarchyScopedTasks] = useState(null);
+  const filteredTasks = hierarchyScopedTasks ?? tasks;
 
   // Grupos, estudiantes e instrumentos no tienen un vínculo directo con la jerarquía académica,
   // así que se acotan a los que participan en al menos una tarea dentro del curso/módulo/clase filtrado.
@@ -222,6 +208,30 @@ function EvaluatorReportsPage() {
       isMounted = false;
     };
   }, [hierarchyParams, reportType, selectedId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchScopedTasks() {
+      if (!isHierarchyFilterActive) {
+        setHierarchyScopedTasks(null);
+        return;
+      }
+
+      try {
+        const data = await listResource('tasks', { limit: 100, ...hierarchyParams });
+        if (isMounted) setHierarchyScopedTasks(data.tasks ?? []);
+      } catch (requestError) {
+        if (isMounted) setError(getErrorMessage(requestError));
+      }
+    }
+
+    fetchScopedTasks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hierarchyParams, isHierarchyFilterActive]);
 
   useEffect(() => {
     let isMounted = true;

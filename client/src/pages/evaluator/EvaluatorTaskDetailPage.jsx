@@ -19,6 +19,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   title: '',
@@ -36,10 +37,6 @@ const statusLabels = {
   pending: 'Por evaluar',
   completed: 'Evaluada',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function toInputDate(value) {
   if (!value) return '';
@@ -141,9 +138,14 @@ function EvaluatorTaskDetailPage() {
   const classTasksPath = `/evaluator/courses/${courseId}/modules/${moduleId}/classes/${classId}`;
 
   const loadTask = async () => {
-    const data = await getResource('tasks', taskId);
-    setTask(data.task);
-    setFormData(buildFormData(data.task));
+    try {
+      const data = await getResource('tasks', taskId);
+      setTask(data.task);
+      setFormData(buildFormData(data.task));
+      setError('');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
   };
 
   useEffect(() => {

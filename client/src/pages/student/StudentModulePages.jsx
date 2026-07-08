@@ -2,15 +2,12 @@ import { CalendarClock, ClipboardList, Search, Users, Weight } from 'lucide-reac
 import { useEffect, useMemo, useState } from 'react';
 import { getStudentTasks } from '../../services/studentService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const statusLabels = {
   pending: 'Por evaluar',
   completed: 'Evaluada',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function formatDate(value) {
   if (!value) return 'Sin fecha';

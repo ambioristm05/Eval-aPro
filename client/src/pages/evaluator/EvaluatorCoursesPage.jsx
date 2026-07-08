@@ -5,6 +5,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import { createResource, deleteResource, listResource, updateResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
@@ -16,10 +17,6 @@ const statusLabels = {
   active: 'Activo',
   archived: 'Archivado',
 };
-
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
 
 function EvaluatorCoursesPage() {
   const [courses, setCourses] = useState([]);

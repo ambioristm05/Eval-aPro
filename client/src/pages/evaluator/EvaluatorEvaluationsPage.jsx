@@ -8,6 +8,7 @@ import {
   updateResource,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const defaultDraft = {
   studentIds: [],
@@ -21,11 +22,6 @@ const statusLabels = {
   completed: 'Completada',
   published: 'Publicada',
 };
-
-function getId(resource) {
-  if (typeof resource === 'string') return resource;
-  return resource?.id ?? resource?._id ?? '';
-}
 
 function getStudentName(evaluation) {
   return evaluation.student?.name ?? 'Estudiante';
@@ -414,14 +410,19 @@ function EvaluatorEvaluationsPage() {
         .filter(Boolean);
       const status = targetStatus === 'published' ? 'completed' : targetStatus;
 
-      const succeeded = [];
-      const failed = [];
+      const results = await Promise.allSettled(
+        targetStudents.map(async (student) => {
+          const studentId = getId(student);
+          // Look up this student's existing evaluation directly instead of relying on the
+          // locally-loaded `evaluations` list, which is capped at 100 records and may not
+          // include it — using it here would wrongly try to create a duplicate.
+          const existingList = await listResource('evaluations', {
+            studentId,
+            taskId: draft.taskId,
+            limit: 1,
+          });
+          const existingEvaluation = existingList.evaluations?.[0];
 
-      for (const student of targetStudents) {
-        const studentId = getId(student);
-
-        try {
-          const existingEvaluation = findExistingEvaluation(evaluations, studentId, draft.taskId);
           const saved = existingEvaluation
             ? await updateResource('evaluations', getId(existingEvaluation), {
                 answers,
@@ -439,27 +440,46 @@ function EvaluatorEvaluationsPage() {
               });
 
           if (targetStatus === 'published') {
-            await publishEvaluation(getId(saved.evaluation));
+            try {
+              await publishEvaluation(getId(saved.evaluation));
+            } catch (publishError) {
+              // The evaluation was already saved successfully; only publishing failed.
+              // Tag the error so the caller can report this distinctly from a save failure.
+              publishError.savedButNotPublished = true;
+              throw publishError;
+            }
           }
+        })
+      );
 
-          succeeded.push(student.name);
-        } catch (studentError) {
-          failed.push(`${student.name}: ${getErrorMessage(studentError)}`);
+      const succeeded = [];
+      const publishFailed = [];
+      const failed = [];
+
+      results.forEach((result, index) => {
+        const studentName = targetStudents[index].name;
+        if (result.status === 'fulfilled') {
+          succeeded.push(studentName);
+        } else if (result.reason?.savedButNotPublished) {
+          publishFailed.push(`${studentName}: ${getErrorMessage(result.reason)}`);
+        } else {
+          failed.push(`${studentName}: ${getErrorMessage(result.reason)}`);
         }
-      }
+      });
 
       const verb = targetStatus === 'published' ? 'publicada(s)' : 'guardada(s)';
+      const messageParts = [];
+      if (succeeded.length) messageParts.push(`Evaluación ${verb} para ${succeeded.length} estudiante(s).`);
+      if (publishFailed.length) {
+        messageParts.push(`Se guardó pero no se pudo publicar para: ${publishFailed.join('; ')}.`);
+      }
+      if (failed.length) messageParts.push(`No se pudo guardar para: ${failed.join('; ')}.`);
 
-      if (succeeded.length && !failed.length) {
-        setMessage(`Evaluación ${verb} para ${succeeded.length} estudiante(s).`);
-        setDraft((current) => ({ ...current, feedback: '', suggestions: '' }));
-      } else if (succeeded.length && failed.length) {
-        setMessage(
-          `Evaluación ${verb} para ${succeeded.length} estudiante(s). No se pudo para: ${failed.join('; ')}.`
-        );
+      if (succeeded.length || publishFailed.length) {
+        setMessage(messageParts.join(' '));
         setDraft((current) => ({ ...current, feedback: '', suggestions: '' }));
       } else {
-        setError(`No se pudo guardar la evaluación. ${failed.join('; ')}`);
+        setError(messageParts.join(' '));
       }
 
       await loadEvaluations();
