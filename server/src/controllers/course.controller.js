@@ -4,6 +4,7 @@ import { Course } from '../models/Course.js';
 import { Module as AcademicModule } from '../models/Module.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { bulkArchive } from '../utils/cascadeArchive.js';
 
 function courseScope(req) {
   return { evaluator: req.user._id };
@@ -103,15 +104,10 @@ export const deleteCourse = asyncHandler(async (req, res) => {
   let classesArchived = 0;
 
   if (activeModuleIds.length > 0 && cascade) {
-    const [classResult, moduleResult] = await Promise.all([
-      AcademicClass.updateMany(
-        { module: { $in: activeModuleIds }, evaluator: req.user._id, status: ACADEMIC_STATUSES.ACTIVE },
-        { $set: { status: ACADEMIC_STATUSES.ARCHIVED } }
-      ),
-      AcademicModule.updateMany({ _id: { $in: activeModuleIds } }, { $set: { status: ACADEMIC_STATUSES.ARCHIVED } })
+    [classesArchived, modulesArchived] = await Promise.all([
+      bulkArchive(AcademicClass, { module: { $in: activeModuleIds }, evaluator: req.user._id }),
+      bulkArchive(AcademicModule, { _id: { $in: activeModuleIds } })
     ]);
-    classesArchived = classResult.modifiedCount ?? 0;
-    modulesArchived = moduleResult.modifiedCount ?? 0;
   }
 
   course.status = ACADEMIC_STATUSES.ARCHIVED;

@@ -3,6 +3,7 @@ import { Class as AcademicClass } from '../models/Class.js';
 import { Module as AcademicModule } from '../models/Module.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { bulkArchive } from '../utils/cascadeArchive.js';
 
 async function findModuleForEvaluator(req, id) {
   const module = await AcademicModule.findOne({
@@ -58,11 +59,7 @@ export const deleteModule = asyncHandler(async (req, res) => {
   let classesArchived = 0;
 
   if (activeClasses > 0 && cascade) {
-    const classResult = await AcademicClass.updateMany(
-      { module: module._id, evaluator: req.user._id, status: ACADEMIC_STATUSES.ACTIVE },
-      { $set: { status: ACADEMIC_STATUSES.ARCHIVED } }
-    );
-    classesArchived = classResult.modifiedCount ?? 0;
+    classesArchived = await bulkArchive(AcademicClass, { module: module._id, evaluator: req.user._id });
   }
 
   module.status = ACADEMIC_STATUSES.ARCHIVED;
