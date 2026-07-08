@@ -1,6 +1,7 @@
 import { TASK_STATUSES } from '../constants/task.constants.js';
 import { USER_ROLES, USER_STATUSES } from '../constants/user.constants.js';
 import { ensureInstrumentForEvaluator } from './instrument.controller.js';
+import { Class as AcademicClass } from '../models/Class.js';
 import { Group } from '../models/Group.js';
 import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
@@ -9,9 +10,17 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const taskPopulate = [
   { path: 'evaluator', select: 'name email role' },
+  {
+    path: 'class',
+    select: 'name description status order module course evaluator',
+    populate: [
+      { path: 'course', select: 'name status' },
+      { path: 'module', select: 'name status' }
+    ]
+  },
   { path: 'group', select: 'name status evaluator' },
   { path: 'students', select: 'name email role status' },
-  { path: 'instrument', select: 'title type status maxScore criteria indicators' }
+  { path: 'instrument', select: 'title type status maxScore criteria indicators options' }
 ];
 
 function taskScope(req) {
@@ -33,6 +42,27 @@ async function findTaskForUser(req, id) {
   }
 
   return task;
+}
+
+async function findClassForEvaluator(req, classId) {
+  const academicClass = await AcademicClass.findOne({
+    _id: classId,
+    evaluator: req.user._id
+  });
+
+  if (!academicClass) {
+    throw new AppError('Clase no encontrada', 404);
+  }
+
+  return academicClass;
+}
+
+function ensureValidTaskDates(task) {
+  if (!task.startDate || !task.dueDate) return;
+
+  if (task.dueDate < task.startDate) {
+    throw new AppError('La fecha de entrega debe ser posterior o igual a la fecha de inicio', 400);
+  }
 }
 
 async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
@@ -88,6 +118,46 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
 }
 
 export const createTask = asyncHandler(async (req, res) => {
+  const {
+    title,
+    description,
+    status,
+    group: groupId,
+    students: studentIds,
+    instrument,
+    startDate,
+    dueDate,
+    weight,
+    class: classId
+  } = req.validated.body;
+  const academicClass = await findClassForEvaluator(req, classId);
+  const relations = await resolveTaskRelations(req, { groupId, studentIds });
+  const resolvedInstrument = await ensureInstrumentForEvaluator({
+    instrumentId: instrument,
+    evaluatorId: req.user._id
+  });
+
+  const task = await Task.create({
+    title,
+    description,
+    status,
+    evaluator: req.user._id,
+    class: academicClass._id,
+    group: relations.group?._id,
+    students: relations.students.map((student) => student._id),
+    instrument: resolvedInstrument?._id,
+    startDate,
+    dueDate,
+    weight
+  });
+
+  const populatedTask = await Task.findById(task._id).populate(taskPopulate);
+
+  res.status(201).json({ task: populatedTask });
+});
+
+export const createTaskForClass = asyncHandler(async (req, res) => {
+  const academicClass = await findClassForEvaluator(req, req.validated.params.classId);
   const { title, description, status, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
   const relations = await resolveTaskRelations(req, { groupId, studentIds });
   const resolvedInstrument = await ensureInstrumentForEvaluator({
@@ -100,6 +170,7 @@ export const createTask = asyncHandler(async (req, res) => {
     description,
     status,
     evaluator: req.user._id,
+    class: academicClass._id,
     group: relations.group?._id,
     students: relations.students.map((student) => student._id),
     instrument: resolvedInstrument?._id,
@@ -110,7 +181,7 @@ export const createTask = asyncHandler(async (req, res) => {
 
   const populatedTask = await Task.findById(task._id).populate(taskPopulate);
 
-  res.status(201).json({ task: populatedTask });
+  res.status(201).json({ task: populatedTask, class: academicClass });
 });
 
 export const getTasks = asyncHandler(async (req, res) => {
@@ -132,6 +203,37 @@ export const getTasks = asyncHandler(async (req, res) => {
 
   res.json({
     tasks,
+    pagination: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit) || 1
+    }
+  });
+});
+
+export const getClassTasks = asyncHandler(async (req, res) => {
+  const academicClass = await findClassForEvaluator(req, req.validated.params.classId);
+  const { search, status, groupId, studentId, page, limit } = req.validated.query;
+  const filter = {
+    evaluator: req.user._id,
+    class: academicClass._id
+  };
+
+  if (status) filter.status = status;
+  if (groupId) filter.group = groupId;
+  if (studentId) filter.students = studentId;
+  if (search) filter.title = { $regex: search, $options: 'i' };
+
+  const skip = (page - 1) * limit;
+  const [tasks, total] = await Promise.all([
+    Task.find(filter).populate(taskPopulate).sort({ dueDate: 1, createdAt: -1 }).skip(skip).limit(limit),
+    Task.countDocuments(filter)
+  ]);
+
+  res.json({
+    tasks,
+    class: academicClass,
     pagination: {
       total,
       page,
@@ -175,6 +277,8 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (startDate !== undefined) task.startDate = startDate;
   if (dueDate !== undefined) task.dueDate = dueDate;
   if (weight !== undefined) task.weight = weight;
+
+  ensureValidTaskDates(task);
 
   await task.save();
 

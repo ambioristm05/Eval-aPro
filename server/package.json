@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
+    "migrate:academic-hierarchy": "node src/scripts/migrateAcademicHierarchy.js",
     "lint": "eslint src",
     "test": "vitest run"
   },

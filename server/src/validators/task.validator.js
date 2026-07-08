@@ -26,17 +26,45 @@ const taskBodyShape = {
 };
 
 export const createTaskSchema = z.object({
+  body: z
+    .object({ ...taskBodyShape, class: mongoIdSchema })
+    .refine(validateDateRange, {
+      message: 'La fecha de entrega debe ser posterior o igual a la fecha de inicio',
+      path: ['dueDate']
+    }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+export const createClassTaskSchema = z.object({
   body: z.object(taskBodyShape).refine(validateDateRange, {
     message: 'La fecha de entrega debe ser posterior o igual a la fecha de inicio',
     path: ['dueDate']
   }),
-  params: z.object({}).optional(),
+  params: z.object({
+    classId: mongoIdSchema
+  }),
   query: z.object({}).optional()
 });
 
 export const listTasksSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
+  query: z.object({
+    search: z.string().trim().max(100).optional(),
+    status: z.enum(Object.values(TASK_STATUSES)).optional(),
+    groupId: mongoIdSchema.optional(),
+    studentId: mongoIdSchema.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20)
+  })
+});
+
+export const listClassTasksSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({
+    classId: mongoIdSchema
+  }),
   query: z.object({
     search: z.string().trim().max(100).optional(),
     status: z.enum(Object.values(TASK_STATUSES)).optional(),

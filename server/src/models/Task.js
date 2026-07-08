@@ -23,6 +23,11 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
       required: true
     },
+    class: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Class',
+      required: true
+    },
     group: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Group'
@@ -58,6 +63,8 @@ const taskSchema = new mongoose.Schema(
 );
 
 taskSchema.index({ evaluator: 1, status: 1 });
+taskSchema.index({ evaluator: 1, class: 1, status: 1 });
+taskSchema.index({ class: 1, dueDate: 1 });
 taskSchema.index({ group: 1 });
 taskSchema.index({ students: 1 });
 taskSchema.index({ dueDate: 1 });
