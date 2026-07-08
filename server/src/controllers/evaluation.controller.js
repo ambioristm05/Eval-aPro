@@ -15,7 +15,7 @@ const evaluationPopulate = [
   { path: 'student', select: 'name email role status' },
   { path: 'evaluator', select: 'name email role' },
   { path: 'task', select: 'title status weight dueDate group students' },
-  { path: 'instrument', select: 'title type status maxScore criteria indicators' }
+  { path: 'instrument', select: 'title type status maxScore criteria indicators options' }
 ];
 
 function evaluationScope(req) {

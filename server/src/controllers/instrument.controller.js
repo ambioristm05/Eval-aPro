@@ -1,4 +1,4 @@
-import { INSTRUMENT_STATUSES } from '../constants/instrument.constants.js';
+import { INSTRUMENT_STATUSES, INSTRUMENT_TYPES } from '../constants/instrument.constants.js';
 import { USER_ROLES } from '../constants/user.constants.js';
 import { Instrument } from '../models/Instrument.js';
 import { AppError } from '../utils/AppError.js';
@@ -22,6 +22,14 @@ async function findInstrumentForUser(req, id) {
   return instrument;
 }
 
+function hasValidStructure(instrument) {
+  if (instrument.type === INSTRUMENT_TYPES.CHECKLIST) return instrument.indicators.length > 0;
+  if ([INSTRUMENT_TYPES.RUBRIC, INSTRUMENT_TYPES.RATING_SCALE].includes(instrument.type)) {
+    return instrument.criteria.length > 0;
+  }
+  return instrument.criteria.length > 0 || instrument.indicators.length > 0;
+}
+
 export async function ensureInstrumentForEvaluator({ instrumentId, evaluatorId, allowDraft = true }) {
   if (!instrumentId) return null;
 
@@ -43,7 +51,7 @@ export async function ensureInstrumentForEvaluator({ instrumentId, evaluatorId, 
 }
 
 export const createInstrument = asyncHandler(async (req, res) => {
-  const { title, description, type, criteria, indicators, status } = req.validated.body;
+  const { title, description, type, criteria, indicators, options, status } = req.validated.body;
 
   const instrument = await Instrument.create({
     title,
@@ -51,6 +59,7 @@ export const createInstrument = asyncHandler(async (req, res) => {
     type,
     criteria,
     indicators,
+    options,
     evaluator: req.user._id,
     status
   });
@@ -102,14 +111,19 @@ export const getInstrumentById = asyncHandler(async (req, res) => {
 
 export const updateInstrument = asyncHandler(async (req, res) => {
   const instrument = await findInstrumentForUser(req, req.validated.params.id);
-  const { title, description, type, criteria, indicators, status } = req.validated.body;
+  const { title, description, type, criteria, indicators, options, status } = req.validated.body;
 
   if (title !== undefined) instrument.title = title;
   if (description !== undefined) instrument.description = description;
   if (type !== undefined) instrument.type = type;
   if (criteria !== undefined) instrument.criteria = criteria;
   if (indicators !== undefined) instrument.indicators = indicators;
+  if (options !== undefined) instrument.options = options;
   if (status !== undefined) instrument.status = status;
+
+  if (!hasValidStructure(instrument)) {
+    throw new AppError('El instrumento necesita criterios o indicadores válidos para su tipo', 400);
+  }
 
   await instrument.save();
 
