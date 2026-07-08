@@ -103,16 +103,14 @@ export const deleteCourse = asyncHandler(async (req, res) => {
   let classesArchived = 0;
 
   if (activeModuleIds.length > 0 && cascade) {
-    const classResult = await AcademicClass.updateMany(
-      { module: { $in: activeModuleIds }, evaluator: req.user._id, status: ACADEMIC_STATUSES.ACTIVE },
-      { $set: { status: ACADEMIC_STATUSES.ARCHIVED } }
-    );
+    const [classResult, moduleResult] = await Promise.all([
+      AcademicClass.updateMany(
+        { module: { $in: activeModuleIds }, evaluator: req.user._id, status: ACADEMIC_STATUSES.ACTIVE },
+        { $set: { status: ACADEMIC_STATUSES.ARCHIVED } }
+      ),
+      AcademicModule.updateMany({ _id: { $in: activeModuleIds } }, { $set: { status: ACADEMIC_STATUSES.ARCHIVED } })
+    ]);
     classesArchived = classResult.modifiedCount ?? 0;
-
-    const moduleResult = await AcademicModule.updateMany(
-      { _id: { $in: activeModuleIds } },
-      { $set: { status: ACADEMIC_STATUSES.ARCHIVED } }
-    );
     modulesArchived = moduleResult.modifiedCount ?? 0;
   }
 

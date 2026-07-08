@@ -55,6 +55,9 @@ export const listTasksSchema = z.object({
     status: z.enum(Object.values(TASK_STATUSES)).optional(),
     groupId: mongoIdSchema.optional(),
     studentId: mongoIdSchema.optional(),
+    courseId: mongoIdSchema.optional(),
+    moduleId: mongoIdSchema.optional(),
+    classId: mongoIdSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20)
   })

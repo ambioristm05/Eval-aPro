@@ -57,6 +57,9 @@ export const deleteClass = asyncHandler(async (req, res) => {
   res.json({
     message: 'Clase archivada correctamente',
     class: academicClass,
-    cascade: { tasksLinked: linkedTasks }
+    // A class has no lower level to cascade-archive into (tasks don't have an
+    // archived state of their own) — `linkedTasks` is informational only, it
+    // does NOT mean those tasks were modified.
+    linkedTasks
   });
 });

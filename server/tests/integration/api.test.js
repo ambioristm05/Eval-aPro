@@ -603,7 +603,7 @@ describe('academic hierarchy routes', () => {
       .expect(200);
 
     expect(cascadeResponse.body.class.status).toBe('archived');
-    expect(cascadeResponse.body.cascade).toEqual({ tasksLinked: 1 });
+    expect(cascadeResponse.body.linkedTasks).toBe(1);
 
     const remainingTasks = await Task.countDocuments({ class: classId });
     expect(remainingTasks).toBe(1);
@@ -640,6 +640,58 @@ describe('academic hierarchy routes', () => {
     const outsiderList = await request(app).get('/api/courses').set('Authorization', `Bearer ${outsiderToken}`).expect(200);
 
     expect(outsiderList.body.courses).toHaveLength(0);
+  });
+
+  it('filters the flat task list by courseId, moduleId, and classId', async () => {
+    const { evaluatorPassword, group, instrument, student } = await seedEvaluationGraph('tasks-hierarchy-filter');
+    const token = await login('tasks-hierarchy-filter-evaluator@example.com', evaluatorPassword);
+
+    const courseResponse = await request(app)
+      .post('/api/courses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Curso filtro' })
+      .expect(201);
+    const courseId = courseResponse.body.course.id || courseResponse.body.course._id;
+
+    const moduleResponse = await request(app)
+      .post(`/api/courses/${courseId}/modules`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Módulo filtro' })
+      .expect(201);
+    const moduleId = moduleResponse.body.module.id || moduleResponse.body.module._id;
+
+    const classResponse = await request(app)
+      .post(`/api/modules/${moduleId}/classes`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Clase filtro' })
+      .expect(201);
+    const classId = classResponse.body.class.id || classResponse.body.class._id;
+
+    await request(app)
+      .post(`/api/classes/${classId}/tasks`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Tarea dentro del filtro',
+        group: group._id.toString(),
+        students: [student._id.toString()],
+        instrument: instrument._id.toString()
+      })
+      .expect(201);
+
+    // seedEvaluationGraph already created one unrelated task under its own
+    // "Curso base/Módulo base/Clase base" — the filters below must exclude it.
+    const [byCourse, byModule, byClass, unfiltered] = await Promise.all([
+      request(app).get('/api/tasks').query({ courseId }).set('Authorization', `Bearer ${token}`).expect(200),
+      request(app).get('/api/tasks').query({ moduleId }).set('Authorization', `Bearer ${token}`).expect(200),
+      request(app).get('/api/tasks').query({ classId }).set('Authorization', `Bearer ${token}`).expect(200),
+      request(app).get('/api/tasks').set('Authorization', `Bearer ${token}`).expect(200)
+    ]);
+
+    expect(byCourse.body.tasks).toHaveLength(1);
+    expect(byCourse.body.tasks[0].title).toBe('Tarea dentro del filtro');
+    expect(byModule.body.tasks).toHaveLength(1);
+    expect(byClass.body.tasks).toHaveLength(1);
+    expect(unfiltered.body.tasks).toHaveLength(2);
   });
 
   it('creates and lists tasks inside an evaluator class', async () => {
@@ -745,6 +797,64 @@ describe('academic hierarchy routes', () => {
     expect(task.class.status).toBe('active');
     expect(task.class.course.status).toBe('archived');
     expect(task.class.module.status).toBe('active');
+  });
+
+  it('rejects creating, updating, and deleting tasks under an archived course/module/class', async () => {
+    const { evaluatorPassword, group, instrument, student } = await seedEvaluationGraph('archived-hierarchy-tasks');
+    const token = await login('archived-hierarchy-tasks-evaluator@example.com', evaluatorPassword);
+
+    const courseResponse = await request(app)
+      .post('/api/courses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Curso a archivar' })
+      .expect(201);
+    const courseId = courseResponse.body.course.id || courseResponse.body.course._id;
+
+    const moduleResponse = await request(app)
+      .post(`/api/courses/${courseId}/modules`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Módulo a archivar' })
+      .expect(201);
+    const moduleId = moduleResponse.body.module.id || moduleResponse.body.module._id;
+
+    const classResponse = await request(app)
+      .post(`/api/modules/${moduleId}/classes`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Clase activa' })
+      .expect(201);
+    const classId = classResponse.body.class.id || classResponse.body.class._id;
+
+    const taskResponse = await request(app)
+      .post(`/api/classes/${classId}/tasks`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Tarea previa al archivado',
+        group: group._id.toString(),
+        students: [student._id.toString()],
+        instrument: instrument._id.toString()
+      })
+      .expect(201);
+    const taskId = taskResponse.body.task.id || taskResponse.body.task._id;
+
+    await request(app)
+      .patch(`/api/courses/${courseId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'archived' })
+      .expect(200);
+
+    await request(app)
+      .post(`/api/classes/${classId}/tasks`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Tarea nueva bajo curso archivado' })
+      .expect(409);
+
+    await request(app)
+      .patch(`/api/tasks/${taskId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Intento de edición' })
+      .expect(409);
+
+    await request(app).delete(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${token}`).expect(409);
   });
 
   it('rejects creating tasks in another evaluator class', async () => {
