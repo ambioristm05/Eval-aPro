@@ -6,9 +6,12 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { createResource } from '../../services/resourceService.js';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import { createResource, getResource, updateResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const initialIndicators = [
   {
@@ -16,7 +19,7 @@ const initialIndicators = [
     text: 'Presenta una introducción clara al tema.',
     score: 2,
     required: true,
-    observation: 'Verificar que contextualice el proposito de la actividad.',
+    observation: 'Verificar que contextualice el propósito de la actividad.',
   },
   {
     id: 'indicator-evidence',
@@ -35,7 +38,7 @@ const initialIndicators = [
 ];
 
 const initialOptions = [
-  { id: 'option-yes', label: 'Si', scoreFactor: 1 },
+  { id: 'option-yes', label: 'Sí', scoreFactor: 1 },
   { id: 'option-partial', label: 'Parcial', scoreFactor: 0.5 },
   { id: 'option-no', label: 'No', scoreFactor: 0 },
 ];
@@ -44,7 +47,54 @@ function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
 }
 
+function buildChecklistPayload(checklist, indicators, options) {
+  return {
+    title: checklist.title,
+    description: checklist.description,
+    type: 'checklist',
+    status: checklist.status,
+    criteria: [],
+    options: options.map((option) => ({
+      label: option.label,
+      scoreFactor: Number(option.scoreFactor) || 0,
+    })),
+    indicators: indicators.map((indicator) => ({
+      text: indicator.text,
+      score: Number(indicator.score) || 0,
+      required: Boolean(indicator.required),
+      observation: indicator.observation,
+    })),
+  };
+}
+
+function normalizeChecklistInstrument(instrument) {
+  const sourceIndicators = instrument.indicators?.length ? instrument.indicators : initialIndicators;
+
+  return {
+    checklist: {
+      title: instrument.title ?? '',
+      description: instrument.description ?? '',
+      status: instrument.status ?? 'draft',
+    },
+    indicators: sourceIndicators.map((indicator, index) => ({
+      id: getId(indicator, `indicator-${index}`),
+      text: indicator.text ?? '',
+      score: Number(indicator.score) || 0,
+      required: Boolean(indicator.required),
+      observation: indicator.observation ?? '',
+    })),
+    options: instrument.options?.length
+      ? instrument.options.map((option, index) => ({
+          id: getId(option, `option-${index}`),
+          label: option.label ?? '',
+          scoreFactor: Number(option.scoreFactor) || 0,
+        }))
+      : initialOptions,
+  };
+}
+
 function ChecklistBuilderPage() {
+  const { id: instrumentId } = useParams();
   const [checklist, setChecklist] = useState({
     title: 'Lista de cotejo para exposición',
     description: 'Indicadores observables para revisar entregas y presentaciones.',
@@ -54,7 +104,11 @@ function ChecklistBuilderPage() {
   const [indicators, setIndicators] = useState(initialIndicators);
   const [savedMessage, setSavedMessage] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(Boolean(instrumentId));
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const isEditing = Boolean(instrumentId);
 
   const maxScore = useMemo(
     () => indicators.reduce((total, indicator) => total + Number(indicator.score || 0), 0),
@@ -62,6 +116,45 @@ function ChecklistBuilderPage() {
   );
 
   const requiredCount = indicators.filter((indicator) => indicator.required).length;
+
+  useEffect(() => {
+    if (!instrumentId) return undefined;
+
+    let isMounted = true;
+
+    async function fetchInstrument() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await getResource('instruments', instrumentId);
+        const instrument = data.instrument;
+
+        if (!isMounted) return;
+
+        if (instrument.type !== 'checklist') {
+          setError('Este instrumento no es una lista de cotejo.');
+          return;
+        }
+
+        const nextState = normalizeChecklistInstrument(instrument);
+        setChecklist(nextState.checklist);
+        setIndicators(nextState.indicators);
+        setOptions(nextState.options);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInstrument();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [instrumentId]);
 
   const handleChecklistChange = (event) => {
     const { name, value } = event.target;
@@ -90,6 +183,17 @@ function ChecklistBuilderPage() {
 
   const removeOption = (optionId) => {
     if (options.length <= 2) return;
+    const option = options.find((item) => item.id === optionId);
+
+    setConfirmAction({
+      title: `Eliminar opción ${option?.label ?? 'seleccionada'}`,
+      description: 'Se quitará esta opción de respuesta de la lista.',
+      confirmLabel: 'Eliminar opción',
+      onConfirm: () => deleteOption(optionId),
+    });
+  };
+
+  const deleteOption = (optionId) => {
     setOptions((current) => current.filter((option) => option.id !== optionId));
   };
 
@@ -137,7 +241,30 @@ function ChecklistBuilderPage() {
 
   const removeIndicator = (indicatorId) => {
     if (indicators.length <= 1) return;
+    const indicator = indicators.find((item) => item.id === indicatorId);
+
+    setConfirmAction({
+      title: 'Eliminar indicador',
+      description: indicator?.text ?? 'Se quitará el indicador seleccionado de esta lista.',
+      confirmLabel: 'Eliminar indicador',
+      onConfirm: () => deleteIndicator(indicatorId),
+    });
+  };
+
+  const deleteIndicator = (indicatorId) => {
     setIndicators((current) => current.filter((indicator) => indicator.id !== indicatorId));
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const handleSave = async () => {
@@ -146,19 +273,17 @@ function ChecklistBuilderPage() {
     setIsSaving(true);
 
     try {
-      await createResource('instruments', {
-        title: checklist.title,
-        description: checklist.description,
-        type: 'checklist',
-        status: checklist.status,
-        criteria: [],
-        indicators: indicators.map((indicator) => ({
-          text: indicator.text,
-          score: Number(indicator.score) || 0,
-        })),
-      });
+      const payload = buildChecklistPayload(checklist, indicators, options);
 
-      setSavedMessage('Lista de cotejo guardada en la base de datos.');
+      if (isEditing) {
+        await updateResource('instruments', instrumentId, payload);
+      } else {
+        await createResource('instruments', payload);
+      }
+
+      setSavedMessage(
+        isEditing ? 'Lista de cotejo actualizada correctamente.' : 'Lista de cotejo guardada correctamente.'
+      );
       window.setTimeout(() => setSavedMessage(''), 2600);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -175,7 +300,7 @@ function ChecklistBuilderPage() {
         </span>
         <div>
           <p className="eyebrow">Instrumentos</p>
-          <h1>Constructor de listas</h1>
+          <h1>{isEditing ? 'Editar lista de cotejo' : 'Constructor de listas'}</h1>
           <p className="dashboard-description">
             Define indicadores observables, opciones de respuesta y puntajes para una
             lista de cotejo reutilizable.
@@ -208,7 +333,7 @@ function ChecklistBuilderPage() {
           </span>
           <div>
             <strong>{maxScore}</strong>
-            <span>Puntos maximos</span>
+            <span>Puntos máximos</span>
           </div>
         </article>
       </div>
@@ -245,10 +370,22 @@ function ChecklistBuilderPage() {
           </form>
 
           <div className="builder-actions">
-            <button className="button button-primary" type="button" onClick={handleSave} disabled={isSaving}>
-              <Save size={18} aria-hidden="true" />
-              {isSaving ? 'Guardando...' : 'Guardar borrador'}
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving || isLoading}
+            >
+              {isSaving ? (
+                <span className="button-spinner-ring" aria-hidden="true" />
+              ) : (
+                <Save size={18} aria-hidden="true" />
+              )}
+              {isSaving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar lista'}
             </button>
+            <Link className="button button-secondary" to="/evaluator/instruments">
+              Volver a instrumentos
+            </Link>
             {error ? <p className="form-message form-message-error">{error}</p> : null}
             {savedMessage ? <p className="form-message form-message-success">{savedMessage}</p> : null}
           </div>
@@ -347,7 +484,7 @@ function ChecklistBuilderPage() {
                         updateIndicator(indicator.id, 'required', event.target.value)
                       }
                     >
-                      <option value="true">Si</option>
+                      <option value="true">Sí</option>
                       <option value="false">No</option>
                     </select>
                   </label>
@@ -398,6 +535,16 @@ function ChecklistBuilderPage() {
           ))}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }

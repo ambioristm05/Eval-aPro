@@ -42,3 +42,26 @@ export const loginSchema = z.object({
   params: z.object({}).optional(),
   query: z.object({}).optional()
 });
+
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email('Email inválido').toLowerCase()
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+export const resetPasswordSchema = z.object({
+  body: z
+    .object({
+      token: z.string().min(32, 'Token inválido'),
+      password: passwordSchema,
+      confirmPassword: z.string().min(1, 'Confirma la nueva contraseña')
+    })
+    .refine((body) => body.password === body.confirmPassword, {
+      message: 'La confirmación no coincide con la nueva contraseña',
+      path: ['confirmPassword']
+    }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});

@@ -1,13 +1,46 @@
 import puppeteer from 'puppeteer';
 
-export async function generatePdfFromHtml(html) {
+let browserPromise = null;
+
+async function launchBrowser() {
+  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
   const browser = await puppeteer.launch({
-    headless: 'new',
+    headless: true,
+    ...(executablePath ? { executablePath } : {}),
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
+  browser.on('disconnected', () => {
+    browserPromise = null;
+  });
+
+  return browser;
+}
+
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = launchBrowser().catch((error) => {
+      browserPromise = null;
+      throw error;
+    });
+  }
+
+  return browserPromise;
+}
+
+export async function closePdfBrowser() {
+  if (!browserPromise) return;
+
+  const browser = await browserPromise;
+  browserPromise = null;
+  await browser.close();
+}
+
+export async function generatePdfFromHtml(html) {
+  const browser = await getBrowser();
+  const page = await browser.newPage();
+
   try {
-    const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
     const pdf = await page.pdf({
@@ -23,6 +56,6 @@ export async function generatePdfFromHtml(html) {
 
     return Buffer.from(pdf);
   } finally {
-    await browser.close();
+    await page.close();
   }
 }

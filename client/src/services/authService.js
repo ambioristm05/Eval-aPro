@@ -5,6 +5,11 @@ export async function login(credentials) {
   return data;
 }
 
+export async function requestPasswordReset(email) {
+  const { data } = await api.post('/auth/forgot-password', { email });
+  return data;
+}
+
 export async function registerStudent(payload) {
   const { data } = await api.post('/auth/register/student', payload);
   return data;

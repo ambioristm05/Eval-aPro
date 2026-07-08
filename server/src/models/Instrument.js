@@ -47,6 +47,23 @@ const criterionSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const optionSchema = new mongoose.Schema(
+  {
+    label: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    scoreFactor: {
+      type: Number,
+      min: 0,
+      max: 1,
+      default: 0
+    }
+  },
+  { _id: true }
+);
+
 const indicatorSchema = new mongoose.Schema(
   {
     text: {
@@ -58,6 +75,15 @@ const indicatorSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       default: 0
+    },
+    required: {
+      type: Boolean,
+      default: false
+    },
+    observation: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   { _id: true }
@@ -86,6 +112,10 @@ const instrumentSchema = new mongoose.Schema(
     },
     indicators: {
       type: [indicatorSchema],
+      default: []
+    },
+    options: {
+      type: [optionSchema],
       default: []
     },
     maxScore: {

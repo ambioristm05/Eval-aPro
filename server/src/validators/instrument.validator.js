@@ -16,9 +16,16 @@ const criterionSchema = z.object({
   levels: z.array(levelSchema).default([])
 });
 
+const optionSchema = z.object({
+  label: z.string().trim().min(1, 'La etiqueta de la opción es requerida').max(80),
+  scoreFactor: z.coerce.number().min(0).max(1).default(0)
+});
+
 const indicatorSchema = z.object({
   text: z.string().trim().min(1, 'El indicador es requerido').max(300),
-  score: z.coerce.number().min(0).default(0)
+  score: z.coerce.number().min(0).default(0),
+  required: z.boolean().default(false),
+  observation: z.string().trim().max(500).default('')
 });
 
 function validateInstrumentStructure(data) {
@@ -39,6 +46,7 @@ export const createInstrumentSchema = z.object({
       type: z.enum(Object.values(INSTRUMENT_TYPES)),
       criteria: z.array(criterionSchema).default([]),
       indicators: z.array(indicatorSchema).default([]),
+      options: z.array(optionSchema).default([]),
       status: z.enum(Object.values(INSTRUMENT_STATUSES)).default(INSTRUMENT_STATUSES.DRAFT)
     })
     .refine(validateInstrumentStructure, {
@@ -81,6 +89,7 @@ export const updateInstrumentSchema = z.object({
       type: z.enum(Object.values(INSTRUMENT_TYPES)).optional(),
       criteria: z.array(criterionSchema).optional(),
       indicators: z.array(indicatorSchema).optional(),
+      options: z.array(optionSchema).optional(),
       status: z.enum(Object.values(INSTRUMENT_STATUSES)).optional()
     })
     .refine((body) => Object.keys(body).length > 0, {

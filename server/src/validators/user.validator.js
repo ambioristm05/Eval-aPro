@@ -6,6 +6,14 @@ const passwordSchema = z
   .string()
   .min(8, 'La contraseña debe tener al menos 8 caracteres')
   .max(72, 'La contraseña no puede exceder 72 caracteres');
+const booleanQuerySchema = z
+  .preprocess((value) => {
+    if (value === undefined) return undefined;
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  }, z.boolean())
+  .optional();
 
 export const createStudentSchema = z.object({
   body: z.object({
@@ -28,6 +36,7 @@ export const listStudentsSchema = z.object({
   query: z.object({
     search: z.string().trim().max(100).optional(),
     status: z.enum(Object.values(USER_STATUSES)).optional(),
+    includeDeleted: booleanQuerySchema,
     groupId: mongoIdSchema.optional(),
     availableForGroup: mongoIdSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),

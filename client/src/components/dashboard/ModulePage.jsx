@@ -1,4 +1,16 @@
-function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, statusItems }) {
+function ModulePage({
+  eyebrow,
+  title,
+  description,
+  icon: Icon,
+  primaryItems,
+  statusItems,
+  status = 'ready',
+  statusLabel = 'Módulo en preparación',
+  statusDescription = 'Esta vista presenta el alcance previsto mientras se completa el flujo funcional.',
+}) {
+  const isInProgress = status === 'in-progress';
+
   return (
     <section className="module-page">
       <div className="module-hero">
@@ -11,6 +23,13 @@ function ModulePage({ eyebrow, title, description, icon: Icon, primaryItems, sta
           <p className="dashboard-description">{description}</p>
         </div>
       </div>
+
+      {isInProgress ? (
+        <aside className="module-status-banner" aria-label={statusLabel}>
+          <strong>{statusLabel}</strong>
+          <p>{statusDescription}</p>
+        </aside>
+      ) : null}
 
       <div className="module-page-grid">
         <section className="dashboard-panel">

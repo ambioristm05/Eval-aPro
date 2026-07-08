@@ -7,15 +7,19 @@ import {
   AdminSettingsPage,
   AdminStatisticsPage,
 } from '../pages/admin/AdminModulePages.jsx';
+import ClassDetailPage from '../pages/evaluator/ClassDetailPage.jsx';
+import CourseDetailPage from '../pages/evaluator/CourseDetailPage.jsx';
+import EvaluatorCoursesPage from '../pages/evaluator/EvaluatorCoursesPage.jsx';
 import EvaluatorDashboard from '../pages/evaluator/EvaluatorDashboard.jsx';
 import EvaluatorEvaluationsPage from '../pages/evaluator/EvaluatorEvaluationsPage.jsx';
 import EvaluatorReportsPage from '../pages/evaluator/EvaluatorReportsPage.jsx';
+import EvaluatorTaskDetailPage from '../pages/evaluator/EvaluatorTaskDetailPage.jsx';
+import ModuleDetailPage from '../pages/evaluator/ModuleDetailPage.jsx';
 import EvaluatorGroupsPage from '../pages/evaluator/EvaluatorGroupsPage.jsx';
 import EvaluatorInstrumentsPage from '../pages/evaluator/EvaluatorInstrumentsPage.jsx';
 import ChecklistBuilderPage from '../pages/evaluator/ChecklistBuilderPage.jsx';
 import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
-import EvaluatorTasksPage from '../pages/evaluator/EvaluatorTasksPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
@@ -53,12 +57,25 @@ function AppRoutes() {
           </Route>
           <Route element={<RoleRoute allowedRoles={['evaluator']} />}>
             <Route path="evaluator" element={<EvaluatorDashboard />} />
+            <Route path="evaluator/courses" element={<EvaluatorCoursesPage />} />
+            <Route path="evaluator/courses/:courseId" element={<CourseDetailPage />} />
+            <Route path="evaluator/courses/:courseId/modules/:moduleId" element={<ModuleDetailPage />} />
+            <Route
+              path="evaluator/courses/:courseId/modules/:moduleId/classes/:classId"
+              element={<ClassDetailPage />}
+            />
+            <Route
+              path="evaluator/courses/:courseId/modules/:moduleId/classes/:classId/tasks/:taskId"
+              element={<EvaluatorTaskDetailPage />}
+            />
             <Route path="evaluator/groups" element={<EvaluatorGroupsPage />} />
             <Route path="evaluator/students" element={<EvaluatorStudentsPage />} />
-            <Route path="evaluator/tasks" element={<EvaluatorTasksPage />} />
+            <Route path="evaluator/tasks" element={<Navigate to="/evaluator/courses" replace />} />
             <Route path="evaluator/instruments" element={<EvaluatorInstrumentsPage />} />
             <Route path="evaluator/instruments/rubric-builder" element={<RubricBuilderPage />} />
+            <Route path="evaluator/instruments/rubric-builder/:id" element={<RubricBuilderPage />} />
             <Route path="evaluator/instruments/checklist-builder" element={<ChecklistBuilderPage />} />
+            <Route path="evaluator/instruments/checklist-builder/:id" element={<ChecklistBuilderPage />} />
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
             <Route path="evaluator/profile" element={<ProfilePage role="evaluator" />} />

@@ -10,12 +10,12 @@ const moduleCards = [
   {
     icon: FileText,
     title: 'Instrumentos',
-    text: 'Base preparada para rúbricas, listas de cotejo y escalas.',
+    text: 'Crea rúbricas, listas de cotejo y escalas para cada actividad.',
   },
   {
     icon: Printer,
     title: 'Reportes',
-    text: 'La estructura deja listo el camino para impresión y PDF.',
+    text: 'Genera vistas imprimibles y archivos PDF para compartir resultados.',
   },
 ];
 
@@ -23,11 +23,11 @@ function PublicHomePage() {
   return (
     <section className="home-grid">
       <div className="intro-panel">
-        <p className="eyebrow">Gestion académica digital</p>
+        <p className="eyebrow">Gestión académica digital</p>
         <h1>EvalúaPro</h1>
         <p className="lead">
           Organiza tareas, instrumentos de evaluación, resultados y reportes en
-          un flujo pensado para profesores y participantes.
+          un flujo pensado para evaluadores y participantes.
         </p>
         <div className="action-row">
           <Link className="button button-primary" to="/login">
@@ -35,7 +35,7 @@ function PublicHomePage() {
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="button button-secondary" to="/register/student">
-            Crear cuenta estudiante
+            Crear cuenta
           </Link>
         </div>
       </div>

@@ -275,7 +275,13 @@ El estudiante debe poder eliminar su cuenta directamente desde su perfil.
 
 ## 8.4. Gestión de tareas
 
-El evaluador podrá crear tareas o actividades evaluables.
+El evaluador podrá crear tareas o actividades evaluables dentro de una jerarquía académica:
+
+```txt
+Curso → Módulo → Clase → Tarea
+```
+
+Los grupos y estudiantes siguen siendo entidades reutilizables: una tarea puede vincular un grupo existente y estudiantes específicos sin duplicar cuentas ni historiales.
 
 Campos sugeridos:
 
@@ -291,14 +297,15 @@ Campos sugeridos:
 Estados:
 
 ```txt
-Pendiente
-En progreso
-Completada
-Cancelada
+Por evaluar
+Evaluada
 ```
 
 Funcionalidades:
 
+- Crear cursos.
+- Crear módulos dentro de un curso.
+- Crear clases dentro de un módulo.
 - Crear tarea.
 - Editar tarea.
 - Eliminar tarea.
@@ -306,6 +313,7 @@ Funcionalidades:
 - Cambiar estado.
 - Buscar y filtrar tareas.
 - Ver tareas por estudiante.
+- Ver tareas por clase dentro de la jerarquía académica.
 
 ---
 
@@ -564,7 +572,63 @@ Búsqueda:
 }
 ```
 
-## 9.3. Task
+## 9.3. Course
+
+```js
+{
+  name: String,
+  description: String,
+  evaluator: ObjectId,
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## 9.4. Module
+
+```js
+{
+  name: String,
+  description: String,
+  order: Number,
+  course: ObjectId,
+  evaluator: ObjectId,
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## 9.5. Class
+
+```js
+{
+  name: String,
+  description: String,
+  order: Number,
+  course: ObjectId,
+  module: ObjectId,
+  evaluator: ObjectId,
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## 9.6. Task
 
 ```js
 {
@@ -572,9 +636,11 @@ Búsqueda:
   description: String,
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'cancelled']
+    enum: ['pending', 'completed'],
+    default: 'pending'
   },
   evaluator: ObjectId,
+  class: ObjectId,
   group: ObjectId,
   students: [ObjectId],
   instrument: ObjectId,
@@ -586,7 +652,7 @@ Búsqueda:
 }
 ```
 
-## 9.4. Instrument
+## 9.7. Instrument
 
 ```js
 {
@@ -626,7 +692,7 @@ Búsqueda:
 }
 ```
 
-## 9.5. Evaluation
+## 9.8. Evaluation
 
 ```js
 {
@@ -650,7 +716,7 @@ Búsqueda:
 }
 ```
 
-## 9.6. Invitation
+## 9.9. Invitation
 
 ```js
 {
@@ -721,7 +787,39 @@ PATCH  /api/tasks/:id
 DELETE /api/tasks/:id
 ```
 
-## 10.6. Instrumentos
+## 10.6. Cursos
+
+```txt
+POST   /api/courses
+GET    /api/courses
+GET    /api/courses/:id
+PATCH  /api/courses/:id
+DELETE /api/courses/:id
+POST   /api/courses/:courseId/modules
+GET    /api/courses/:courseId/modules
+```
+
+## 10.7. Módulos
+
+```txt
+GET    /api/modules/:id
+PATCH  /api/modules/:id
+DELETE /api/modules/:id
+POST   /api/modules/:moduleId/classes
+GET    /api/modules/:moduleId/classes
+```
+
+## 10.8. Clases
+
+```txt
+GET    /api/classes/:id
+PATCH  /api/classes/:id
+DELETE /api/classes/:id
+POST   /api/classes/:classId/tasks
+GET    /api/classes/:classId/tasks
+```
+
+## 10.9. Instrumentos
 
 ```txt
 POST   /api/instruments
@@ -731,7 +829,7 @@ PATCH  /api/instruments/:id
 DELETE /api/instruments/:id
 ```
 
-## 10.7. Evaluaciones
+## 10.10. Evaluaciones
 
 ```txt
 POST   /api/evaluations
@@ -743,7 +841,7 @@ DELETE /api/evaluations/:id
 PATCH  /api/evaluations/:id/publish
 ```
 
-## 10.8. Reportes
+## 10.11. Reportes
 
 ```txt
 GET /api/reports/student/:studentId
@@ -781,9 +879,14 @@ Importante:
 ## 11.3. Evaluador
 
 - Dashboard
+- Cursos
+- Detalle de curso: módulos
+- Detalle de módulo: clases
+- Detalle de clase: tareas
+- Detalle de tarea
 - Mis grupos
 - Estudiantes
-- Tareas
+- Tareas, como acceso directo y compatibilidad
 - Instrumentos
 - Crear rúbrica
 - Crear lista de cotejo
@@ -809,16 +912,19 @@ Importante:
 
 1. El administrador crea o invita al evaluador.
 2. El evaluador inicia sesión.
-3. El evaluador crea un grupo o clase.
-4. Los estudiantes se registran o son agregados al grupo.
-5. El evaluador crea una tarea.
-6. El evaluador crea o selecciona un instrumento.
-7. El evaluador aplica la evaluación.
-8. El sistema calcula la nota.
-9. El evaluador publica los resultados.
-10. El estudiante ve sus notas, comentarios y sugerencias.
-11. El sistema acumula las calificaciones.
-12. El evaluador genera reportes o imprime información si lo necesita.
+3. El evaluador crea un curso.
+4. El evaluador crea módulos dentro del curso.
+5. El evaluador crea clases dentro del módulo.
+6. El evaluador crea o reutiliza grupos.
+7. Los estudiantes se registran o son agregados al grupo.
+8. El evaluador crea una tarea dentro de una clase.
+9. El evaluador crea o selecciona un instrumento.
+10. El evaluador aplica la evaluación.
+11. El sistema calcula la nota.
+12. El evaluador publica los resultados.
+13. El estudiante ve sus notas, comentarios y sugerencias.
+14. El sistema acumula las calificaciones.
+15. El evaluador genera reportes o imprime información si lo necesita.
 
 ---
 
@@ -834,6 +940,12 @@ Importante:
 - Las notas finales deben recalcularse cuando se edite una evaluación publicada.
 - La impresión debe estar disponible solo para usuarios autorizados.
 - La eliminación de cuenta por parte del estudiante debe cerrar la sesión automáticamente.
+- Un evaluador solo puede ver y gestionar sus propios cursos, módulos, clases y tareas.
+- Una tarea debe pertenecer a una clase; una clase a un módulo; un módulo a un curso.
+- Los grupos y estudiantes siguen siendo entidades globales reutilizables por el evaluador.
+- No se debe archivar ni eliminar un curso, módulo o clase con contenido activo sin confirmación explícita.
+- Archivar un nivel superior de la jerarquía no elimina ni afecta evaluaciones ya publicadas.
+- Curso, módulo y clase solo se archivan cuando tienen contenido relacionado; no se eliminan físicamente con historial activo.
 
 ---
 
@@ -858,6 +970,7 @@ src/
   services/
     api.js
     authService.js
+    academicHierarchyService.js
     taskService.js
     instrumentService.js
     evaluationService.js
@@ -880,6 +993,9 @@ src/
     auth.controller.js
     user.controller.js
     group.controller.js
+    course.controller.js
+    module.controller.js
+    class.controller.js
     task.controller.js
     instrument.controller.js
     evaluation.controller.js
@@ -892,6 +1008,9 @@ src/
   models/
     User.js
     Group.js
+    Course.js
+    Module.js
+    Class.js
     Task.js
     Instrument.js
     Evaluation.js
@@ -900,6 +1019,9 @@ src/
     auth.routes.js
     user.routes.js
     group.routes.js
+    course.routes.js
+    module.routes.js
+    class.routes.js
     task.routes.js
     instrument.routes.js
     evaluation.routes.js
@@ -957,6 +1079,9 @@ Para iniciar, construir primero estas funciones:
 
 ### Fase 2: Gestión académica
 
+- CRUD de cursos.
+- CRUD de módulos por curso.
+- CRUD de clases por módulo.
 - CRUD de grupos.
 - CRUD de estudiantes por evaluador.
 - Suspender estudiantes.
@@ -966,7 +1091,7 @@ Para iniciar, construir primero estas funciones:
 
 ### Fase 3: Tareas e instrumentos
 
-- CRUD de tareas.
+- CRUD de tareas dentro de clases.
 - CRUD de instrumentos.
 - Crear rúbricas.
 - Crear listas de cotejo.
@@ -1048,17 +1173,20 @@ Orden recomendado:
 4. Registro de estudiante.
 5. Registro protegido de evaluador.
 6. Gestión de grupos.
-7. Gestión de estudiantes.
-8. Suspensión/eliminación de estudiantes.
-9. Tareas.
-10. Instrumentos.
-11. Evaluaciones.
-12. Resultados.
-13. Cálculo de nota final.
-14. Reportes.
-15. Impresión y PDF.
-16. Mejoras visuales.
-17. Estadísticas.
+7. Gestión de cursos.
+8. Gestión de módulos.
+9. Gestión de clases.
+10. Gestión de estudiantes.
+11. Suspensión/eliminación de estudiantes.
+12. Tareas dentro de clases.
+13. Instrumentos.
+14. Evaluaciones.
+15. Resultados.
+16. Cálculo de nota final.
+17. Reportes.
+18. Impresión y PDF.
+19. Mejoras visuales.
+20. Estadísticas.
 
 ---
 
@@ -1068,6 +1196,9 @@ Orden recomendado:
 - Users Module
 - Roles Module
 - Groups Module
+- Courses Module
+- Modules Module
+- Classes Module
 - Students Module
 - Tasks Module
 - Instruments Module

@@ -9,7 +9,7 @@ const resultPopulate = [
   { path: 'student', select: 'name email role status' },
   { path: 'evaluator', select: 'name email role' },
   { path: 'task', select: 'title description status weight dueDate group' },
-  { path: 'instrument', select: 'title description type maxScore criteria indicators' }
+  { path: 'instrument', select: 'title description type maxScore criteria indicators options' }
 ];
 
 function resultScope(req) {
@@ -56,7 +56,9 @@ function buildResult(evaluation) {
         ? {
             id: indicator._id,
             text: indicator.text,
-            score: indicator.score
+            score: indicator.score,
+            required: indicator.required,
+            observation: indicator.observation
           }
         : null,
       levelName: answer.levelName,

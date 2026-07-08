@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════
+  EvalúaPro · Kit de identidad visual (v4 · FINAL)
+  Sincronizado con las variables CSS de la app
+═══════════════════════════════════════════════════
+
+CONCEPTO
+Matriz de rúbrica 2×2 cuyas celdas suben de nivel en
+dirección del logro, atravesada por una palomita
+ascendente: evaluar es marcar el progreso.
+
+PALETA (tomada de tu :root CSS)
+  Verde        #2F6F4E  --color-primary (marca, botones, "Pro")
+  Verde oscuro #1F5138  --color-primary-strong (gradiente)
+  Verde hover  #285F43  --color-primary-hover
+  Tinta        #0F1F2E  --color-heading (titulares, "Evalúa")
+  Verde claro  #E4F1E8  --color-primary-soft (fondos, chips)
+  Verde claro+ #8FD3AC  "Pro" sobre fondos oscuros
+  Texto        #1B2430  --color-text (cuerpo)
+  Página       #EEF1F3  --color-page (fondo general)
+
+TIPOGRAFÍA (idéntica a tu CSS)
+  Titulares y logo → Zilla Slab  (--font-display)
+      "Evalúa" SemiBold · "Pro" Bold
+  Cuerpo / etiquetas → IBM Plex Sans  (--font-sans)
+  Ambas de licencia libre SIL OFL. En los SVG el texto
+  ya está en trazados: no necesitas instalar nada.
+  Zilla Slab:     fonts.google.com/specimen/Zilla+Slab
+  IBM Plex Sans:  fonts.google.com/specimen/IBM+Plex+Sans
+
+CONTENIDO
+  svg/               Vectores maestros (logo, ícono, variantes)
+  svg/icono-plano    Ícono plano verde sólido, sin gradiente
+  png/               Ícono 16–1024, logotipos, monocromos
+  png/icono-plano/   Variante plana en 10 tamaños
+  web/               favicon.ico, favicon 16/32,
+                     apple-touch-icon (180), icon-192, icon-512
+
+USO EN TU WEB
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  Header:  <img src="/icono-plano.svg" className="h-10 w-10" />
+  manifest.json → icon-192.png e icon-512.png
+
+BUENAS PRÁCTICAS
+  · Aire mínimo alrededor del logo: la altura de la "P".
+  · No distorsiones ni recolorees el gradiente.
+  · El ícono CON gradiente es para tiendas de apps, redes
+    y marketing; el PLANO para la interfaz.
+  · Sobre fotos o fondos saturados usa monocromo o la
+    variante para fondo oscuro. Impresión 1 tinta → "mono".

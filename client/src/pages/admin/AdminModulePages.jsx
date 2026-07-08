@@ -8,10 +8,12 @@ import { moduleIcons } from '../../utils/navigation.jsx';
 export function AdminEvaluatorsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Gestionar evaluadores"
-      description="Espacio privado para crear, aprobar, suspender y revisar cuentas de profesores."
+      description="Espacio privado para crear, aprobar, suspender y revisar cuentas de evaluadores."
       icon={moduleIcons.UserCog}
+      status="in-progress"
+      statusDescription="La gestión completa de evaluadores está definida, pero el alta y los cambios de estado todavía se operan desde invitaciones y controles protegidos."
       primaryItems={[
         {
           title: 'Crear cuenta',
@@ -19,17 +21,17 @@ export function AdminEvaluatorsPage() {
         },
         {
           title: 'Cambiar estado',
-          description: 'Suspender o reactivar profesores según las reglas del sistema.',
+          description: 'Suspender o reactivar evaluadores según las reglas del sistema.',
         },
         {
-          title: 'Auditoria básica',
-          description: 'Registrar quien crea o modifica cuentas sensibles.',
+          title: 'Auditoría básica',
+          description: 'Registrar quién crea o modifica cuentas sensibles.',
         },
       ]}
       statusItems={[
-        { label: 'Ruta privada', value: 'Lista' },
-        { label: 'Formulario real', value: 'Pendiente' },
-        { label: 'API requerida', value: 'Pendiente' },
+        { label: 'Ruta privada', value: 'Disponible' },
+        { label: 'Acceso', value: 'Protegido' },
+        { label: 'Registro', value: 'Por invitación' },
       ]}
     />
   );
@@ -86,7 +88,7 @@ export function AdminInvitationsPage() {
           <moduleIcons.KeyRound size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Administracion</p>
+          <p className="eyebrow">Administración</p>
           <h1>Invitaciones</h1>
           <p className="dashboard-description">
             Genera enlaces de registro para evaluadores sin exponer un formulario público.
@@ -108,14 +110,14 @@ export function AdminInvitationsPage() {
                 type="email"
                 name="email"
                 value={formData.email}
-                placeholder="profesor@correo.com"
+                placeholder="evaluador@correo.com"
                 autoComplete="email"
                 onChange={handleChange}
                 required
               />
             </label>
             <label>
-              Expira en dias
+              Expira en días
               <input
                 type="number"
                 name="expiresInDays"
@@ -131,7 +133,11 @@ export function AdminInvitationsPage() {
             {message ? <p className="form-message form-message-success">{message}</p> : null}
 
             <button className="button button-primary" type="submit" disabled={isSubmitting}>
-              <MailPlus size={18} aria-hidden="true" />
+              {isSubmitting ? (
+                <span className="button-spinner-ring" aria-hidden="true" />
+              ) : (
+                <MailPlus size={18} aria-hidden="true" />
+              )}
               {isSubmitting ? 'Generando...' : 'Generar invitación'}
             </button>
           </form>
@@ -155,7 +161,7 @@ export function AdminInvitationsPage() {
           </div>
           <div className="progress-list">
             <div>
-              <span>Registro público profesor</span>
+              <span>Registro público evaluador</span>
               <strong>Oculto</strong>
             </div>
             <div>
@@ -176,10 +182,12 @@ export function AdminInvitationsPage() {
 export function AdminStatisticsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Estadísticas generales"
       description="Resumen global para monitorear usuarios, evaluaciones, instrumentos y actividad del sistema."
       icon={moduleIcons.BarChart3}
+      status="in-progress"
+      statusDescription="El panel estadístico está definido como alcance institucional y se integrará con métricas reales del sistema."
       primaryItems={[
         {
           title: 'Usuarios por rol',
@@ -195,9 +203,9 @@ export function AdminStatisticsPage() {
         },
       ]}
       statusItems={[
-        { label: 'Vista base', value: 'Lista' },
-        { label: 'Gráficas', value: 'Pendiente' },
-        { label: 'Datos reales', value: 'Pendiente' },
+        { label: 'Vista base', value: 'Definida' },
+        { label: 'Alcance', value: 'Institucional' },
+        { label: 'Datos', value: 'En integración' },
       ]}
     />
   );
@@ -206,10 +214,12 @@ export function AdminStatisticsPage() {
 export function AdminSettingsPage() {
   return (
     <ModulePage
-      eyebrow="Administracion"
+      eyebrow="Administración"
       title="Configuración"
       description="Ajustes generales de seguridad, permisos y comportamiento del sistema."
       icon={moduleIcons.Settings}
+      status="in-progress"
+      statusDescription="Los ajustes centrales están planteados como módulo administrativo y todavía no guardan cambios persistentes desde esta pantalla."
       primaryItems={[
         {
           title: 'Políticas de acceso',
@@ -217,7 +227,7 @@ export function AdminSettingsPage() {
         },
         {
           title: 'Preferencias de reportes',
-          description: 'Preparar opciones de impresión y exportación.',
+          description: 'Configurar opciones de impresión y exportación.',
         },
         {
           title: 'Parámetros académicos',
@@ -225,9 +235,9 @@ export function AdminSettingsPage() {
         },
       ]}
       statusItems={[
-        { label: 'Ruta privada', value: 'Lista' },
-        { label: 'Controles', value: 'Pendiente' },
-        { label: 'Persistencia', value: 'Pendiente' },
+        { label: 'Ruta privada', value: 'Disponible' },
+        { label: 'Controles', value: 'Seguridad' },
+        { label: 'Persistencia', value: 'En integración' },
       ]}
     />
   );

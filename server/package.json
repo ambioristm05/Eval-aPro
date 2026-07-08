@@ -8,7 +8,9 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
-    "lint": "eslint src"
+    "migrate:academic-hierarchy": "node src/scripts/migrateAcademicHierarchy.js",
+    "lint": "eslint src",
+    "test": "vitest run"
   },
   "dependencies": {
     "@faker-js/faker": "^9.4.0",
@@ -16,17 +18,20 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.5.2",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
     "nodemailer": "^6.10.0",
     "puppeteer": "^24.1.1",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "eslint": "^9.18.0",
-    "nodemon": "^3.1.9"
+    "mongodb-memory-server": "^11.2.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.9"
   }
 }

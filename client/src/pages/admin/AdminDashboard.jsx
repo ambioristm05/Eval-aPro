@@ -6,7 +6,7 @@ function AdminDashboard() {
     <DashboardShell
       eyebrow="Panel administrativo"
       title="Control del sistema"
-      description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y prepara la configuración general de EvalúaPro."
+      description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y configura la operación general de EvalúaPro."
       stats={[
         { label: 'Evaluadores', value: '0', icon: UserCog },
         { label: 'Invitaciones', value: '0', icon: KeyRound },
@@ -15,13 +15,13 @@ function AdminDashboard() {
       actions={[
         {
           title: 'Crear evaluador',
-          description: 'Alta manual de profesores desde un espacio privado.',
+          description: 'Alta manual de evaluadores desde un espacio privado.',
           icon: UserCog,
           href: '/admin/evaluators',
         },
         {
           title: 'Generar invitación',
-          description: 'Codigo o enlace protegido para registrar evaluadores.',
+          description: 'Código o enlace protegido para registrar evaluadores.',
           icon: KeyRound,
           href: '/admin/invitations',
         },
@@ -36,7 +36,7 @@ function AdminDashboard() {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Vista general</h2>
-          <p>Los indicadores reales llegarán al conectar los módulos administrativos.</p>
+          <p>Resumen de accesos, registro protegido y actividad administrativa.</p>
         </div>
         <div className="progress-list">
           <div>
@@ -44,17 +44,17 @@ function AdminDashboard() {
             <strong>Lista</strong>
           </div>
           <div>
-            <span>Registro público de profesor</span>
+            <span>Registro público de evaluador</span>
             <strong>Oculto</strong>
           </div>
           <div>
             <span>Estadísticas generales</span>
-            <strong>Pendiente</strong>
+            <strong>En seguimiento</strong>
           </div>
         </div>
         <div className="report-preview">
           <BarChart3 size={28} aria-hidden="true" />
-          <p>Panel preparado para gráficas y reportes administrativos.</p>
+          <p>Consulta el estado operativo de usuarios, invitaciones y seguridad.</p>
         </div>
       </aside>
     </DashboardShell>

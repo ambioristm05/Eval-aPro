@@ -189,7 +189,7 @@ function ProfilePage({ role, mode = 'view' }) {
           </div>
           <div>
             <span>Correo</span>
-            <strong>{isLoading ? 'Cargando...' : user?.email ?? 'Sin correo'}</strong>
+            <strong className="plain-value">{isLoading ? 'Cargando...' : user?.email ?? 'Sin correo'}</strong>
           </div>
           <div>
             <span>Rol</span>
@@ -211,7 +211,7 @@ function ProfilePage({ role, mode = 'view' }) {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Seguridad</h2>
-          <p>Los cambios sensibles se realizan desde la vista de modificacion.</p>
+          <p>Los cambios sensibles se realizan desde la vista de modificación.</p>
         </div>
         <Link className="button button-secondary" to={editPath}>
           <KeyRound size={18} aria-hidden="true" />
@@ -233,7 +233,11 @@ function ProfilePage({ role, mode = 'view' }) {
           ) : null}
           <div className="form-actions">
             <button className="button button-primary" type="submit" disabled={isSaving || isLoading}>
-              <Save size={18} aria-hidden="true" />
+              {isSaving ? (
+                <span className="button-spinner-ring" aria-hidden="true" />
+              ) : (
+                <Save size={18} aria-hidden="true" />
+              )}
               {isSaving ? 'Guardando...' : 'Guardar cambios'}
             </button>
             <Link className="button button-secondary" to={profilePath}>
@@ -278,7 +282,8 @@ function ProfilePage({ role, mode = 'view' }) {
             />
           </label>
           <button className="button button-secondary" type="submit" disabled={isSaving}>
-            Actualizar contraseña
+            {isSaving ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
+            {isSaving ? 'Actualizando...' : 'Actualizar contraseña'}
           </button>
         </form>
 
@@ -286,7 +291,7 @@ function ProfilePage({ role, mode = 'view' }) {
           <div className="danger-zone">
             <h3>Eliminar cuenta</h3>
             <p>Esta acción está separada para evitar eliminaciones accidentales.</p>
-            <Link className="button danger-button" to={deletePath}>
+            <Link className="button button-danger" to={deletePath}>
               <Trash2 size={18} aria-hidden="true" />
               Ir a eliminar cuenta
             </Link>
@@ -324,11 +329,11 @@ function ProfilePage({ role, mode = 'view' }) {
             onChange={handleDeleteChange}
           />
           <div className="form-actions">
-            <button className="button danger-button" type="button" onClick={deleteAccount} disabled={isSaving}>
+            <button className="button button-danger" type="button" onClick={deleteAccount} disabled={isSaving}>
               <Trash2 size={18} aria-hidden="true" />
               Eliminar mi cuenta
             </button>
-            <Link className="button button-secondary" to={editPath}>
+            <Link className="button button-ghost" to={editPath}>
               <ArrowLeft size={18} aria-hidden="true" />
               Volver
             </Link>

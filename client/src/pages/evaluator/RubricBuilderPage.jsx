@@ -5,9 +5,12 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { createResource } from '../../services/resourceService.js';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import { createResource, getResource, updateResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const initialLevels = [
   { id: 'level-excellent', name: 'Excelente', score: 5 },
@@ -23,7 +26,7 @@ const initialCriteria = [
     maxScore: 5,
     descriptions: {
       'level-excellent': 'Comprende el tema con profundidad y conecta ideas clave.',
-      'level-good': 'Comprende el tema y explica la mayoria de ideas relevantes.',
+      'level-good': 'Comprende el tema y explica la mayoría de ideas relevantes.',
       'level-acceptable': 'Comprende aspectos básicos, pero le falta desarrollo.',
       'level-improve': 'Presenta confusiones importantes sobre el tema.',
     },
@@ -45,7 +48,60 @@ function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
 }
 
+function buildRubricPayload(rubric, criteria, levels) {
+  return {
+    title: rubric.title,
+    description: rubric.description,
+    type: 'rubric',
+    status: rubric.status,
+    criteria: criteria.map((criterion) => ({
+      name: criterion.name,
+      description: '',
+      maxScore: Number(criterion.maxScore) || 0,
+      levels: levels.map((level) => ({
+        name: level.name,
+        description: criterion.descriptions[level.id] ?? '',
+        score: Number(level.score) || 0,
+      })),
+    })),
+    indicators: [],
+  };
+}
+
+function normalizeRubricInstrument(instrument) {
+  const sourceCriteria = instrument.criteria?.length ? instrument.criteria : initialCriteria;
+  const sourceLevels = sourceCriteria.find((criterion) => criterion.levels?.length)?.levels;
+  const normalizedLevels = sourceLevels?.length
+    ? sourceLevels.map((level, index) => ({
+        id: `level-${index}`,
+        name: level.name,
+        score: Number(level.score) || 0,
+      }))
+    : initialLevels;
+
+  const normalizedCriteria = sourceCriteria.map((criterion, criterionIndex) => ({
+    id: getId(criterion, `criterion-${criterionIndex}`),
+    name: criterion.name,
+    maxScore: Number(criterion.maxScore) || 0,
+    descriptions: normalizedLevels.reduce((descriptions, level, levelIndex) => {
+      descriptions[level.id] = criterion.levels?.[levelIndex]?.description ?? criterion.descriptions?.[level.id] ?? '';
+      return descriptions;
+    }, {}),
+  }));
+
+  return {
+    rubric: {
+      title: instrument.title ?? '',
+      description: instrument.description ?? '',
+      status: instrument.status ?? 'draft',
+    },
+    levels: normalizedLevels,
+    criteria: normalizedCriteria,
+  };
+}
+
 function RubricBuilderPage() {
+  const { id: instrumentId } = useParams();
   const [rubric, setRubric] = useState({
     title: 'Rúbrica analítica de lectura',
     description: 'Instrumento para valorar comprensión, organización y argumentación.',
@@ -55,12 +111,55 @@ function RubricBuilderPage() {
   const [criteria, setCriteria] = useState(initialCriteria);
   const [savedMessage, setSavedMessage] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(Boolean(instrumentId));
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const isEditing = Boolean(instrumentId);
 
   const maxScore = useMemo(
     () => criteria.reduce((total, criterion) => total + Number(criterion.maxScore || 0), 0),
     [criteria],
   );
+
+  useEffect(() => {
+    if (!instrumentId) return undefined;
+
+    let isMounted = true;
+
+    async function fetchInstrument() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await getResource('instruments', instrumentId);
+        const instrument = data.instrument;
+
+        if (!isMounted) return;
+
+        if (instrument.type !== 'rubric') {
+          setError('Este instrumento no es una rúbrica.');
+          return;
+        }
+
+        const nextState = normalizeRubricInstrument(instrument);
+        setRubric(nextState.rubric);
+        setLevels(nextState.levels);
+        setCriteria(nextState.criteria);
+      } catch (requestError) {
+        if (!isMounted) return;
+        setError(getErrorMessage(requestError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInstrument();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [instrumentId]);
 
   const handleRubricChange = (event) => {
     const { name, value } = event.target;
@@ -94,6 +193,16 @@ function RubricBuilderPage() {
   const removeLevel = (levelId) => {
     if (levels.length <= 2) return;
 
+    const level = levels.find((item) => item.id === levelId);
+    setConfirmAction({
+      title: `Eliminar nivel ${level?.name ?? 'seleccionado'}`,
+      description: 'Se quitará este nivel de todos los criterios de la rúbrica.',
+      confirmLabel: 'Eliminar nivel',
+      onConfirm: () => deleteLevel(levelId),
+    });
+  };
+
+  const deleteLevel = (levelId) => {
     setLevels((current) => current.filter((level) => level.id !== levelId));
     setCriteria((current) =>
       current.map((criterion) => {
@@ -160,7 +269,30 @@ function RubricBuilderPage() {
 
   const removeCriterion = (criterionId) => {
     if (criteria.length <= 1) return;
+    const criterion = criteria.find((item) => item.id === criterionId);
+
+    setConfirmAction({
+      title: `Eliminar criterio ${criterion?.name ?? 'seleccionado'}`,
+      description: 'Se quitarán sus descripciones y puntaje de esta rúbrica.',
+      confirmLabel: 'Eliminar criterio',
+      onConfirm: () => deleteCriterion(criterionId),
+    });
+  };
+
+  const deleteCriterion = (criterionId) => {
     setCriteria((current) => current.filter((criterion) => criterion.id !== criterionId));
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const handleSave = async () => {
@@ -169,25 +301,15 @@ function RubricBuilderPage() {
     setIsSaving(true);
 
     try {
-      await createResource('instruments', {
-        title: rubric.title,
-        description: rubric.description,
-        type: 'rubric',
-        status: rubric.status,
-        criteria: criteria.map((criterion) => ({
-          name: criterion.name,
-          description: '',
-          maxScore: Number(criterion.maxScore) || 0,
-          levels: levels.map((level) => ({
-            name: level.name,
-            description: criterion.descriptions[level.id] ?? '',
-            score: Number(level.score) || 0,
-          })),
-        })),
-        indicators: [],
-      });
+      const payload = buildRubricPayload(rubric, criteria, levels);
 
-      setSavedMessage('Rúbrica guardada en la base de datos.');
+      if (isEditing) {
+        await updateResource('instruments', instrumentId, payload);
+      } else {
+        await createResource('instruments', payload);
+      }
+
+      setSavedMessage(isEditing ? 'Rúbrica actualizada correctamente.' : 'Rúbrica guardada correctamente.');
       window.setTimeout(() => setSavedMessage(''), 2600);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -204,7 +326,7 @@ function RubricBuilderPage() {
         </span>
         <div>
           <p className="eyebrow">Instrumentos</p>
-          <h1>Constructor de rúbricas</h1>
+          <h1>{isEditing ? 'Editar rúbrica' : 'Constructor de rúbricas'}</h1>
           <p className="dashboard-description">
             Define criterios, niveles de desempeño, puntajes y descripciones para una
             rúbrica analítica reutilizable.
@@ -237,7 +359,7 @@ function RubricBuilderPage() {
           </span>
           <div>
             <strong>{maxScore}</strong>
-            <span>Puntos maximos</span>
+            <span>Puntos máximos</span>
           </div>
         </article>
       </div>
@@ -274,10 +396,22 @@ function RubricBuilderPage() {
           </form>
 
           <div className="builder-actions">
-            <button className="button button-primary" type="button" onClick={handleSave} disabled={isSaving}>
-              <Save size={18} aria-hidden="true" />
-              {isSaving ? 'Guardando...' : 'Guardar borrador'}
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving || isLoading}
+            >
+              {isSaving ? (
+                <span className="button-spinner-ring" aria-hidden="true" />
+              ) : (
+                <Save size={18} aria-hidden="true" />
+              )}
+              {isSaving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar rúbrica'}
             </button>
+            <Link className="button button-secondary" to="/evaluator/instruments">
+              Volver a instrumentos
+            </Link>
             {error ? <p className="form-message form-message-error">{error}</p> : null}
             {savedMessage ? <p className="form-message form-message-success">{savedMessage}</p> : null}
           </div>
@@ -354,7 +488,7 @@ function RubricBuilderPage() {
                   />
                 </label>
                 <label>
-                  Maximo
+                  Puntuación máxima
                   <input
                     type="number"
                     min="0"
@@ -405,6 +539,16 @@ function RubricBuilderPage() {
           ))}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }

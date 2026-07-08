@@ -1,13 +1,18 @@
 import { z } from 'zod';
 
 const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
+const hierarchyQuerySchema = z.object({
+  courseId: mongoIdSchema.optional(),
+  moduleId: mongoIdSchema.optional(),
+  classId: mongoIdSchema.optional()
+});
 
 export const studentReportSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
     studentId: mongoIdSchema
   }),
-  query: z.object({}).optional()
+  query: hierarchyQuerySchema.optional()
 });
 
 export const studentReportPermissionSchema = z.object({
@@ -25,7 +30,7 @@ export const groupReportSchema = z.object({
   params: z.object({
     groupId: mongoIdSchema
   }),
-  query: z.object({}).optional()
+  query: hierarchyQuerySchema.optional()
 });
 
 export const taskReportSchema = z.object({
@@ -33,7 +38,7 @@ export const taskReportSchema = z.object({
   params: z.object({
     taskId: mongoIdSchema
   }),
-  query: z.object({}).optional()
+  query: hierarchyQuerySchema.optional()
 });
 
 export const instrumentReportSchema = z.object({
@@ -41,5 +46,5 @@ export const instrumentReportSchema = z.object({
   params: z.object({
     instrumentId: mongoIdSchema
   }),
-  query: z.object({}).optional()
+  query: hierarchyQuerySchema.optional()
 });

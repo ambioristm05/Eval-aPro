@@ -55,7 +55,7 @@ function renderGrade(value) {
   const number = Math.max(0, Math.min(100, Number(value || 0)));
   return `
     <div class="grade ${gradeTone(number)}">
-      <strong>${escapeHtml(`${number}%`)}</strong>
+      <strong>${escapeHtml(`${number}`)}</strong>
       <span><i style="width:${number}%"></i></span>
     </div>
   `;
@@ -65,13 +65,13 @@ function renderSummary(summary = {}) {
   const finalGrade = summary.finalGrade;
   const cards = [
     ['Evaluaciones', summary.count ?? 0],
-    ['Promedio', `${summary.average ?? 0}%`],
-    ['Mayor nota', `${summary.highest ?? 0}%`],
-    ['Menor nota', `${summary.lowest ?? 0}%`]
+    ['Promedio', `${summary.average ?? 0}`],
+    ['Mayor nota', `${summary.highest ?? 0}`],
+    ['Menor nota', `${summary.lowest ?? 0}`]
   ];
 
   if (finalGrade) {
-    cards.push(['Nota final', `${finalGrade.grade}%`], ['Metodo', finalGrade.method]);
+    cards.push(['Nota final', `${finalGrade.grade}`], ['Método', finalGrade.method]);
   }
 
   return `
@@ -118,7 +118,7 @@ function renderEvaluations(evaluations = []) {
           <th>Tarea</th>
           <th>Instrumento</th>
           <th>Puntaje</th>
-          <th>Porcentaje</th>
+          <th>Nota final</th>
           <th>Publicada</th>
         </tr>
       </thead>
@@ -132,7 +132,7 @@ function renderEvaluations(evaluations = []) {
                   <strong>${escapeHtml(item.student?.name || 'No definido')}</strong>
                   <small>${escapeHtml(item.student?.email || '')}</small>
                 </td>
-                <td>${escapeHtml(item.task?.title || 'No definido')}</td>
+                <td>${escapeHtml(item.task?.title || 'Tarea sin título')}</td>
                 <td>${escapeHtml(item.instrument?.title || 'No definido')}</td>
                 <td>${escapeHtml(`${item.score ?? 0}/${item.maxScore ?? 0}`)}</td>
                 <td>${renderGrade(item.percentage)}</td>
@@ -156,7 +156,7 @@ function renderFinalGrades(grades = []) {
           <th>Estudiante</th>
           <th>Email</th>
           <th>Nota final</th>
-          <th>Metodo</th>
+          <th>Método</th>
           <th>Evaluaciones</th>
         </tr>
       </thead>
@@ -255,12 +255,18 @@ export function renderReportHtml(report) {
             padding-bottom: 18px;
           }
           .brand {
+            align-items: center;
             color: var(--accent);
+            display: flex;
             font-size: 12px;
             font-weight: 700;
+            gap: 6px;
             letter-spacing: 0;
             margin-bottom: 4px;
             text-transform: uppercase;
+          }
+          .brand svg {
+            flex-shrink: 0;
           }
           h1, h2 { margin: 0; }
           h1 {
@@ -407,7 +413,17 @@ export function renderReportHtml(report) {
       <body>
         <header>
           <div>
-            <div class="brand">EvalúaPro</div>
+            <div class="brand">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" aria-hidden="true">
+                <rect width="512" height="512" rx="115" fill="#2F6F4E"/>
+                <rect x="98" y="98" width="148" height="148" rx="30" fill="#FFFFFF" opacity="0.19"/>
+                <rect x="266" y="98" width="148" height="148" rx="30" fill="#FFFFFF" opacity="0.28"/>
+                <rect x="98" y="266" width="148" height="148" rx="30" fill="#FFFFFF" opacity="0.14"/>
+                <rect x="266" y="266" width="148" height="148" rx="30" fill="#FFFFFF" opacity="0.19"/>
+                <path d="M150 274 L232 354 L374 156" fill="none" stroke="#FFFFFF" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              EvalúaPro
+            </div>
             <h1>${escapeHtml(labelForType(plainReport.type))}</h1>
             <div class="subtitle">${escapeHtml(title)}</div>
           </div>

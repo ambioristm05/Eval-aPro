@@ -1,6 +1,9 @@
 import api from './api.js';
 
 const endpointMap = {
+  courses: '/courses',
+  modules: '/modules',
+  classes: '/classes',
   groups: '/groups',
   students: '/users/students',
   tasks: '/tasks',
@@ -14,8 +17,43 @@ export async function listResource(resource, params) {
   return data;
 }
 
+export async function getResource(resource, id) {
+  const { data } = await api.get(`${endpointMap[resource]}/${id}`);
+  return data;
+}
+
 export async function createResource(resource, payload) {
   const { data } = await api.post(endpointMap[resource], payload);
+  return data;
+}
+
+export async function listCourseModules(courseId, params) {
+  const { data } = await api.get(`/courses/${courseId}/modules`, { params });
+  return data;
+}
+
+export async function createCourseModule(courseId, payload) {
+  const { data } = await api.post(`/courses/${courseId}/modules`, payload);
+  return data;
+}
+
+export async function listModuleClasses(moduleId, params) {
+  const { data } = await api.get(`/modules/${moduleId}/classes`, { params });
+  return data;
+}
+
+export async function createModuleClass(moduleId, payload) {
+  const { data } = await api.post(`/modules/${moduleId}/classes`, payload);
+  return data;
+}
+
+export async function listClassTasks(classId, params) {
+  const { data } = await api.get(`/classes/${classId}/tasks`, { params });
+  return data;
+}
+
+export async function createClassTask(classId, payload) {
+  const { data } = await api.post(`/classes/${classId}/tasks`, payload);
   return data;
 }
 
@@ -24,8 +62,8 @@ export async function updateResource(resource, id, payload) {
   return data;
 }
 
-export async function deleteResource(resource, id) {
-  const { data } = await api.delete(`${endpointMap[resource]}/${id}`);
+export async function deleteResource(resource, id, params) {
+  const { data } = await api.delete(`${endpointMap[resource]}/${id}`, { params });
   return data;
 }
 
@@ -64,7 +102,7 @@ export async function updateStudentReportPermission(studentId, enabled) {
   return data;
 }
 
-export async function getReport(type, id) {
+export async function getReport(type, id, params) {
   const pathMap = {
     student: `/reports/student/${id}`,
     group: `/reports/group/${id}`,
@@ -73,11 +111,11 @@ export async function getReport(type, id) {
     instrument: `/reports/instruments/${id}`,
   };
 
-  const { data } = await api.get(pathMap[type]);
+  const { data } = await api.get(pathMap[type], { params });
   return data.report;
 }
 
-export async function getPrintableReport(type, id) {
+export async function getPrintableReport(type, id, params) {
   const pathMap = {
     student: `/reports/student/${id}/print`,
     group: `/reports/group/${id}/print`,
@@ -86,6 +124,6 @@ export async function getPrintableReport(type, id) {
     instrument: `/reports/instruments/${id}/print`,
   };
 
-  const { data } = await api.get(pathMap[type], { responseType: 'text' });
+  const { data } = await api.get(pathMap[type], { params, responseType: 'text' });
   return data;
 }

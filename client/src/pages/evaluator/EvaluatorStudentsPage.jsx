@@ -7,7 +7,9 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import EmptyState from '../../components/common/EmptyState.jsx';
 import {
   createResource,
   deleteStudent,
@@ -16,6 +18,7 @@ import {
   suspendStudent,
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
@@ -30,16 +33,13 @@ const statusLabels = {
   deleted: 'Eliminado',
 };
 
-function getId(resource) {
-  return resource.id ?? resource._id;
-}
-
 function getGroupNames(student) {
   if (!student.groups?.length) return 'Sin grupo';
   return student.groups.map((group) => group.name).filter(Boolean).join(', ') || 'Sin grupo';
 }
 
 function EvaluatorStudentsPage() {
+  const nameInputRef = useRef(null);
   const [students, setStudents] = useState([]);
   const [groups, setGroups] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
@@ -49,6 +49,8 @@ function EvaluatorStudentsPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const filteredStudents = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -70,17 +72,9 @@ function EvaluatorStudentsPage() {
   const deletedCount = students.filter((student) => student.status === 'deleted').length;
 
   const loadStudents = async () => {
-    const [visibleData, deletedData] = await Promise.all([
-      listResource('students', { limit: 100 }),
-      listResource('students', { status: 'deleted', limit: 100 }),
-    ]);
+    const data = await listResource('students', { includeDeleted: true, limit: 100 });
 
-    const mergedStudents = [...(visibleData.students ?? []), ...(deletedData.students ?? [])];
-    const uniqueStudents = Array.from(
-      new Map(mergedStudents.map((student) => [getId(student), student])).values(),
-    );
-
-    setStudents(uniqueStudents);
+    setStudents(data.students ?? []);
   };
 
   useEffect(() => {
@@ -163,7 +157,14 @@ function EvaluatorStudentsPage() {
     }
   };
 
-  const updateStudentStatus = async (studentId, status) => {
+  const focusStudentForm = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    nameInputRef.current?.focus();
+    nameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const applyStudentStatus = async (studentId, status) => {
     setError('');
     setMessage('');
 
@@ -186,6 +187,35 @@ function EvaluatorStudentsPage() {
       await loadStudents();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    }
+  };
+
+  const updateStudentStatus = (studentId, status, studentName = 'este estudiante') => {
+    if (status === 'active') {
+      applyStudentStatus(studentId, status);
+      return;
+    }
+
+    setConfirmAction({
+      title: status === 'suspended' ? `Suspender a ${studentName}` : `Eliminar lógicamente a ${studentName}`,
+      description:
+        status === 'suspended'
+          ? 'El estudiante no podrá acceder hasta ser reactivado.'
+          : 'Se conservará su historial, pero saldrá del listado activo.',
+      confirmLabel: status === 'suspended' ? 'Suspender estudiante' : 'Eliminar estudiante',
+      onConfirm: () => applyStudentStatus(studentId, status),
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -249,6 +279,7 @@ function EvaluatorStudentsPage() {
             <label>
               Nombre completo
               <input
+                ref={nameInputRef}
                 type="text"
                 name="name"
                 value={formData.name}
@@ -299,7 +330,11 @@ function EvaluatorStudentsPage() {
               type="submit"
               disabled={isSubmitting || !groups.length}
             >
-              <UserPlus size={18} aria-hidden="true" />
+              {isSubmitting ? (
+                <span className="button-spinner-ring" aria-hidden="true" />
+              ) : (
+                <UserPlus size={18} aria-hidden="true" />
+              )}
               {isSubmitting ? 'Agregando...' : 'Agregar estudiante'}
             </button>
           </form>
@@ -338,7 +373,20 @@ function EvaluatorStudentsPage() {
           </div>
 
           <div className="resource-list">
-            {filteredStudents.map((student) => (
+            {isLoading ? (
+              <div className="skeleton-list" aria-label="Cargando estudiantes">
+                {[0, 1, 2].map((item) => (
+                  <div className="skeleton-card" key={item}>
+                    <span className="skeleton-line skeleton-line-title" />
+                    <span className="skeleton-line" />
+                    <div className="skeleton-chip-row">
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredStudents.map((student) => (
               <article className="resource-item" key={getId(student)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
@@ -359,7 +407,7 @@ function EvaluatorStudentsPage() {
                     <button
                       className="icon-button"
                       type="button"
-                      onClick={() => updateStudentStatus(getId(student), 'suspended')}
+                      onClick={() => updateStudentStatus(getId(student), 'suspended', student.name)}
                       title="Suspender"
                       aria-label={`Suspender ${student.name}`}
                     >
@@ -369,7 +417,7 @@ function EvaluatorStudentsPage() {
                     <button
                       className="icon-button"
                       type="button"
-                      onClick={() => updateStudentStatus(getId(student), 'active')}
+                      onClick={() => updateStudentStatus(getId(student), 'active', student.name)}
                       title="Reactivar"
                       aria-label={`Reactivar ${student.name}`}
                     >
@@ -379,7 +427,7 @@ function EvaluatorStudentsPage() {
                   <button
                     className="icon-button danger"
                     type="button"
-                    onClick={() => updateStudentStatus(getId(student), 'deleted')}
+                    onClick={() => updateStudentStatus(getId(student), 'deleted', student.name)}
                     title="Eliminar lógicamente"
                     aria-label={`Eliminar lógicamente ${student.name}`}
                     disabled={student.status === 'deleted'}
@@ -394,15 +442,29 @@ function EvaluatorStudentsPage() {
               </article>
             ))}
 
-            {filteredStudents.length === 0 ? (
-              <div className="inline-empty">
-                <h3>{isLoading ? 'Cargando estudiantes...' : 'No hay estudiantes'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Ajusta los filtros o agrega un estudiante nuevo.'}</p>
-              </div>
+            {!isLoading && filteredStudents.length === 0 ? (
+              <EmptyState
+                title="No hay estudiantes"
+                description="Ajusta los filtros o agrega un estudiante nuevo."
+                action={{
+                  label: 'Agregar estudiante',
+                  onClick: focusStudentForm,
+                }}
+              />
             ) : null}
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }
