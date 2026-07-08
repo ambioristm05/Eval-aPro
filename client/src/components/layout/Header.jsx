@@ -1,4 +1,4 @@
-import { ClipboardCheck, LogIn, LogOut, Menu, UserPlus, X } from 'lucide-react';
+import { LogIn, LogOut, Menu, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
@@ -28,9 +28,7 @@ function Header() {
   return (
     <header className="site-header">
       <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro">
-        <span className="brand-mark">
-          <ClipboardCheck size={22} aria-hidden="true" />
-        </span>
+        <img className="brand-mark" src="/icono-plano.svg" width="40" height="40" alt="" aria-hidden="true" />
         <span>EvalúaPro</span>
       </Link>
 
@@ -65,11 +63,11 @@ function Header() {
             <>
               <NavLink to="/login">
                 <LogIn size={18} aria-hidden="true" />
-                Entrar
+                Iniciar sesión
               </NavLink>
               <NavLink to="/register/student">
                 <UserPlus size={18} aria-hidden="true" />
-                Crear cuenta
+                Registro estudiante
               </NavLink>
             </>
           )}
