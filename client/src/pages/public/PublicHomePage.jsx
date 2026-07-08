@@ -27,7 +27,7 @@ function PublicHomePage() {
         <h1>EvalúaPro</h1>
         <p className="lead">
           Organiza tareas, instrumentos de evaluación, resultados y reportes en
-          un flujo pensado para profesores y participantes.
+          un flujo pensado para evaluadores y participantes.
         </p>
         <div className="action-row">
           <Link className="button button-primary" to="/login">

@@ -15,7 +15,7 @@ function AdminDashboard() {
       actions={[
         {
           title: 'Crear evaluador',
-          description: 'Alta manual de profesores desde un espacio privado.',
+          description: 'Alta manual de evaluadores desde un espacio privado.',
           icon: UserCog,
           href: '/admin/evaluators',
         },
@@ -44,7 +44,7 @@ function AdminDashboard() {
             <strong>Lista</strong>
           </div>
           <div>
-            <span>Registro público de profesor</span>
+            <span>Registro público de evaluador</span>
             <strong>Oculto</strong>
           </div>
           <div>

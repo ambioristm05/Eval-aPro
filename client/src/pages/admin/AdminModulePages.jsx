@@ -10,7 +10,7 @@ export function AdminEvaluatorsPage() {
     <ModulePage
       eyebrow="Administración"
       title="Gestionar evaluadores"
-      description="Espacio privado para crear, aprobar, suspender y revisar cuentas de profesores."
+      description="Espacio privado para crear, aprobar, suspender y revisar cuentas de evaluadores."
       icon={moduleIcons.UserCog}
       status="in-progress"
       statusDescription="La gestión completa de evaluadores está definida, pero el alta y los cambios de estado todavía se operan desde invitaciones y controles protegidos."
@@ -21,7 +21,7 @@ export function AdminEvaluatorsPage() {
         },
         {
           title: 'Cambiar estado',
-          description: 'Suspender o reactivar profesores según las reglas del sistema.',
+          description: 'Suspender o reactivar evaluadores según las reglas del sistema.',
         },
         {
           title: 'Auditoría básica',
@@ -110,7 +110,7 @@ export function AdminInvitationsPage() {
                 type="email"
                 name="email"
                 value={formData.email}
-                placeholder="profesor@correo.com"
+                placeholder="evaluador@correo.com"
                 autoComplete="email"
                 onChange={handleChange}
                 required
@@ -161,7 +161,7 @@ export function AdminInvitationsPage() {
           </div>
           <div className="progress-list">
             <div>
-              <span>Registro público profesor</span>
+              <span>Registro público evaluador</span>
               <strong>Oculto</strong>
             </div>
             <div>
