@@ -12,6 +12,14 @@ function RoleNav() {
   const links = role ? (roleNavigation[role] ?? []) : [];
   const primaryLinks = links.slice(0, 4);
   const overflowLinks = links.slice(4);
+  const evaluatorWorkflowRoutes = [
+    '/evaluator/courses',
+    '/evaluator/groups',
+    '/evaluator/students',
+    '/evaluator/instruments',
+    '/evaluator/evaluations',
+    '/evaluator/reports',
+  ];
   const isOverflowActive = overflowLinks.some(
     (link) => location.pathname === link.to || location.pathname.startsWith(`${link.to}/`),
   );
@@ -24,8 +32,31 @@ function RoleNav() {
     return null;
   }
 
-  const navLinkClassName = (isOverflow = false) =>
-    ({ isActive }) => `role-nav-link${isOverflow ? ' role-nav-link-overflow' : ''}${isActive ? ' active' : ''}`;
+  const getWorkflowClassName = (link) => {
+    if (role !== 'evaluator') return '';
+
+    const workflowIndex = evaluatorWorkflowRoutes.indexOf(link.to);
+    if (workflowIndex === -1) return '';
+
+    return [
+      'role-nav-link-workflow',
+      workflowIndex === 0 ? 'role-nav-link-workflow-first' : '',
+      workflowIndex === evaluatorWorkflowRoutes.length - 1 ? 'role-nav-link-workflow-last' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  };
+
+  const navLinkClassName = (link, isOverflow = false) =>
+    ({ isActive }) =>
+      [
+        'role-nav-link',
+        isOverflow ? 'role-nav-link-overflow' : '',
+        getWorkflowClassName(link),
+        isActive ? 'active' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
   return (
     <nav className="role-nav" aria-label="Navegación del rol">
@@ -33,7 +64,7 @@ function RoleNav() {
         const Icon = link.icon;
 
         return (
-          <NavLink className={navLinkClassName()} end={link.to === `/${user.role}`} to={link.to} key={link.to}>
+          <NavLink className={navLinkClassName(link)} end={link.to === `/${user.role}`} to={link.to} key={link.to}>
             <Icon size={17} aria-hidden="true" />
             <span>{link.label}</span>
           </NavLink>
@@ -45,7 +76,7 @@ function RoleNav() {
 
         return (
           <NavLink
-            className={navLinkClassName(true)}
+            className={navLinkClassName(link, true)}
             end={link.to === `/${user.role}`}
             to={link.to}
             key={link.to}

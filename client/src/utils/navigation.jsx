@@ -28,9 +28,9 @@ export const roleNavigation = {
   ],
   evaluator: [
     { label: 'Panel', to: '/evaluator', icon: LayoutDashboard },
+    { label: 'Cursos', to: '/evaluator/courses', icon: BookOpenCheck },
     { label: 'Grupos', to: '/evaluator/groups', icon: GraduationCap },
     { label: 'Estudiantes', to: '/evaluator/students', icon: Users },
-    { label: 'Tareas', to: '/evaluator/tasks', icon: NotebookTabs },
     { label: 'Instrumentos', to: '/evaluator/instruments', icon: ClipboardCheck },
     { label: 'Evaluaciones', to: '/evaluator/evaluations', icon: FileText },
     { label: 'Reportes', to: '/evaluator/reports', icon: Printer },

@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
+  FolderOpen,
   Pencil,
   Plus,
   Save,
@@ -12,9 +13,15 @@ import {
   Weight,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import EmptyState from '../../components/common/EmptyState.jsx';
+import HierarchyBreadcrumb from '../../components/common/HierarchyBreadcrumb.jsx';
 import {
-  createResource,
+  createClassTask,
   deleteResource,
+  getResource,
+  listClassTasks,
   listResource,
   updateResource,
 } from '../../services/resourceService.js';
@@ -33,10 +40,8 @@ const emptyForm = {
 };
 
 const statusLabels = {
-  pending: 'Pendiente',
-  in_progress: 'En progreso',
-  completed: 'Completada',
-  cancelled: 'Cancelada',
+  pending: 'Por evaluar',
+  completed: 'Evaluada',
 };
 
 function getId(resource) {
@@ -69,8 +74,8 @@ function studentBelongsToGroup(student, groupId) {
   return getStudentGroupIds(student).includes(groupId);
 }
 
-function getAssignedStudentsCount(task) {
-  return task.students?.length ?? 0;
+function normalizeTaskStatus(status) {
+  return status === 'completed' ? 'completed' : 'pending';
 }
 
 function buildTaskPayload(formData) {
@@ -87,7 +92,9 @@ function buildTaskPayload(formData) {
   };
 }
 
-function EvaluatorTasksPage() {
+function ClassDetailPage() {
+  const { courseId, moduleId, classId } = useParams();
+  const [academicClass, setAcademicClass] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
@@ -101,12 +108,19 @@ function EvaluatorTasksPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const course = academicClass?.course;
+  const module = academicClass?.module;
+  const isReadOnly =
+    course?.status === 'archived' || module?.status === 'archived' || academicClass?.status === 'archived';
 
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return tasks.filter((task) => {
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || normalizeTaskStatus(task.status) === statusFilter;
       const matchesSearch =
         !normalizedSearch ||
         task.title.toLowerCase().includes(normalizedSearch) ||
@@ -118,13 +132,15 @@ function EvaluatorTasksPage() {
     });
   }, [tasks, searchTerm, statusFilter]);
 
-  const activeTasks = tasks.filter((task) => ['pending', 'in_progress'].includes(task.status)).length;
-  const completedTasks = tasks.filter((task) => task.status === 'completed').length;
+  const pendingTasks = tasks.filter((task) => normalizeTaskStatus(task.status) === 'pending').length;
+  const evaluatedTasks = tasks.filter((task) => normalizeTaskStatus(task.status) === 'completed').length;
   const totalWeight = tasks.reduce((total, task) => total + Number(task.weight || 0), 0);
+
   const assignableStudents = useMemo(
     () => students.filter((student) => studentBelongsToGroup(student, formData.group)),
     [students, formData.group]
   );
+
   const filteredAssignableStudents = useMemo(() => {
     const normalizedSearch = studentSearchTerm.trim().toLowerCase();
     if (!normalizedSearch) return assignableStudents;
@@ -135,23 +151,15 @@ function EvaluatorTasksPage() {
         student.email.toLowerCase().includes(normalizedSearch)
     );
   }, [assignableStudents, studentSearchTerm]);
+
   const selectedStudents = useMemo(
     () => students.filter((student) => formData.students.includes(getId(student))),
     [formData.students, students]
   );
 
   const loadTasks = async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const data = await listResource('tasks', { limit: 100 });
-      setTasks(data.tasks ?? []);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
-    } finally {
-      setIsLoading(false);
-    }
+    const data = await listClassTasks(classId, { limit: 100 });
+    setTasks(data.tasks ?? []);
   };
 
   useEffect(() => {
@@ -162,8 +170,9 @@ function EvaluatorTasksPage() {
       setError('');
 
       try {
-        const [tasksResult, groupsResult, studentsResult, instrumentsResult] = await Promise.allSettled([
-          listResource('tasks', { limit: 100 }),
+        const [classResult, tasksResult, groupsResult, studentsResult, instrumentsResult] = await Promise.allSettled([
+          getResource('classes', classId),
+          listClassTasks(classId, { limit: 100 }),
           listResource('groups', { status: 'active', limit: 100 }),
           listResource('students', { status: 'active', limit: 100 }),
           listResource('instruments', { limit: 100 }),
@@ -171,12 +180,13 @@ function EvaluatorTasksPage() {
 
         if (!isMounted) return;
 
+        if (classResult.status === 'fulfilled') setAcademicClass(classResult.value.class);
         if (tasksResult.status === 'fulfilled') setTasks(tasksResult.value.tasks ?? []);
         if (groupsResult.status === 'fulfilled') setGroups(groupsResult.value.groups ?? []);
         if (studentsResult.status === 'fulfilled') setStudents(studentsResult.value.students ?? []);
         if (instrumentsResult.status === 'fulfilled') setInstruments(instrumentsResult.value.instruments ?? []);
 
-        const failedResult = [tasksResult, groupsResult, studentsResult, instrumentsResult].find(
+        const failedResult = [classResult, tasksResult, groupsResult, studentsResult, instrumentsResult].find(
           (result) => result.status === 'rejected'
         );
 
@@ -196,7 +206,7 @@ function EvaluatorTasksPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [classId]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -234,6 +244,8 @@ function EvaluatorTasksPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isReadOnly) return;
+
     setError('');
     setMessage('');
 
@@ -249,7 +261,7 @@ function EvaluatorTasksPage() {
         await updateResource('tasks', editingId, payload);
         setMessage('Tarea actualizada correctamente.');
       } else {
-        await createResource('tasks', payload);
+        await createClassTask(classId, payload);
         setMessage('Tarea creada correctamente.');
       }
 
@@ -270,7 +282,7 @@ function EvaluatorTasksPage() {
       group: task.group ? getId(task.group) : '',
       students: (task.students ?? []).map(getId).filter(Boolean),
       instrument: task.instrument ? getId(task.instrument) : '',
-      status: task.status,
+      status: normalizeTaskStatus(task.status),
       startDate: toInputDate(task.startDate),
       dueDate: toInputDate(task.dueDate),
       weight: task.weight ?? 0,
@@ -290,7 +302,9 @@ function EvaluatorTasksPage() {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
+  const deleteTask = async (task) => {
+    const taskId = getId(task);
+
     setError('');
     setMessage('');
 
@@ -304,18 +318,51 @@ function EvaluatorTasksPage() {
     }
   };
 
+  const handleDeleteTask = (task) => {
+    setConfirmAction({
+      title: `Eliminar ${task.title}`,
+      description: 'Esta acción no se puede deshacer desde esta pantalla.',
+      confirmLabel: 'Eliminar tarea',
+      onConfirm: () => deleteTask(task),
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setIsConfirming(true);
+    try {
+      await confirmAction.onConfirm();
+      setConfirmAction(null);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   return (
     <section className="management-page">
+      <HierarchyBreadcrumb
+        items={[
+          course ? { label: course.name, to: `/evaluator/courses/${getId(course) || courseId}` } : { label: 'Curso' },
+          module
+            ? {
+                label: module.name,
+                to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
+              }
+            : { label: 'Módulo' },
+          academicClass ? { label: academicClass.name } : { label: 'Clase' },
+        ]}
+      />
+
       <div className="module-hero">
         <span className="module-hero-icon">
           <ClipboardList size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Evaluador</p>
-          <h1>Tareas</h1>
+          <p className="eyebrow">Clase</p>
+          <h1>{academicClass?.name ?? 'Detalle de clase'}</h1>
           <p className="dashboard-description">
-            Crea actividades evaluables, asigna grupos e instrumentos, define fechas y prepara
-            la ponderación para la nota final.
+            {academicClass?.description || 'Crea y gestiona las tareas evaluables de esta clase.'}
           </p>
         </div>
       </div>
@@ -329,15 +376,20 @@ function EvaluatorTasksPage() {
         </div>
       ) : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
+      {isReadOnly ? (
+        <p className="form-message form-message-warning">
+          Este nivel está archivado. Puedes revisar sus tareas, pero no crear nuevos contenidos.
+        </p>
+      ) : null}
 
-      <div className="metric-grid" aria-label="Resumen de tareas">
+      <div className="metric-grid" aria-label="Resumen de tareas de la clase">
         <article className="metric-card">
           <span className="metric-icon">
             <CalendarClock size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{activeTasks}</strong>
-            <span>Activas</span>
+            <strong>{isLoading ? '...' : String(pendingTasks)}</strong>
+            <span>Por evaluar</span>
           </div>
         </article>
         <article className="metric-card">
@@ -345,8 +397,8 @@ function EvaluatorTasksPage() {
             <CheckCircle2 size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{completedTasks}</strong>
-            <span>Completadas</span>
+            <strong>{isLoading ? '...' : String(evaluatedTasks)}</strong>
+            <span>Evaluadas</span>
           </div>
         </article>
         <article className="metric-card">
@@ -354,7 +406,7 @@ function EvaluatorTasksPage() {
             <Weight size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{totalWeight}%</strong>
+            <strong>{isLoading ? '...' : `${totalWeight}%`}</strong>
             <span>Ponderación</span>
           </div>
         </article>
@@ -364,7 +416,7 @@ function EvaluatorTasksPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>{editingId ? 'Editar tarea' : 'Crear tarea'}</h2>
-            <p>Define la actividad evaluable y su valor dentro del periodo.</p>
+            <p>Define la actividad evaluable dentro de esta clase.</p>
           </div>
 
           <form className="stacked-form compact-form task-form" onSubmit={handleSubmit}>
@@ -377,8 +429,9 @@ function EvaluatorTasksPage() {
                     type="text"
                     name="title"
                     value={formData.title}
-                    placeholder="Ej. Presentación oral"
+                    placeholder="Ej. Práctica de digitación"
                     onChange={handleChange}
+                    disabled={isReadOnly}
                     required
                   />
                 </label>
@@ -390,18 +443,19 @@ function EvaluatorTasksPage() {
                     placeholder="Instrucciones o alcance de la tarea"
                     rows="4"
                     onChange={handleChange}
+                    disabled={isReadOnly}
                   />
                 </label>
               </div>
             </details>
 
-            <details className="form-section" open>
+            <details className="form-section">
               <summary>Asignación</summary>
               <div className="form-section-body">
                 <div className="form-two-columns">
                   <label>
                     Grupo
-                    <select name="group" value={formData.group} onChange={handleChange}>
+                    <select name="group" value={formData.group} onChange={handleChange} disabled={isReadOnly}>
                       <option value="">Sin grupo</option>
                       {groups.map((group) => (
                         <option key={getId(group)} value={getId(group)}>
@@ -412,7 +466,12 @@ function EvaluatorTasksPage() {
                   </label>
                   <label>
                     Instrumento
-                    <select name="instrument" value={formData.instrument} onChange={handleChange}>
+                    <select
+                      name="instrument"
+                      value={formData.instrument}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                    >
                       <option value="">Sin instrumento</option>
                       {instruments.map((instrument) => (
                         <option key={getId(instrument)} value={getId(instrument)}>
@@ -437,6 +496,7 @@ function EvaluatorTasksPage() {
                           type="button"
                           key={getId(student)}
                           onClick={() => handleStudentToggle(getId(student))}
+                          disabled={isReadOnly}
                         >
                           {getStudentName(student)}
                         </button>
@@ -451,6 +511,7 @@ function EvaluatorTasksPage() {
                       value={studentSearchTerm}
                       placeholder="Buscar estudiante"
                       onChange={(event) => setStudentSearchTerm(event.target.value)}
+                      disabled={isReadOnly}
                     />
                   </label>
 
@@ -465,6 +526,7 @@ function EvaluatorTasksPage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleStudentToggle(studentId)}
+                            disabled={isReadOnly}
                           />
                           <span className="assignment-check" aria-hidden="true">
                             <CheckCircle2 size={15} />
@@ -493,7 +555,7 @@ function EvaluatorTasksPage() {
               </div>
             </details>
 
-            <details className="form-section" open>
+            <details className="form-section">
               <summary>Fechas y ponderación</summary>
               <div className="form-section-body">
                 <div className="form-two-columns">
@@ -501,25 +563,35 @@ function EvaluatorTasksPage() {
                     Inicio
                     <span className="date-field">
                       <CalendarDays size={17} aria-hidden="true" />
-                      <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} />
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleChange}
+                        disabled={isReadOnly}
+                      />
                     </span>
                   </label>
                   <label>
                     Entrega
                     <span className="date-field">
                       <CalendarDays size={17} aria-hidden="true" />
-                      <input type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} />
+                      <input
+                        type="date"
+                        name="dueDate"
+                        value={formData.dueDate}
+                        onChange={handleChange}
+                        disabled={isReadOnly}
+                      />
                     </span>
                   </label>
                 </div>
                 <div className="form-two-columns">
                   <label>
                     Estado
-                    <select name="status" value={formData.status} onChange={handleChange}>
-                      <option value="pending">Pendiente</option>
-                      <option value="in_progress">En progreso</option>
-                      <option value="completed">Completada</option>
-                      <option value="cancelled">Cancelada</option>
+                    <select name="status" value={formData.status} onChange={handleChange} disabled={isReadOnly}>
+                      <option value="pending">Por evaluar</option>
+                      <option value="completed">Evaluada</option>
                     </select>
                   </label>
                   <label>
@@ -531,6 +603,7 @@ function EvaluatorTasksPage() {
                       max="100"
                       value={formData.weight}
                       onChange={handleChange}
+                      disabled={isReadOnly}
                     />
                   </label>
                 </div>
@@ -538,12 +611,18 @@ function EvaluatorTasksPage() {
             </details>
 
             <div className="form-actions">
-              <button className="button button-primary" type="submit" disabled={isSubmitting}>
-                {editingId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
+              <button className="button button-primary" type="submit" disabled={isSubmitting || isReadOnly}>
+                {isSubmitting ? (
+                  <span className="button-spinner-ring" aria-hidden="true" />
+                ) : editingId ? (
+                  <Save size={18} aria-hidden="true" />
+                ) : (
+                  <Plus size={18} aria-hidden="true" />
+                )}
                 {isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear tarea'}
               </button>
               {editingId ? (
-                <button className="button button-secondary" type="button" onClick={resetForm}>
+                <button className="button button-ghost" type="button" onClick={resetForm}>
                   Cancelar
                 </button>
               ) : null}
@@ -554,7 +633,7 @@ function EvaluatorTasksPage() {
         <section className="dashboard-panel">
           <div className="panel-heading panel-heading-row">
             <div>
-              <h2>Listado</h2>
+              <h2>Tareas</h2>
               <p>Busca por tarea, grupo o instrumento y filtra por estado.</p>
             </div>
             <span className="count-pill">{filteredTasks.length}</span>
@@ -577,21 +656,33 @@ function EvaluatorTasksPage() {
               aria-label="Filtrar por estado"
             >
               <option value="all">Todas</option>
-              <option value="pending">Pendientes</option>
-              <option value="in_progress">En progreso</option>
-              <option value="completed">Completadas</option>
-              <option value="cancelled">Canceladas</option>
+              <option value="pending">Por evaluar</option>
+              <option value="completed">Evaluadas</option>
             </select>
           </div>
 
           <div className="resource-list">
-            {filteredTasks.map((task) => (
+            {isLoading ? (
+              <div className="skeleton-list" aria-label="Cargando tareas">
+                {[0, 1, 2].map((item) => (
+                  <div className="skeleton-card" key={item}>
+                    <span className="skeleton-line skeleton-line-title" />
+                    <span className="skeleton-line" />
+                    <div className="skeleton-chip-row">
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                      <span className="skeleton-chip" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredTasks.map((task) => (
               <article className="resource-item" key={getId(task)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
                     <h3>{task.title}</h3>
-                    <span className={`status-badge status-${task.status}`}>
-                      {statusLabels[task.status]}
+                    <span className={`status-badge status-${normalizeTaskStatus(task.status)}`}>
+                      {statusLabels[normalizeTaskStatus(task.status)]}
                     </span>
                   </div>
                   <p>{task.description || 'Sin descripción registrada.'}</p>
@@ -600,7 +691,7 @@ function EvaluatorTasksPage() {
                     <span>{getInstrumentName(task)}</span>
                     <span>
                       <Users size={14} aria-hidden="true" />
-                      {getAssignedStudentsCount(task)}
+                      {task.students?.length ?? 0}
                     </span>
                     <span>{task.weight}%</span>
                     <span>{toInputDate(task.dueDate) || 'Sin entrega'}</span>
@@ -608,12 +699,22 @@ function EvaluatorTasksPage() {
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${task.title}`}>
+                  <Link
+                    className="icon-button labeled"
+                    to={`/evaluator/courses/${courseId}/modules/${moduleId}/classes/${classId}/tasks/${getId(task)}`}
+                    title="Ver detalle"
+                    aria-label={`Ver detalle de ${task.title}`}
+                  >
+                    <FolderOpen size={17} aria-hidden="true" />
+                    <span>Detalle</span>
+                  </Link>
                   <button
                     className="icon-button labeled"
                     type="button"
                     onClick={() => handleEdit(task)}
                     title="Editar"
                     aria-label={`Editar ${task.title}`}
+                    disabled={isReadOnly}
                   >
                     <Pencil size={17} aria-hidden="true" />
                     <span>Editar</span>
@@ -622,19 +723,20 @@ function EvaluatorTasksPage() {
                     className="icon-button labeled"
                     type="button"
                     onClick={() => updateTaskStatus(getId(task), 'completed')}
-                    title="Marcar completada"
-                    aria-label={`Marcar completada ${task.title}`}
-                    disabled={task.status === 'completed'}
+                    title="Marcar evaluada"
+                    aria-label={`Marcar evaluada ${task.title}`}
+                    disabled={isReadOnly || task.status === 'completed'}
                   >
                     <CheckCircle2 size={17} aria-hidden="true" />
-                    <span>Completar</span>
+                    <span>Evaluada</span>
                   </button>
                   <button
                     className="icon-button danger labeled"
                     type="button"
-                    onClick={() => handleDeleteTask(getId(task))}
+                    onClick={() => handleDeleteTask(task)}
                     title="Eliminar"
                     aria-label={`Eliminar ${task.title}`}
+                    disabled={isReadOnly}
                   >
                     <Trash2 size={17} aria-hidden="true" />
                     <span>Eliminar</span>
@@ -643,17 +745,42 @@ function EvaluatorTasksPage() {
               </article>
             ))}
 
-            {filteredTasks.length === 0 ? (
-              <div className="inline-empty">
-                <h3>{isLoading ? 'Cargando tareas...' : 'No hay tareas'}</h3>
-                <p>{isLoading ? 'Espera un momento.' : 'Ajusta los filtros o crea una tarea nueva.'}</p>
-              </div>
+            {!isLoading && filteredTasks.length === 0 ? (
+              <EmptyState
+                title="No hay tareas"
+                description={
+                  isReadOnly
+                    ? 'Esta clase no tiene tareas activas para mostrar.'
+                    : 'Crea la primera tarea de esta clase.'
+                }
+                action={
+                  isReadOnly
+                    ? null
+                    : {
+                        label: 'Crear tarea',
+                        onClick: () => {
+                          resetForm();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
+                      }
+                }
+              />
             ) : null}
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmLabel={confirmAction?.confirmLabel}
+        isBusy={isConfirming}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+      />
     </section>
   );
 }
 
-export default EvaluatorTasksPage;
+export default ClassDetailPage;
