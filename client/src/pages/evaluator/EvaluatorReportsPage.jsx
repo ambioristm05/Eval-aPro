@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   getPrintableReport,
   getReport,
+  listCourseModules,
+  listModuleClasses,
   listResource,
   updateStudentReportPermission,
 } from '../../services/resourceService.js';
@@ -19,6 +21,12 @@ const reportTitles = {
 
 function getId(resource) {
   return resource?.id ?? resource?._id ?? '';
+}
+
+function idEquals(value, target) {
+  if (!value || !target) return false;
+  const valueId = typeof value === 'string' ? value : getId(value);
+  return valueId === target;
 }
 
 function getStudentName(evaluation) {
@@ -41,13 +49,17 @@ function getGradeValue(value) {
   return Number(value ?? 0);
 }
 
-function formatPercent(value) {
+function formatGrade(value) {
   const numericValue = getGradeValue(value);
-  return `${Number.isFinite(numericValue) ? numericValue : 0}%`;
+  return `${Number.isFinite(numericValue) ? numericValue : 0}`;
 }
 
 function getSummaryValue(report) {
   return report?.summary?.finalGrade ?? report?.summary?.average ?? 0;
+}
+
+function cleanHierarchyParams(filter) {
+  return Object.fromEntries(Object.entries(filter).filter(([, value]) => Boolean(value)));
 }
 
 function EvaluatorReportsPage() {
@@ -56,6 +68,10 @@ function EvaluatorReportsPage() {
   const [groups, setGroups] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [instruments, setInstruments] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [hierarchyModules, setHierarchyModules] = useState([]);
+  const [hierarchyClasses, setHierarchyClasses] = useState([]);
+  const [hierarchyFilter, setHierarchyFilter] = useState({ courseId: '', moduleId: '', classId: '' });
   const [selectedIds, setSelectedIds] = useState({
     student: '',
     group: '',
@@ -69,18 +85,62 @@ function EvaluatorReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
 
+  const isHierarchyFilterActive = Boolean(
+    hierarchyFilter.courseId || hierarchyFilter.moduleId || hierarchyFilter.classId
+  );
+
+  const filteredTasks = useMemo(() => {
+    if (!isHierarchyFilterActive) return tasks;
+
+    return tasks.filter((task) => {
+      const taskClass = task.class;
+      if (!taskClass) return false;
+      if (hierarchyFilter.classId) return idEquals(taskClass, hierarchyFilter.classId);
+      if (hierarchyFilter.moduleId) return idEquals(taskClass.module, hierarchyFilter.moduleId);
+      return idEquals(taskClass.course, hierarchyFilter.courseId);
+    });
+  }, [tasks, hierarchyFilter, isHierarchyFilterActive]);
+
+  // Grupos, estudiantes e instrumentos no tienen un vínculo directo con la jerarquía académica,
+  // así que se acotan a los que participan en al menos una tarea dentro del curso/módulo/clase filtrado.
+  const scopedGroupIds = useMemo(() => new Set(filteredTasks.map((task) => task.group && getId(task.group)).filter(Boolean)), [filteredTasks]);
+  const scopedInstrumentIds = useMemo(
+    () => new Set(filteredTasks.map((task) => task.instrument && getId(task.instrument)).filter(Boolean)),
+    [filteredTasks]
+  );
+  const scopedStudentIds = useMemo(
+    () => new Set(filteredTasks.flatMap((task) => (task.students ?? []).map(getId))),
+    [filteredTasks]
+  );
+
+  const filteredGroups = useMemo(() => {
+    if (!isHierarchyFilterActive) return groups;
+    return groups.filter((group) => scopedGroupIds.has(getId(group)));
+  }, [groups, isHierarchyFilterActive, scopedGroupIds]);
+
+  const filteredInstruments = useMemo(() => {
+    if (!isHierarchyFilterActive) return instruments;
+    return instruments.filter((instrument) => scopedInstrumentIds.has(getId(instrument)));
+  }, [instruments, isHierarchyFilterActive, scopedInstrumentIds]);
+
+  const filteredStudents = useMemo(() => {
+    if (!isHierarchyFilterActive) return students;
+    return students.filter((student) => scopedStudentIds.has(getId(student)));
+  }, [students, isHierarchyFilterActive, scopedStudentIds]);
+
   const activeOptions = useMemo(() => {
-    if (reportType === 'student') return students;
-    if (reportType === 'group' || reportType === 'final') return groups;
-    if (reportType === 'task') return tasks;
-    if (reportType === 'instrument') return instruments;
+    if (reportType === 'student') return filteredStudents;
+    if (reportType === 'group' || reportType === 'final') return filteredGroups;
+    if (reportType === 'task') return filteredTasks;
+    if (reportType === 'instrument') return filteredInstruments;
     return [];
-  }, [groups, instruments, reportType, students, tasks]);
+  }, [filteredGroups, filteredInstruments, reportType, filteredStudents, filteredTasks]);
 
   const selectedId = reportType === 'final' ? selectedIds.final || selectedIds.group : selectedIds[reportType];
   const evaluations = report?.evaluations ?? [];
   const summaryValue = getSummaryValue(report);
   const studentPrintEnabled = Boolean(report?.permissions?.studentPrintEnabled);
+  const hierarchyParams = useMemo(() => cleanHierarchyParams(hierarchyFilter), [hierarchyFilter]);
 
   useEffect(() => {
     let isMounted = true;
@@ -91,11 +151,12 @@ function EvaluatorReportsPage() {
       setMessage('');
 
       try {
-        const [studentsData, groupsData, tasksData, instrumentsData] = await Promise.all([
+        const [studentsData, groupsData, tasksData, instrumentsData, coursesData] = await Promise.all([
           listResource('students', { limit: 100 }),
           listResource('groups', { limit: 100 }),
           listResource('tasks', { limit: 100 }),
           listResource('instruments', { limit: 100 }),
+          listResource('courses', { limit: 100 }),
         ]);
 
         if (!isMounted) return;
@@ -104,11 +165,13 @@ function EvaluatorReportsPage() {
         const nextGroups = groupsData.groups ?? [];
         const nextTasks = tasksData.tasks ?? [];
         const nextInstruments = instrumentsData.instruments ?? [];
+        const nextCourses = coursesData.courses ?? [];
 
         setStudents(nextStudents);
         setGroups(nextGroups);
         setTasks(nextTasks);
         setInstruments(nextInstruments);
+        setCourses(nextCourses);
         setSelectedIds({
           student: nextStudents[0] ? getId(nextStudents[0]) : '',
           group: nextGroups[0] ? getId(nextGroups[0]) : '',
@@ -143,7 +206,7 @@ function EvaluatorReportsPage() {
       setError('');
 
       try {
-        const nextReport = await getReport(reportType, selectedId);
+        const nextReport = await getReport(reportType, selectedId, hierarchyParams);
         if (!isMounted) return;
         setReport(nextReport);
       } catch (requestError) {
@@ -158,7 +221,81 @@ function EvaluatorReportsPage() {
     return () => {
       isMounted = false;
     };
-  }, [reportType, selectedId]);
+  }, [hierarchyParams, reportType, selectedId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchModulesForCourse() {
+      if (!hierarchyFilter.courseId) return;
+
+      try {
+        const data = await listCourseModules(hierarchyFilter.courseId, { limit: 100 });
+        if (isMounted) setHierarchyModules(data.modules ?? []);
+      } catch {
+        if (isMounted) setHierarchyModules([]);
+      }
+    }
+
+    fetchModulesForCourse();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hierarchyFilter.courseId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchClassesForModule() {
+      if (!hierarchyFilter.moduleId) return;
+
+      try {
+        const data = await listModuleClasses(hierarchyFilter.moduleId, { limit: 100 });
+        if (isMounted) setHierarchyClasses(data.classes ?? []);
+      } catch {
+        if (isMounted) setHierarchyClasses([]);
+      }
+    }
+
+    fetchClassesForModule();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hierarchyFilter.moduleId]);
+
+  useEffect(() => {
+    setSelectedIds((current) => {
+      const currentId = reportType === 'final' ? current.final || current.group : current[reportType];
+      const stillValid = activeOptions.some((option) => getId(option) === currentId);
+      if (stillValid) return current;
+
+      const nextId = activeOptions[0] ? getId(activeOptions[0]) : '';
+      if (reportType === 'group' || reportType === 'final') {
+        return { ...current, group: nextId, final: nextId };
+      }
+      return { ...current, [reportType]: nextId };
+    });
+  }, [activeOptions, reportType]);
+
+  const handleCourseFilterChange = (event) => {
+    const value = event.target.value;
+    setHierarchyFilter({ courseId: value, moduleId: '', classId: '' });
+    setHierarchyModules([]);
+    setHierarchyClasses([]);
+  };
+
+  const handleModuleFilterChange = (event) => {
+    const value = event.target.value;
+    setHierarchyFilter((current) => ({ ...current, moduleId: value, classId: '' }));
+    setHierarchyClasses([]);
+  };
+
+  const handleClassFilterChange = (event) => {
+    const value = event.target.value;
+    setHierarchyFilter((current) => ({ ...current, classId: value }));
+  };
 
   const handleReportTypeChange = (event) => {
     const nextType = event.target.value;
@@ -179,7 +316,7 @@ function EvaluatorReportsPage() {
 
   const refreshCurrentReport = async () => {
     if (!selectedId) return;
-    const nextReport = await getReport(reportType, selectedId);
+    const nextReport = await getReport(reportType, selectedId, hierarchyParams);
     setReport(nextReport);
   };
 
@@ -208,7 +345,7 @@ function EvaluatorReportsPage() {
     setMessage('');
 
     try {
-      const html = await getPrintableReport(reportType, selectedId);
+      const html = await getPrintableReport(reportType, selectedId, hierarchyParams);
       openPrintableHtml(html);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -255,6 +392,43 @@ function EvaluatorReportsPage() {
           </button>
         </div>
 
+        <div className="toolbar toolbar-wide" aria-label="Filtrar reporte por jerarquía académica">
+          <select className="filter-select" value={hierarchyFilter.courseId} onChange={handleCourseFilterChange}>
+            <option value="">Todos los cursos</option>
+            {courses.map((course) => (
+              <option value={getId(course)} key={getId(course)}>
+                {course.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="filter-select"
+            value={hierarchyFilter.moduleId}
+            onChange={handleModuleFilterChange}
+            disabled={!hierarchyFilter.courseId}
+          >
+            <option value="">Todos los módulos</option>
+            {hierarchyModules.map((module) => (
+              <option value={getId(module)} key={getId(module)}>
+                {module.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="filter-select"
+            value={hierarchyFilter.classId}
+            onChange={handleClassFilterChange}
+            disabled={!hierarchyFilter.moduleId}
+          >
+            <option value="">Todas las clases</option>
+            {hierarchyClasses.map((academicClass) => (
+              <option value={getId(academicClass)} key={getId(academicClass)}>
+                {academicClass.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {reportType === 'student' ? (
           <label className="permission-toggle">
             <input
@@ -283,7 +457,7 @@ function EvaluatorReportsPage() {
             <h1>{reportTitles[reportType]}</h1>
             <p>{report?.generatedAt ? new Date(report.generatedAt).toLocaleDateString('es-DO') : new Date().toLocaleDateString('es-DO')}</p>
           </div>
-          <strong>{formatPercent(summaryValue)}</strong>
+          <strong>{formatGrade(summaryValue)}</strong>
         </header>
 
         {reportType === 'final' ? (
@@ -298,7 +472,7 @@ function EvaluatorReportsPage() {
               {(report?.grades ?? []).map((grade) => (
                 <tr key={getId(grade.student)}>
                   <td>{grade.student?.name ?? 'Estudiante'}</td>
-                  <td>{formatPercent(grade.finalGrade)}</td>
+                  <td>{formatGrade(grade.finalGrade)}</td>
                 </tr>
               ))}
             </tbody>
@@ -311,7 +485,7 @@ function EvaluatorReportsPage() {
                 <th>Tarea</th>
                 <th>Instrumento</th>
                 <th>Nota</th>
-                <th>Porcentaje</th>
+                <th>Nota final</th>
               </tr>
             </thead>
             <tbody>
@@ -321,7 +495,7 @@ function EvaluatorReportsPage() {
                   <td>{getTaskTitle(evaluation, report)}</td>
                   <td>{getInstrumentTitle(evaluation)}</td>
                   <td>{evaluation.score}/{evaluation.maxScore}</td>
-                  <td>{evaluation.percentage}%</td>
+                  <td>{evaluation.percentage}</td>
                 </tr>
               ))}
             </tbody>
