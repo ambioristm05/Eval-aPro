@@ -1,4 +1,4 @@
-import { Archive, BookOpenCheck, ClipboardList, FolderOpen, Pencil, Plus, Save, Search } from 'lucide-react';
+import { Archive, BookOpenCheck, ClipboardList, FolderOpen, Pencil, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
@@ -16,13 +16,13 @@ import { getId } from '../../utils/getId.js';
 const emptyForm = {
   name: '',
   description: '',
-  order: 0,
   status: 'active',
 };
 
 const statusLabels = {
   active: 'Activo',
   archived: 'Archivado',
+  deleted: 'Eliminado',
 };
 
 function ModuleDetailPage() {
@@ -32,7 +32,7 @@ function ModuleDetailPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('active');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -120,7 +120,6 @@ function ModuleDetailPage() {
       const payload = {
         name: normalizedName,
         description: formData.description.trim(),
-        order: Number(formData.order) || 0,
         status: formData.status,
       };
 
@@ -146,7 +145,6 @@ function ModuleDetailPage() {
     setFormData({
       name: academicClass.name,
       description: academicClass.description ?? '',
-      order: academicClass.order ?? 0,
       status: academicClass.status,
     });
   };
@@ -185,6 +183,29 @@ function ModuleDetailPage() {
       description: 'La clase quedará oculta para nuevos contenidos, pero no se afectarán evaluaciones publicadas.',
       confirmLabel: 'Archivar clase',
       onConfirm: () => archiveClass(academicClass),
+    });
+  };
+
+  const deleteClass = async (academicClass) => {
+    setError('');
+    setMessage('');
+
+    try {
+      await updateResource('classes', getId(academicClass), { status: 'deleted' });
+      setMessage('Clase eliminada y guardada en el archivo.');
+      if (editingId === getId(academicClass)) resetForm();
+      await loadClasses();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
+  };
+
+  const handleDelete = (academicClass) => {
+    setConfirmAction({
+      title: `Eliminar ${academicClass.name}`,
+      description: 'La clase no se eliminará definitivamente. Podrás verla en clases archivadas y eliminadas.',
+      confirmLabel: 'Eliminar clase',
+      onConfirm: () => deleteClass(academicClass),
     });
   };
 
@@ -284,23 +305,12 @@ function ModuleDetailPage() {
               />
             </label>
             <label>
-              Descripción
+              Fecha
               <textarea
                 name="description"
                 value={formData.description}
                 rows="4"
-                placeholder="Propósito o contenido de la clase"
-                onChange={handleChange}
-                disabled={isReadOnly}
-              />
-            </label>
-            <label>
-              Orden
-              <input
-                type="number"
-                name="order"
-                min="0"
-                value={formData.order}
+                placeholder="Ej. 18 de agosto de 2026"
                 onChange={handleChange}
                 disabled={isReadOnly}
               />
@@ -311,6 +321,7 @@ function ModuleDetailPage() {
                 <select name="status" value={formData.status} onChange={handleChange} disabled={isReadOnly}>
                   <option value="active">Activo</option>
                   <option value="archived">Archivado</option>
+                  <option value="deleted">Eliminado</option>
                 </select>
               </label>
             ) : null}
@@ -339,9 +350,17 @@ function ModuleDetailPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Clases</h2>
-              <p>Organiza las clases que luego contendrán tareas.</p>
+              <p>Organiza las fechas de clase que luego contendrán tareas.</p>
             </div>
-            <span className="count-pill">{filteredClasses.length}</span>
+            <div className="panel-heading-actions">
+              <span className="count-pill">{filteredClasses.length}</span>
+              <Link
+                className="button button-secondary"
+                to={`/evaluator/courses/${courseId}/modules/${moduleId}/classes/archive`}
+              >
+                Archivadas y eliminadas
+              </Link>
+            </div>
           </div>
 
           <div className="toolbar">
@@ -389,10 +408,7 @@ function ModuleDetailPage() {
                       {statusLabels[academicClass.status]}
                     </span>
                   </div>
-                  <p>{academicClass.description || 'Sin descripción registrada.'}</p>
-                  <div className="chip-row">
-                    <span className="metadata-chip">Orden {academicClass.order ?? 0}</span>
-                  </div>
+                  <p>{academicClass.description || 'Sin fecha registrada.'}</p>
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${academicClass.name}`}>
@@ -426,6 +442,17 @@ function ModuleDetailPage() {
                   >
                     <Archive size={17} aria-hidden="true" />
                     <span>Archivar</span>
+                  </button>
+                  <button
+                    className="icon-button danger labeled"
+                    type="button"
+                    onClick={() => handleDelete(academicClass)}
+                    title="Eliminar"
+                    aria-label={`Eliminar ${academicClass.name}`}
+                    disabled={isReadOnly || academicClass.status === 'deleted'}
+                  >
+                    <Trash2 size={17} aria-hidden="true" />
+                    <span>Eliminar</span>
                   </button>
                 </div>
               </article>

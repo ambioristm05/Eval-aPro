@@ -1,13 +1,16 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import AdminDashboard from '../pages/admin/AdminDashboard.jsx';
+import AdminEvaluatorsPage from '../pages/admin/AdminEvaluatorsPage.jsx';
+import AdminStudentsPage from '../pages/admin/AdminStudentsPage.jsx';
+import AdminCoursesPage from '../pages/admin/AdminCoursesPage.jsx';
 import {
-  AdminEvaluatorsPage,
   AdminInvitationsPage,
   AdminSettingsPage,
   AdminStatisticsPage,
 } from '../pages/admin/AdminModulePages.jsx';
 import ClassDetailPage from '../pages/evaluator/ClassDetailPage.jsx';
+import ClassArchivePage from '../pages/evaluator/ClassArchivePage.jsx';
 import CourseDetailPage from '../pages/evaluator/CourseDetailPage.jsx';
 import EvaluatorCoursesPage from '../pages/evaluator/EvaluatorCoursesPage.jsx';
 import EvaluatorDashboard from '../pages/evaluator/EvaluatorDashboard.jsx';
@@ -17,6 +20,7 @@ import EvaluatorTaskDetailPage from '../pages/evaluator/EvaluatorTaskDetailPage.
 import ModuleDetailPage from '../pages/evaluator/ModuleDetailPage.jsx';
 import EvaluatorGroupsPage from '../pages/evaluator/EvaluatorGroupsPage.jsx';
 import EvaluatorInstrumentsPage from '../pages/evaluator/EvaluatorInstrumentsPage.jsx';
+import InstrumentArchivePage from '../pages/evaluator/InstrumentArchivePage.jsx';
 import ChecklistBuilderPage from '../pages/evaluator/ChecklistBuilderPage.jsx';
 import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
@@ -51,15 +55,24 @@ function AppRoutes() {
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="admin/evaluators" element={<AdminEvaluatorsPage />} />
+            <Route path="admin/students" element={<AdminStudentsPage />} />
+            <Route path="admin/courses" element={<AdminCoursesPage />} />
             <Route path="admin/invitations" element={<AdminInvitationsPage />} />
             <Route path="admin/statistics" element={<AdminStatisticsPage />} />
             <Route path="admin/settings" element={<AdminSettingsPage />} />
+            <Route path="admin/profile" element={<ProfilePage role="admin" />} />
+            <Route path="admin/profile/edit" element={<ProfilePage role="admin" mode="edit" />} />
           </Route>
           <Route element={<RoleRoute allowedRoles={['evaluator']} />}>
             <Route path="evaluator" element={<EvaluatorDashboard />} />
             <Route path="evaluator/courses" element={<EvaluatorCoursesPage />} />
+            <Route path="evaluator/courses/groups" element={<EvaluatorGroupsPage />} />
             <Route path="evaluator/courses/:courseId" element={<CourseDetailPage />} />
             <Route path="evaluator/courses/:courseId/modules/:moduleId" element={<ModuleDetailPage />} />
+            <Route
+              path="evaluator/courses/:courseId/modules/:moduleId/classes/archive"
+              element={<ClassArchivePage />}
+            />
             <Route
               path="evaluator/courses/:courseId/modules/:moduleId/classes/:classId"
               element={<ClassDetailPage />}
@@ -68,10 +81,11 @@ function AppRoutes() {
               path="evaluator/courses/:courseId/modules/:moduleId/classes/:classId/tasks/:taskId"
               element={<EvaluatorTaskDetailPage />}
             />
-            <Route path="evaluator/groups" element={<EvaluatorGroupsPage />} />
+            <Route path="evaluator/groups" element={<Navigate to="/evaluator/courses/groups" replace />} />
             <Route path="evaluator/students" element={<EvaluatorStudentsPage />} />
             <Route path="evaluator/tasks" element={<Navigate to="/evaluator/courses" replace />} />
             <Route path="evaluator/instruments" element={<EvaluatorInstrumentsPage />} />
+            <Route path="evaluator/instruments/archive" element={<InstrumentArchivePage />} />
             <Route path="evaluator/instruments/rubric-builder" element={<RubricBuilderPage />} />
             <Route path="evaluator/instruments/rubric-builder/:id" element={<RubricBuilderPage />} />
             <Route path="evaluator/instruments/checklist-builder" element={<ChecklistBuilderPage />} />

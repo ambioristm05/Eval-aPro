@@ -191,6 +191,65 @@ textarea {
   font-weight: 800;
 }
 
+.role-nav-item {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+}
+
+.role-nav-item-with-submenu {
+  gap: 0.35rem;
+}
+
+.role-nav-parent-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+}
+
+.role-nav-parent-row a {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.role-nav-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.role-nav-toggle:hover,
+.role-nav-toggle:focus-visible {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.role-nav-toggle-icon {
+  transition: transform 160ms ease;
+}
+
+.role-nav-toggle-icon-open {
+  transform: rotate(180deg);
+}
+
+.role-nav-submenu {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.role-nav-submenu-link {
+  min-height: 2.15rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.84rem;
+}
+
 .role-nav-more {
   display: none;
 }
@@ -215,6 +274,12 @@ textarea {
 .role-nav a:hover,
 .role-nav-more-button.active,
 .role-nav-more-button:hover {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.role-nav-submenu-link.active,
+.role-nav-submenu-link:hover {
   color: var(--color-primary-strong);
   background: var(--color-primary-soft);
 }
@@ -643,6 +708,12 @@ input[aria-invalid="true"] {
   margin-top: 1rem;
 }
 
+.evaluation-print-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
 .form-two-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -684,6 +755,24 @@ input[aria-invalid="true"] {
 .assignment-list {
   display: grid;
   gap: 0.45rem;
+}
+
+.group-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.group-option-row .assignment-option {
+  flex: 1;
+  min-width: 0;
+}
+
+.button-compact {
+  min-height: 0;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+  flex-shrink: 0;
 }
 
 .assignment-option {
@@ -753,10 +842,6 @@ input[aria-invalid="true"] {
   padding: 0.6rem;
   font-size: 0.9rem;
   font-weight: 700;
-}
-
-.assignment-search {
-  width: 100%;
 }
 
 .selected-student-chips {
@@ -1185,6 +1270,27 @@ a.action-item:focus-visible {
   background: var(--color-surface-raised);
 }
 
+.hierarchy-breadcrumb-home {
+  cursor: pointer;
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-weight: 800;
+}
+
+.hierarchy-breadcrumb-link {
+  font: inherit;
+  color: var(--color-primary-strong);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.hierarchy-breadcrumb-link:hover,
+.hierarchy-breadcrumb-link:focus-visible {
+  text-decoration: underline;
+}
+
 .management-grid {
   display: grid;
   grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
@@ -1203,6 +1309,13 @@ a.action-item:focus-visible {
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.panel-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .count-pill {
@@ -1234,6 +1347,7 @@ a.action-item:focus-visible {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  box-sizing: border-box;
   min-width: 0;
   min-height: 2.75rem;
   padding: 0 0.8rem;
@@ -1243,13 +1357,35 @@ a.action-item:focus-visible {
   color: var(--color-muted-soft);
 }
 
+.search-field svg {
+  flex: 0 0 auto;
+}
+
 .search-field input {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  min-height: 1.5rem;
+  padding: 0;
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--color-text);
+}
+
+.stacked-form .search-field input,
+.stacked-form .search-field input:focus,
+.stacked-form .search-field input:focus-visible {
+  min-height: 1.5rem;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+.assignment-search {
+  width: 100%;
+  height: 2.75rem;
 }
 
 .filter-select {
@@ -1601,30 +1737,34 @@ a.action-item:focus-visible {
   background: var(--color-surface-raised);
 }
 
-.builder-shortcut {
+.structure-summary {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.85rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 1rem;
   align-items: center;
-  margin-top: 1rem;
-  padding: 1rem;
+  padding: 0.85rem 1rem;
   border-radius: 8px;
-  color: var(--color-primary-strong);
-  background: var(--color-primary-soft);
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface);
 }
 
-.builder-shortcut h3,
-.builder-shortcut p {
-  margin: 0;
+.structure-summary div {
+  display: grid;
+  gap: 0.15rem;
 }
 
-.builder-shortcut h3 {
+.structure-summary strong {
+  font-size: 1.2rem;
   color: var(--color-heading-soft);
-  font-size: 1rem;
 }
 
-.builder-shortcut p {
+.structure-summary span {
   color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.structure-summary .button {
+  justify-self: end;
 }
 
 .builder-page {
@@ -2556,11 +2696,46 @@ a.action-item:focus-visible {
     overflow-y: auto;
   }
 
+  .app-shell-authenticated .role-nav-item {
+    display: grid;
+    width: 100%;
+  }
+
+  .app-shell-authenticated .role-nav-item-with-submenu {
+    gap: 0.25rem;
+  }
+
   .app-shell-authenticated .role-nav a {
     position: relative;
     width: 100%;
     min-height: 2.65rem;
     justify-content: flex-start;
+  }
+
+  .app-shell-authenticated .role-nav-parent-row a {
+    width: auto;
+  }
+
+  .app-shell-authenticated .role-nav-toggle {
+    min-height: 2.65rem;
+  }
+
+  .app-shell-authenticated .role-nav-submenu {
+    display: grid;
+    gap: 0.18rem;
+    padding-left: 0.85rem;
+  }
+
+  .app-shell-authenticated .role-nav-submenu-link {
+    min-height: 2.25rem;
+    padding: 0.45rem 0.65rem 0.45rem 1rem;
+    color: var(--color-muted);
+    font-size: 0.84rem;
+    box-shadow: none;
+  }
+
+  .app-shell-authenticated .role-nav-submenu-link.active {
+    box-shadow: inset 0.2rem 0 0 var(--color-primary);
   }
 
   .app-shell-authenticated .role-nav-link-workflow {
@@ -2666,6 +2841,18 @@ a.action-item:focus-visible {
   .role-nav a span {
     white-space: normal;
   }
+
+  .role-nav-item-open {
+    grid-column: 1 / -1;
+  }
+
+  .role-nav-parent-row {
+    max-width: 14rem;
+  }
+
+  .role-nav-submenu {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 760px) {
@@ -2747,7 +2934,7 @@ a.action-item:focus-visible {
   .toolbar-wide,
   .resource-item,
   .form-two-columns,
-  .builder-shortcut,
+  .structure-summary,
   .level-item,
   .option-item,
   .checklist-item {
@@ -2791,6 +2978,22 @@ a.action-item:focus-visible {
 
   .role-nav-link-overflow {
     display: none !important;
+  }
+
+  .role-nav-item {
+    min-width: 0;
+  }
+
+  .role-nav-item-with-submenu {
+    display: flex;
+  }
+
+  .role-nav-toggle {
+    display: none;
+  }
+
+  .role-nav-submenu {
+    display: none;
   }
 
   .role-nav a,

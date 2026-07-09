@@ -75,6 +75,7 @@ function EvaluatorReportsPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const isHierarchyFilterActive = Boolean(
     hierarchyFilter.courseId || hierarchyFilter.moduleId || hierarchyFilter.classId
@@ -89,7 +90,10 @@ function EvaluatorReportsPage() {
 
   // Grupos, estudiantes e instrumentos no tienen un vínculo directo con la jerarquía académica,
   // así que se acotan a los que participan en al menos una tarea dentro del curso/módulo/clase filtrado.
-  const scopedGroupIds = useMemo(() => new Set(filteredTasks.map((task) => task.group && getId(task.group)).filter(Boolean)), [filteredTasks]);
+  const scopedGroupIds = useMemo(
+    () => new Set(filteredTasks.flatMap((task) => (task.groups ?? []).map(getId)).filter(Boolean)),
+    [filteredTasks]
+  );
   const scopedInstrumentIds = useMemo(
     () => new Set(filteredTasks.map((task) => task.instrument && getId(task.instrument)).filter(Boolean)),
     [filteredTasks]
@@ -353,12 +357,15 @@ function EvaluatorReportsPage() {
 
     setError('');
     setMessage('');
+    setIsPrinting(true);
 
     try {
       const html = await getPrintableReport(reportType, selectedId, hierarchyParams);
       openPrintableHtml(html);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    } finally {
+      setIsPrinting(false);
     }
   };
 
@@ -396,9 +403,14 @@ function EvaluatorReportsPage() {
               </option>
             ))}
           </select>
-          <button className="button button-primary" type="button" onClick={handleOpenPrintableReport} disabled={!report}>
-            <Printer size={18} aria-hidden="true" />
-            Imprimir
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={handleOpenPrintableReport}
+            disabled={!report || isPrinting}
+          >
+            {isPrinting ? <span className="button-spinner-ring" aria-hidden="true" /> : <Printer size={18} aria-hidden="true" />}
+            {isPrinting ? 'Abriendo...' : 'Imprimir'}
           </button>
         </div>
 
@@ -529,8 +541,14 @@ function EvaluatorReportsPage() {
         </div>
       </section>
 
-      <button className="floating-print no-print" type="button" onClick={handleOpenPrintableReport} title="Imprimir" disabled={!report}>
-        <Download size={20} aria-hidden="true" />
+      <button
+        className="floating-print no-print"
+        type="button"
+        onClick={handleOpenPrintableReport}
+        title="Imprimir"
+        disabled={!report || isPrinting}
+      >
+        {isPrinting ? <span className="button-spinner-ring" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
       </button>
     </section>
   );

@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, Save, Search, Send, Star } from 'lucide-react';
+import { CheckCircle2, FileText, Printer, Save, Search, Send, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
+import { openPrintableHtml } from '../../utils/printReport.js';
 
 const defaultDraft = {
   studentIds: [],
@@ -44,9 +45,12 @@ function studentCanBeEvaluatedForTask(student, task) {
 
   const studentId = getId(student);
   const directStudentIds = (task.students ?? []).map(getId).filter(Boolean);
-  const taskGroupId = getId(task.group);
+  const taskGroupIds = (task.groups ?? []).map(getId).filter(Boolean);
+  const studentGroupIds = getStudentGroupIds(student);
 
-  return directStudentIds.includes(studentId) || (taskGroupId && getStudentGroupIds(student).includes(taskGroupId));
+  return (
+    directStudentIds.includes(studentId) || taskGroupIds.some((groupId) => studentGroupIds.includes(groupId))
+  );
 }
 
 function getInstrumentItems(instrument) {
@@ -111,9 +115,115 @@ function formatToday() {
   }).format(new Date());
 }
 
+function getPageStyles() {
+  return Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+    .map((node) => node.outerHTML)
+    .join('\n');
+}
+
+function cloneElementWithCurrentValues(element) {
+  const clone = element.cloneNode(true);
+  const sourceFields = element.querySelectorAll('input, select, textarea');
+  const cloneFields = clone.querySelectorAll('input, select, textarea');
+
+  sourceFields.forEach((field, index) => {
+    const clonedField = cloneFields[index];
+    if (!clonedField) return;
+
+    if (field.tagName === 'TEXTAREA') {
+      clonedField.textContent = field.value;
+      return;
+    }
+
+    if (field.tagName === 'SELECT') {
+      Array.from(clonedField.options).forEach((option) => {
+        option.selected = option.value === field.value;
+      });
+      return;
+    }
+
+    if (field.type === 'checkbox' || field.type === 'radio') {
+      if (field.checked) clonedField.setAttribute('checked', '');
+      else clonedField.removeAttribute('checked');
+      return;
+    }
+
+    clonedField.setAttribute('value', field.value);
+  });
+
+  return clone;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function buildEvaluationPrintHtml({ title, content }) {
+  const safeTitle = escapeHtml(title);
+
+  return `<!doctype html>
+    <html lang="es">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <base href="${window.location.origin}/" />
+        <title>${safeTitle}</title>
+        ${getPageStyles()}
+        <style>
+          body {
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+          }
+
+          .evaluation-print-document {
+            width: min(100%, 1120px);
+            margin: 0 auto;
+          }
+
+          .evaluation-print-document button {
+            cursor: default;
+          }
+
+          .evaluation-print-document .rubric-sheet-table-wrap {
+            overflow: visible;
+          }
+
+          @media print {
+            body {
+              padding: 0;
+            }
+
+            .evaluation-print-document {
+              width: 100%;
+            }
+
+            .rubric-sheet,
+            .checklist-sheet {
+              border: 0;
+              border-radius: 0;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <main class="evaluation-print-document">
+          ${content}
+        </main>
+      </body>
+    </html>`;
+}
+
 function EvaluatorEvaluationsPage() {
   const studentSearchInputRef = useRef(null);
   const studentBannerRef = useRef(null);
+  const printableInstrumentRef = useRef(null);
   const previousTaskIdRef = useRef(null);
   const [evaluations, setEvaluations] = useState([]);
   const [students, setStudents] = useState([]);
@@ -143,7 +253,7 @@ function EvaluatorEvaluationsPage() {
   const rubricMaxScore = getRubricMaxScore(selectedInstrument, rubricCriteria);
   const checklistTotalScore = instrumentItems.reduce((total, item) => total + Number(scores[item.id] || 0), 0);
   const checklistMaxScore = instrumentItems.reduce((total, item) => total + Number(item.maxScore || 0), 0);
-  const isGroupTask = Boolean(selectedTask?.group);
+  const isGroupTask = Boolean(selectedTask?.groups?.length);
   const eligibleStudents = useMemo(
     () => students.filter((student) => studentCanBeEvaluatedForTask(student, selectedTask)),
     [students, selectedTask]
@@ -519,6 +629,27 @@ function EvaluatorEvaluationsPage() {
     }
   };
 
+  const printCurrentInstrument = () => {
+    setError('');
+
+    if (!selectedInstrument || !printableInstrumentRef.current) {
+      setError('Selecciona una tarea con instrumento antes de imprimir.');
+      return;
+    }
+
+    try {
+      const printableContent = cloneElementWithCurrentValues(printableInstrumentRef.current).outerHTML;
+      openPrintableHtml(
+        buildEvaluationPrintHtml({
+          title: `${selectedInstrument.title} - Evaluación`,
+          content: printableContent,
+        })
+      );
+    } catch (printError) {
+      setError(getErrorMessage(printError));
+    }
+  };
+
   return (
     <section className="management-page">
       <div className="module-hero">
@@ -659,8 +790,9 @@ function EvaluatorEvaluationsPage() {
               </p>
             ) : null}
 
-            {isRubricEvaluation ? (
-              <section className="rubric-sheet" aria-label="Rúbrica de evaluación">
+            <div className="evaluation-print-area" ref={printableInstrumentRef}>
+              {isRubricEvaluation ? (
+                <section className="rubric-sheet" aria-label="Rúbrica de evaluación">
                 <div className="rubric-sheet-header">
                   <div className="rubric-sheet-brand">
                     <img src="/icono-plano.svg" alt="EvalúaPro" />
@@ -743,9 +875,9 @@ function EvaluatorEvaluationsPage() {
                     {rubricLevels.map((level) => `${level.name}: ${formatPoints(level.score)} pts`).join('; ')}
                   </p>
                 </div>
-              </section>
-            ) : isChecklistEvaluation ? (
-              <section className="checklist-sheet" aria-label="Lista de cotejo">
+                </section>
+              ) : isChecklistEvaluation ? (
+                <section className="checklist-sheet" aria-label="Lista de cotejo">
                 <div className="checklist-sheet-header">
                   <div className="checklist-sheet-brand">
                     <img src="/icono-plano.svg" alt="EvalúaPro" />
@@ -850,9 +982,9 @@ function EvaluatorEvaluationsPage() {
                     <strong>Regular</strong> = No cumple
                   </p>
                 </div>
-              </section>
-            ) : (
-              <div className="score-list">
+                </section>
+              ) : (
+                <div className="score-list">
                 {instrumentItems.map((item) => (
                   <label key={item.id}>
                     <span>
@@ -880,8 +1012,18 @@ function EvaluatorEvaluationsPage() {
                     {item.helperText ? <em>{item.helperText}</em> : null}
                   </label>
                 ))}
+                </div>
+              )}
+            </div>
+
+            {selectedInstrument ? (
+              <div className="evaluation-print-actions no-print">
+                <button className="button button-secondary" type="button" onClick={printCurrentInstrument}>
+                  <Printer size={18} aria-hidden="true" />
+                  Imprimir instrumento
+                </button>
               </div>
-            )}
+            ) : null}
 
             <label>
               Retroalimentación

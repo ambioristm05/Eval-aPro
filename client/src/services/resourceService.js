@@ -67,6 +67,15 @@ export async function deleteResource(resource, id, params) {
   return data;
 }
 
+export async function deleteResourcePermanent(resource, id, options = {}) {
+  const { cascade, ...rest } = options;
+  const { data } = await api.delete(`${endpointMap[resource]}/${id}/permanent`, {
+    params: cascade ? { cascade: true } : undefined,
+    ...rest,
+  });
+  return data;
+}
+
 export async function addStudentToGroup(groupId, studentId) {
   const { data } = await api.post(`/groups/${groupId}/students`, { studentId });
   return data;

@@ -1,8 +1,10 @@
 import { INSTRUMENT_STATUSES, INSTRUMENT_TYPES } from '../constants/instrument.constants.js';
 import { USER_ROLES } from '../constants/user.constants.js';
 import { Instrument } from '../models/Instrument.js';
+import { Task } from '../models/Task.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { writeAudit } from '../utils/audit.js';
 
 function instrumentScope(req) {
   if (req.user.role === USER_ROLES.ADMIN) return {};
@@ -133,11 +135,42 @@ export const updateInstrument = asyncHandler(async (req, res) => {
 export const deleteInstrument = asyncHandler(async (req, res) => {
   const instrument = await findInstrumentForUser(req, req.validated.params.id);
 
-  instrument.status = INSTRUMENT_STATUSES.ARCHIVED;
+  instrument.status = INSTRUMENT_STATUSES.DELETED;
   await instrument.save();
 
   res.json({
-    message: 'Instrumento archivado correctamente',
+    message: 'Instrumento eliminado correctamente',
     instrument
+  });
+});
+
+export const deleteInstrumentPermanent = asyncHandler(async (req, res) => {
+  const instrument = await findInstrumentForUser(req, req.validated.params.id);
+
+  if (![INSTRUMENT_STATUSES.ARCHIVED, INSTRUMENT_STATUSES.DELETED].includes(instrument.status)) {
+    throw new AppError('Solo puedes eliminar definitivamente instrumentos archivados o eliminados', 400);
+  }
+
+  const linkedTasks = await Task.countDocuments({ instrument: instrument._id });
+  if (linkedTasks > 0) {
+    throw new AppError(
+      'Este instrumento está vinculado a tareas existentes. Quita la asignación antes de eliminarlo definitivamente.',
+      409
+    );
+  }
+
+  await Instrument.deleteOne({ _id: instrument._id });
+
+  await writeAudit({
+    actor: req.user._id,
+    action: 'instrument.permanentDelete',
+    entity: 'Instrument',
+    entityId: instrument._id,
+    before: instrument.toObject(),
+    after: null
+  });
+
+  res.json({
+    message: 'Instrumento eliminado de forma definitiva'
   });
 });

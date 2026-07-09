@@ -103,6 +103,7 @@ Permisos:
 - Crear cuentas de evaluadores.
 - Aprobar solicitudes de evaluadores.
 - Suspender evaluadores.
+- Eliminar de forma **definitiva (física)** evaluadores, estudiantes, cursos, módulos, clases y tareas.
 - Ver estadísticas generales.
 - Gestionar configuración del sistema.
 
@@ -530,6 +531,30 @@ Búsqueda:
 
 ---
 
+## 8.12. Eliminación definitiva por el administrador
+
+A diferencia del evaluador, que solo puede suspender, eliminar lógicamente o archivar (ver secciones 8.2 y 13), el **administrador** puede realizar eliminaciones **definitivas (físicas)** sobre las siguientes entidades:
+
+- Evaluadores.
+- Estudiantes.
+- Cursos.
+- Módulos.
+- Clases.
+- Tareas.
+
+### Reglas
+
+- La eliminación definitiva borra el registro de la base de datos; no es un cambio de estado (`deleted`) ni un archivado.
+- Es una acción irreversible: no existe forma de restaurar la entidad ni sus datos asociados una vez ejecutada.
+- Solo el rol `admin` puede ejecutar esta acción; el middleware `authorize('admin')` debe proteger estas rutas.
+- Debe solicitar confirmación explícita en el frontend (por ejemplo, escribir el nombre de la entidad o "ELIMINAR") y, para cuentas de usuario, la contraseña del administrador.
+- Antes de borrar físicamente, el sistema debe registrar auditoría (quién, qué entidad, cuándo) dado que el registro deja de existir después.
+- Eliminar de forma definitiva una entidad con contenido dependiente (por ejemplo un curso con módulos, o un módulo con clases y tareas) debe eliminar en cascada toda su jerarquía descendiente, o bloquear la acción si no se confirma explícitamente la cascada.
+- Eliminar de forma definitiva a un evaluador o estudiante también elimina físicamente sus evaluaciones, tareas o vínculos asociados que dependan exclusivamente de esa cuenta; el administrador debe ser advertido de esta pérdida de historial antes de confirmar.
+- Esta capacidad es un mecanismo excepcional para depurar datos (cuentas de prueba, errores, solicitudes legales de borrado), no el flujo habitual de gestión, que sigue siendo la suspensión/eliminación lógica por parte del evaluador.
+
+---
+
 ## 9. Modelos de datos sugeridos
 
 ## 9.1. User
@@ -945,7 +970,10 @@ Importante:
 - Los grupos y estudiantes siguen siendo entidades globales reutilizables por el evaluador.
 - No se debe archivar ni eliminar un curso, módulo o clase con contenido activo sin confirmación explícita.
 - Archivar un nivel superior de la jerarquía no elimina ni afecta evaluaciones ya publicadas.
-- Curso, módulo y clase solo se archivan cuando tienen contenido relacionado; no se eliminan físicamente con historial activo.
+- Curso, módulo y clase solo se archivan cuando tienen contenido relacionado; no se eliminan físicamente con historial activo, **salvo que la acción la ejecute un administrador mediante eliminación definitiva**.
+- El administrador puede eliminar de forma **definitiva (física, irreversible)** evaluadores, estudiantes, cursos, módulos, clases y tareas, incluso si tienen historial o contenido relacionado; esto es distinto de la suspensión y la eliminación lógica que usa el evaluador.
+- Toda eliminación definitiva debe quedar auditada (quién la ejecutó y cuándo) antes de borrar el registro, y debe pedir confirmación explícita por tratarse de una acción irreversible.
+- Solo el rol `admin` puede ejecutar eliminaciones definitivas; un evaluador o estudiante nunca puede eliminar físicamente registros.
 
 ---
 

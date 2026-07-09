@@ -1,14 +1,16 @@
 import { ACADEMIC_STATUSES } from '../constants/academicHierarchy.constants.js';
+import { USER_ROLES } from '../constants/user.constants.js';
 import { Class as AcademicClass } from '../models/Class.js';
 import { Task } from '../models/Task.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { writeAudit } from '../utils/audit.js';
 
 async function findClassForEvaluator(req, id) {
-  const academicClass = await AcademicClass.findOne({
-    _id: id,
-    evaluator: req.user._id
-  })
+  const filter = { _id: id };
+  if (req.user.role !== USER_ROLES.ADMIN) filter.evaluator = req.user._id;
+
+  const academicClass = await AcademicClass.findOne(filter)
     .populate('course', 'name description status')
     .populate('module', 'name description status order');
 
@@ -61,5 +63,42 @@ export const deleteClass = asyncHandler(async (req, res) => {
     // archived state of their own) — `linkedTasks` is informational only, it
     // does NOT mean those tasks were modified.
     linkedTasks
+  });
+});
+
+export const deleteClassPermanent = asyncHandler(async (req, res) => {
+  const academicClass = await AcademicClass.findById(req.validated.params.id)
+    .populate('course', 'name description status')
+    .populate('module', 'name description status order');
+
+  if (!academicClass) {
+    throw new AppError('Clase no encontrada', 404);
+  }
+
+  const cascade = req.validated.query?.cascade;
+  const taskCount = await Task.countDocuments({ class: academicClass._id });
+
+  if (taskCount > 0 && !cascade) {
+    throw new AppError('Esta clase tiene tareas asociadas. Confirma la eliminación en cascada.', 409);
+  }
+
+  const tasksDeleted = await Task.deleteMany({ class: academicClass._id });
+  await AcademicClass.deleteOne({ _id: academicClass._id });
+
+  const cascadeCounts = { tasks: tasksDeleted.deletedCount ?? 0 };
+
+  await writeAudit({
+    actor: req.user._id,
+    action: 'class.permanentDelete',
+    entity: 'Class',
+    entityId: academicClass._id,
+    before: academicClass.toObject(),
+    after: null,
+    metadata: { cascade: cascadeCounts }
+  });
+
+  res.json({
+    message: 'Clase eliminada de forma definitiva',
+    cascade: cascadeCounts
   });
 });

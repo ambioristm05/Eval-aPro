@@ -5,6 +5,8 @@ import {
   createStudent,
   deleteMyAccount,
   deleteStudent,
+  deleteUserPermanent,
+  getEvaluators,
   getMyProfile,
   getStudentById,
   getStudents,
@@ -21,6 +23,8 @@ import {
   createStudentSchema,
   deleteMyAccountSchema,
   deleteStudentSchema,
+  deleteUserPermanentSchema,
+  listEvaluatorsSchema,
   listStudentsSchema,
   reactivateStudentSchema,
   studentIdSchema,
@@ -36,6 +40,15 @@ router.get('/me', getMyProfile);
 router.patch('/me', validateRequest(updateMyProfileSchema), updateMyProfile);
 router.patch('/me/password', validateRequest(changeMyPasswordSchema), changeMyPassword);
 router.delete('/me', validateRequest(deleteMyAccountSchema), deleteMyAccount);
+
+router.get('/evaluators', authorize(USER_ROLES.ADMIN), validateRequest(listEvaluatorsSchema), getEvaluators);
+
+router.delete(
+  '/:id/permanent',
+  authorize(USER_ROLES.ADMIN),
+  validateRequest(deleteUserPermanentSchema),
+  deleteUserPermanent
+);
 
 router.post(
   '/students',

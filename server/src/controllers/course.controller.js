@@ -1,20 +1,28 @@
 import { ACADEMIC_STATUSES } from '../constants/academicHierarchy.constants.js';
+import { USER_ROLES } from '../constants/user.constants.js';
 import { Class as AcademicClass } from '../models/Class.js';
 import { Course } from '../models/Course.js';
 import { Module as AcademicModule } from '../models/Module.js';
+import { Task } from '../models/Task.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { bulkArchive } from '../utils/cascadeArchive.js';
+import { writeAudit } from '../utils/audit.js';
 
 function courseScope(req) {
+  if (req.user.role === USER_ROLES.ADMIN) {
+    const { evaluatorId } = req.validated.query ?? {};
+    return evaluatorId ? { evaluator: evaluatorId } : {};
+  }
+
   return { evaluator: req.user._id };
 }
 
 async function findCourseForEvaluator(req, id) {
-  const course = await Course.findOne({
-    _id: id,
-    ...courseScope(req)
-  }).populate('evaluator', 'name email role');
+  const filter = { _id: id };
+  if (req.user.role !== USER_ROLES.ADMIN) filter.evaluator = req.user._id;
+
+  const course = await Course.findOne(filter).populate('evaluator', 'name email role');
 
   if (!course) {
     throw new AppError('Curso no encontrado', 404);
@@ -126,7 +134,7 @@ export const getCourseModules = asyncHandler(async (req, res) => {
   const filter = applySearch(
     {
       course: course._id,
-      evaluator: req.user._id
+      ...(req.user.role !== USER_ROLES.ADMIN ? { evaluator: req.user._id } : {})
     },
     search
   );
@@ -165,4 +173,52 @@ export const createModuleForCourse = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({ module, course });
+});
+
+export const deleteCoursePermanent = asyncHandler(async (req, res) => {
+  const course = await Course.findById(req.validated.params.id).populate('evaluator', 'name email role');
+  if (!course) {
+    throw new AppError('Curso no encontrado', 404);
+  }
+
+  const cascade = req.validated.query?.cascade;
+  const moduleIds = await AcademicModule.find({ course: course._id }).distinct('_id');
+  const classIds = await AcademicClass.find({ course: course._id }).distinct('_id');
+  const taskCount = await Task.countDocuments({ class: { $in: classIds } });
+
+  if ((moduleIds.length > 0 || classIds.length > 0 || taskCount > 0) && !cascade) {
+    throw new AppError(
+      'Este curso tiene módulos, clases o tareas asociadas. Confirma la eliminación en cascada.',
+      409
+    );
+  }
+
+  const [tasksDeleted, classesDeleted, modulesDeleted] = await Promise.all([
+    Task.deleteMany({ class: { $in: classIds } }),
+    AcademicClass.deleteMany({ course: course._id }),
+    AcademicModule.deleteMany({ course: course._id })
+  ]);
+
+  await Course.deleteOne({ _id: course._id });
+
+  const cascadeCounts = {
+    modules: modulesDeleted.deletedCount ?? 0,
+    classes: classesDeleted.deletedCount ?? 0,
+    tasks: tasksDeleted.deletedCount ?? 0
+  };
+
+  await writeAudit({
+    actor: req.user._id,
+    action: 'course.permanentDelete',
+    entity: 'Course',
+    entityId: course._id,
+    before: course.toObject(),
+    after: null,
+    metadata: { cascade: cascadeCounts }
+  });
+
+  res.json({
+    message: 'Curso eliminado de forma definitiva',
+    cascade: cascadeCounts
+  });
 });

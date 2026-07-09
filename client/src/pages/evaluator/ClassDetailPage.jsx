@@ -31,11 +31,10 @@ import { getId } from '../../utils/getId.js';
 const emptyForm = {
   title: '',
   description: '',
-  group: '',
+  groups: [],
   students: [],
   instrument: '',
   status: 'pending',
-  startDate: '',
   dueDate: '',
   weight: 10,
 };
@@ -50,8 +49,9 @@ function toInputDate(value) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
-function getGroupName(task) {
-  return task.group?.name ?? 'Sin grupo';
+function getGroupNames(task) {
+  const names = (task.groups ?? []).map((group) => group.name).filter(Boolean);
+  return names.length ? names.join(', ') : 'Sin grupo';
 }
 
 function getInstrumentName(task) {
@@ -67,8 +67,12 @@ function getStudentGroupIds(student) {
 }
 
 function studentBelongsToGroup(student, groupId) {
-  if (!groupId) return true;
   return getStudentGroupIds(student).includes(groupId);
+}
+
+function studentBelongsToAnyGroup(student, groupIds) {
+  if (!groupIds.length) return true;
+  return groupIds.some((groupId) => studentBelongsToGroup(student, groupId));
 }
 
 function normalizeTaskStatus(status) {
@@ -79,11 +83,10 @@ function buildTaskPayload(formData) {
   return {
     title: formData.title.trim(),
     description: formData.description.trim(),
-    group: formData.group || undefined,
+    groups: formData.groups,
     students: formData.students,
     instrument: formData.instrument || undefined,
     status: formData.status,
-    startDate: formData.startDate || undefined,
     dueDate: formData.dueDate || undefined,
     weight: Number(formData.weight) || 0,
   };
@@ -107,11 +110,13 @@ function ClassDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isRetryingTasks, setIsRetryingTasks] = useState(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState('');
 
   const course = academicClass?.course;
   const module = academicClass?.module;
   const isReadOnly =
-    course?.status === 'archived' || module?.status === 'archived' || academicClass?.status === 'archived';
+    course?.status !== 'active' || module?.status !== 'active' || academicClass?.status !== 'active';
 
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -122,7 +127,7 @@ function ClassDetailPage() {
         !normalizedSearch ||
         task.title.toLowerCase().includes(normalizedSearch) ||
         (task.description ?? '').toLowerCase().includes(normalizedSearch) ||
-        getGroupName(task).toLowerCase().includes(normalizedSearch) ||
+        getGroupNames(task).toLowerCase().includes(normalizedSearch) ||
         getInstrumentName(task).toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
@@ -134,8 +139,8 @@ function ClassDetailPage() {
   const totalWeight = tasks.reduce((total, task) => total + Number(task.weight || 0), 0);
 
   const assignableStudents = useMemo(
-    () => students.filter((student) => studentBelongsToGroup(student, formData.group)),
-    [students, formData.group]
+    () => students.filter((student) => studentBelongsToAnyGroup(student, formData.groups)),
+    [students, formData.groups]
   );
 
   const filteredAssignableStudents = useMemo(() => {
@@ -161,6 +166,15 @@ function ClassDetailPage() {
       setError('');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    }
+  };
+
+  const retryLoadTasks = async () => {
+    setIsRetryingTasks(true);
+    try {
+      await loadTasks();
+    } finally {
+      setIsRetryingTasks(false);
     }
   };
 
@@ -212,15 +226,22 @@ function ClassDetailPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleGroupToggle = (groupId) => {
     setFormData((current) => {
-      if (name !== 'group') return { ...current, [name]: value };
+      const isSelected = current.groups.includes(groupId);
+      const nextGroups = isSelected
+        ? current.groups.filter((currentId) => currentId !== groupId)
+        : [...current.groups, groupId];
 
       return {
         ...current,
-        group: value,
+        groups: nextGroups,
         students: current.students.filter((studentId) => {
           const student = students.find((item) => getId(item) === studentId);
-          return student ? studentBelongsToGroup(student, value) : false;
+          return student ? studentBelongsToAnyGroup(student, nextGroups) : false;
         }),
       };
     });
@@ -235,6 +256,25 @@ function ClassDetailPage() {
           ? current.students.filter((currentId) => currentId !== studentId)
           : [...current.students, studentId],
       };
+    });
+  };
+
+  const handleSelectAllInGroup = (groupId) => {
+    const groupStudentIds = students
+      .filter((student) => studentBelongsToGroup(student, groupId))
+      .map(getId);
+    const allSelected = groupStudentIds.every((studentId) => formData.students.includes(studentId));
+
+    setFormData((current) => {
+      const nextStudents = new Set(current.students);
+      groupStudentIds.forEach((studentId) => {
+        if (allSelected) {
+          nextStudents.delete(studentId);
+        } else {
+          nextStudents.add(studentId);
+        }
+      });
+      return { ...current, students: [...nextStudents] };
     });
   };
 
@@ -281,11 +321,10 @@ function ClassDetailPage() {
     setFormData({
       title: task.title,
       description: task.description ?? '',
-      group: task.group ? getId(task.group) : '',
+      groups: (task.groups ?? []).map(getId).filter(Boolean),
       students: (task.students ?? []).map(getId).filter(Boolean),
       instrument: task.instrument ? getId(task.instrument) : '',
       status: normalizeTaskStatus(task.status),
-      startDate: toInputDate(task.startDate),
       dueDate: toInputDate(task.dueDate),
       weight: task.weight ?? 0,
     });
@@ -294,6 +333,7 @@ function ClassDetailPage() {
   const updateTaskStatus = async (taskId, status) => {
     setError('');
     setMessage('');
+    setUpdatingStatusId(taskId);
 
     try {
       await updateResource('tasks', taskId, { status });
@@ -301,6 +341,8 @@ function ClassDetailPage() {
       await loadTasks();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    } finally {
+      setUpdatingStatusId('');
     }
   };
 
@@ -372,15 +414,21 @@ function ClassDetailPage() {
       {error ? (
         <div className="form-message form-message-error">
           <span>{error}</span>
-          <button className="button button-secondary" type="button" onClick={loadTasks} disabled={isLoading}>
-            Reintentar tareas
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={retryLoadTasks}
+            disabled={isRetryingTasks}
+          >
+            {isRetryingTasks ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
+            {isRetryingTasks ? 'Reintentando...' : 'Reintentar tareas'}
           </button>
         </div>
       ) : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
       {isReadOnly ? (
         <p className="form-message form-message-warning">
-          Este nivel está archivado. Puedes revisar sus tareas, pero no crear nuevos contenidos.
+          Este nivel no está activo. Puedes revisar sus tareas, pero no crear nuevos contenidos.
         </p>
       ) : null}
 
@@ -408,8 +456,8 @@ function ClassDetailPage() {
             <Weight size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{isLoading ? '...' : `${totalWeight}%`}</strong>
-            <span>Ponderación</span>
+            <strong>{isLoading ? '...' : String(totalWeight)}</strong>
+            <span>Notas</span>
           </div>
         </article>
       </div>
@@ -438,7 +486,7 @@ function ClassDetailPage() {
                   />
                 </label>
                 <label>
-                  Descripción
+                  Objetivo
                   <textarea
                     name="description"
                     value={formData.description}
@@ -454,34 +502,72 @@ function ClassDetailPage() {
             <details className="form-section">
               <summary>Asignación</summary>
               <div className="form-section-body">
-                <div className="form-two-columns">
-                  <label>
-                    Grupo
-                    <select name="group" value={formData.group} onChange={handleChange} disabled={isReadOnly}>
-                      <option value="">Sin grupo</option>
-                      {groups.map((group) => (
-                        <option key={getId(group)} value={getId(group)}>
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Instrumento
-                    <select
-                      name="instrument"
-                      value={formData.instrument}
-                      onChange={handleChange}
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Sin instrumento</option>
-                      {instruments.map((instrument) => (
-                        <option key={getId(instrument)} value={getId(instrument)}>
-                          {instrument.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                <label>
+                  Instrumento
+                  <select
+                    name="instrument"
+                    value={formData.instrument}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                  >
+                    <option value="">Sin instrumento</option>
+                    {instruments.map((instrument) => (
+                      <option key={getId(instrument)} value={getId(instrument)}>
+                        {instrument.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="assignment-selector">
+                  <div className="assignment-header">
+                    <span>Grupos</span>
+                    <strong>{formData.groups.length}</strong>
+                  </div>
+
+                  <div className="assignment-list" aria-label="Seleccionar grupos para esta tarea">
+                    {groups.map((group) => {
+                      const groupId = getId(group);
+                      const isSelected = formData.groups.includes(groupId);
+                      const groupStudentIds = students
+                        .filter((student) => studentBelongsToGroup(student, groupId))
+                        .map(getId);
+                      const allGroupStudentsSelected =
+                        groupStudentIds.length > 0 &&
+                        groupStudentIds.every((studentId) => formData.students.includes(studentId));
+
+                      return (
+                        <div className="group-option-row" key={groupId}>
+                          <label className={`assignment-option${isSelected ? ' assignment-option-selected' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleGroupToggle(groupId)}
+                              disabled={isReadOnly}
+                            />
+                            <span className="assignment-check" aria-hidden="true">
+                              <CheckCircle2 size={15} />
+                            </span>
+                            <span className="assignment-student">
+                              <strong>{group.name}</strong>
+                            </span>
+                          </label>
+                          {isSelected ? (
+                            <button
+                              className="button button-ghost button-compact"
+                              type="button"
+                              onClick={() => handleSelectAllInGroup(groupId)}
+                              disabled={isReadOnly || groupStudentIds.length === 0}
+                            >
+                              {allGroupStudentsSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+
+                    {groups.length === 0 ? <p className="assignment-empty">No hay grupos disponibles.</p> : null}
+                  </div>
                 </div>
 
                 <div className="assignment-selector">
@@ -543,8 +629,8 @@ function ClassDetailPage() {
 
                     {assignableStudents.length === 0 ? (
                       <p className="assignment-empty">
-                        {formData.group
-                          ? 'No hay estudiantes activos en este grupo.'
+                        {formData.groups.length
+                          ? 'No hay estudiantes activos en los grupos seleccionados.'
                           : 'Crea estudiantes o vincúlalos a un grupo para asignarlos.'}
                       </p>
                     ) : null}
@@ -558,24 +644,11 @@ function ClassDetailPage() {
             </details>
 
             <details className="form-section">
-              <summary>Fechas y ponderación</summary>
+              <summary>Fecha y nota</summary>
               <div className="form-section-body">
                 <div className="form-two-columns">
                   <label>
-                    Inicio
-                    <span className="date-field">
-                      <CalendarDays size={17} aria-hidden="true" />
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleChange}
-                        disabled={isReadOnly}
-                      />
-                    </span>
-                  </label>
-                  <label>
-                    Entrega
+                    Fecha
                     <span className="date-field">
                       <CalendarDays size={17} aria-hidden="true" />
                       <input
@@ -587,8 +660,6 @@ function ClassDetailPage() {
                       />
                     </span>
                   </label>
-                </div>
-                <div className="form-two-columns">
                   <label>
                     Estado
                     <select name="status" value={formData.status} onChange={handleChange} disabled={isReadOnly}>
@@ -596,19 +667,19 @@ function ClassDetailPage() {
                       <option value="completed">Evaluada</option>
                     </select>
                   </label>
-                  <label>
-                    Peso %
-                    <input
-                      type="number"
-                      name="weight"
-                      min="0"
-                      max="100"
-                      value={formData.weight}
-                      onChange={handleChange}
-                      disabled={isReadOnly}
-                    />
-                  </label>
                 </div>
+                <label>
+                  Nota
+                  <input
+                    type="number"
+                    name="weight"
+                    min="0"
+                    max="100"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                  />
+                </label>
               </div>
             </details>
 
@@ -689,14 +760,14 @@ function ClassDetailPage() {
                   </div>
                   <p>{task.description || 'Sin descripción registrada.'}</p>
                   <div className="resource-meta">
-                    <span>{getGroupName(task)}</span>
+                    <span>{getGroupNames(task)}</span>
                     <span>{getInstrumentName(task)}</span>
                     <span>
                       <Users size={14} aria-hidden="true" />
                       {task.students?.length ?? 0}
                     </span>
-                    <span>{task.weight}%</span>
-                    <span>{toInputDate(task.dueDate) || 'Sin entrega'}</span>
+                    <span>Nota: {task.weight}</span>
+                    <span>{toInputDate(task.dueDate) || 'Sin fecha'}</span>
                   </div>
                 </div>
 
@@ -727,9 +798,13 @@ function ClassDetailPage() {
                     onClick={() => updateTaskStatus(getId(task), 'completed')}
                     title="Marcar evaluada"
                     aria-label={`Marcar evaluada ${task.title}`}
-                    disabled={isReadOnly || task.status === 'completed'}
+                    disabled={isReadOnly || task.status === 'completed' || updatingStatusId === getId(task)}
                   >
-                    <CheckCircle2 size={17} aria-hidden="true" />
+                    {updatingStatusId === getId(task) ? (
+                      <span className="button-spinner-ring" aria-hidden="true" />
+                    ) : (
+                      <CheckCircle2 size={17} aria-hidden="true" />
+                    )}
                     <span>Evaluada</span>
                   </button>
                   <button

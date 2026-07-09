@@ -84,7 +84,7 @@ async function seedEvaluationGraph(emailPrefix = 'base', { withClass = true } = 
       title: 'Ensayo',
       evaluator: evaluator._id,
       class: academicClass._id,
-      group: group._id,
+      groups: [group._id],
       students: [student._id],
       instrument: instrument._id,
       status: TASK_STATUSES.PENDING,
@@ -96,7 +96,7 @@ async function seedEvaluationGraph(emailPrefix = 'base', { withClass = true } = 
     const insertResult = await Task.collection.insertOne({
       title: 'Ensayo',
       evaluator: evaluator._id,
-      group: group._id,
+      groups: [group._id],
       students: [student._id],
       instrument: instrument._id,
       status: TASK_STATUSES.PENDING,
@@ -308,6 +308,95 @@ describe('instrument routes', () => {
 
     const persistedInstrument = await Instrument.findById(instrument._id);
     expect(persistedInstrument.criteria).toHaveLength(1);
+  });
+
+  it('marks an instrument as deleted (not archived) when deleted', async () => {
+    const { evaluatorPassword, instrument } = await seedEvaluationGraph('delete-instrument');
+    const token = await login('delete-instrument-evaluator@example.com', evaluatorPassword);
+
+    const response = await request(app)
+      .delete(`/api/instruments/${instrument._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(response.body.instrument.status).toBe(INSTRUMENT_STATUSES.DELETED);
+    expect(response.body.instrument.status).not.toBe(INSTRUMENT_STATUSES.ARCHIVED);
+
+    const persistedInstrument = await Instrument.findById(instrument._id);
+    expect(persistedInstrument.status).toBe('deleted');
+  });
+
+  it('rejects permanently deleting an instrument that is still active', async () => {
+    const { evaluatorPassword, instrument } = await seedEvaluationGraph('permanent-delete-active');
+    const token = await login('permanent-delete-active-evaluator@example.com', evaluatorPassword);
+
+    const response = await request(app)
+      .delete(`/api/instruments/${instrument._id}/permanent`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+
+    expect(response.body.message).toBe('Solo puedes eliminar definitivamente instrumentos archivados o eliminados');
+
+    const persistedInstrument = await Instrument.findById(instrument._id);
+    expect(persistedInstrument).not.toBeNull();
+  });
+
+  it('rejects permanently deleting an instrument still linked to a task', async () => {
+    const { evaluatorPassword, instrument } = await seedEvaluationGraph('permanent-delete-linked');
+    const token = await login('permanent-delete-linked-evaluator@example.com', evaluatorPassword);
+
+    await request(app)
+      .delete(`/api/instruments/${instrument._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const response = await request(app)
+      .delete(`/api/instruments/${instrument._id}/permanent`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(409);
+
+    expect(response.body.message).toBe(
+      'Este instrumento está vinculado a tareas existentes. Quita la asignación antes de eliminarlo definitivamente.'
+    );
+
+    const persistedInstrument = await Instrument.findById(instrument._id);
+    expect(persistedInstrument).not.toBeNull();
+  });
+
+  it('permanently deletes an archived instrument with no linked tasks', async () => {
+    const evaluatorPassword = 'Password123';
+    await User.create({
+      name: 'Perla Purgadora',
+      email: 'permanent-delete-clean-evaluator@example.com',
+      password: evaluatorPassword,
+      role: USER_ROLES.EVALUATOR,
+      status: USER_STATUSES.ACTIVE
+    });
+    const token = await login('permanent-delete-clean-evaluator@example.com', evaluatorPassword);
+
+    const createResponse = await request(app)
+      .post('/api/instruments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Instrumento sin uso',
+        type: INSTRUMENT_TYPES.CHECKLIST,
+        indicators: [{ text: 'Indicador único', score: 1, required: false, observation: '' }]
+      })
+      .expect(201);
+    const instrumentId = createResponse.body.instrument.id || createResponse.body.instrument._id;
+
+    await request(app)
+      .delete(`/api/instruments/${instrumentId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    await request(app)
+      .delete(`/api/instruments/${instrumentId}/permanent`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const persistedInstrument = await Instrument.findById(instrumentId);
+    expect(persistedInstrument).toBeNull();
   });
 });
 
@@ -672,7 +761,7 @@ describe('academic hierarchy routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Tarea dentro del filtro',
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString()
       })
@@ -724,7 +813,7 @@ describe('academic hierarchy routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Práctica contextual',
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString(),
         status: TASK_STATUSES.PENDING,
@@ -773,7 +862,7 @@ describe('academic hierarchy routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Tarea bajo curso archivado',
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString()
       })
@@ -829,7 +918,7 @@ describe('academic hierarchy routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Tarea previa al archivado',
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString()
       })
@@ -910,18 +999,17 @@ describe('task routes', () => {
         title: 'Proyecto lector',
         description: 'Primera entrega del proyecto',
         class: academicClass._id.toString(),
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString(),
         status: TASK_STATUSES.PENDING,
-        startDate: '2026-08-01',
         dueDate: '2026-08-10',
         weight: 40
       })
       .expect(201);
 
     const taskId = createResponse.body.task.id || createResponse.body.task._id;
-    expect(createResponse.body.task.group.name).toBe('Grupo A');
+    expect(createResponse.body.task.groups[0].name).toBe('Grupo A');
     expect(createResponse.body.task.students).toHaveLength(1);
     expect(createResponse.body.task.instrument.title).toBe('Rubrica base');
 
@@ -964,7 +1052,7 @@ describe('task routes', () => {
       .send({
         title: 'Estado no permitido',
         class: academicClass._id.toString(),
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString(),
         status: 'in_progress'
@@ -981,31 +1069,28 @@ describe('task routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Tarea sin clase',
-        group: group._id.toString(),
+        groups: [group._id.toString()],
         students: [student._id.toString()],
         instrument: instrument._id.toString()
       })
       .expect(400);
   });
 
-  it('rejects partial updates that leave the due date before the start date', async () => {
+  it('allows partial updates to the task due date', async () => {
     const { evaluatorPassword, task } = await seedEvaluationGraph('tasks-dates');
     const token = await login('tasks-dates-evaluator@example.com', evaluatorPassword);
 
-    task.startDate = new Date('2026-08-10T00:00:00.000Z');
     task.dueDate = new Date('2026-08-15T00:00:00.000Z');
     await task.save();
 
-    const response = await request(app)
+    await request(app)
       .patch(`/api/tasks/${task._id}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ dueDate: '2026-08-01' })
-      .expect(400);
-
-    expect(response.body.message).toBe('La fecha de entrega debe ser posterior o igual a la fecha de inicio');
+      .expect(200);
 
     const persistedTask = await Task.findById(task._id);
-    expect(persistedTask.dueDate.toISOString()).toBe('2026-08-15T00:00:00.000Z');
+    expect(persistedTask.dueDate.toISOString()).toBe('2026-08-01T00:00:00.000Z');
   });
 });
 
@@ -1085,7 +1170,7 @@ describe('report routes', () => {
       title: 'Tarea de otro curso',
       evaluator: graph.evaluator._id,
       class: secondClass._id,
-      group: graph.group._id,
+      groups: [graph.group._id],
       students: [graph.student._id],
       instrument: graph.instrument._id,
       status: TASK_STATUSES.COMPLETED,

@@ -4,11 +4,6 @@ import { TASK_STATUSES } from '../constants/task.constants.js';
 const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
 const optionalDateSchema = z.coerce.date().optional();
 
-function validateDateRange(data) {
-  if (!data.startDate || !data.dueDate) return true;
-  return data.dueDate >= data.startDate;
-}
-
 const taskBodyShape = {
   title: z
     .string()
@@ -16,31 +11,22 @@ const taskBodyShape = {
     .min(2, 'El título debe tener al menos 2 caracteres')
     .max(150, 'El título no puede exceder 150 caracteres'),
   description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').default(''),
-  group: mongoIdSchema.optional(),
+  groups: z.array(mongoIdSchema).default([]),
   students: z.array(mongoIdSchema).default([]),
   instrument: mongoIdSchema.optional(),
   status: z.enum(Object.values(TASK_STATUSES)).default(TASK_STATUSES.PENDING),
-  startDate: optionalDateSchema,
   dueDate: optionalDateSchema,
   weight: z.coerce.number().min(0).max(100).default(0)
 };
 
 export const createTaskSchema = z.object({
-  body: z
-    .object({ ...taskBodyShape, class: mongoIdSchema })
-    .refine(validateDateRange, {
-      message: 'La fecha de entrega debe ser posterior o igual a la fecha de inicio',
-      path: ['dueDate']
-    }),
+  body: z.object({ ...taskBodyShape, class: mongoIdSchema }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
 });
 
 export const createClassTaskSchema = z.object({
-  body: z.object(taskBodyShape).refine(validateDateRange, {
-    message: 'La fecha de entrega debe ser posterior o igual a la fecha de inicio',
-    path: ['dueDate']
-  }),
+  body: z.object(taskBodyShape),
   params: z.object({
     classId: mongoIdSchema
   }),
@@ -92,19 +78,14 @@ export const updateTaskSchema = z.object({
       title: taskBodyShape.title.optional(),
       description: z.string().trim().max(1000, 'La descripción no puede exceder 1000 caracteres').optional(),
       status: z.enum(Object.values(TASK_STATUSES)).optional(),
-      group: mongoIdSchema.optional(),
+      groups: z.array(mongoIdSchema).optional(),
       students: z.array(mongoIdSchema).optional(),
       instrument: mongoIdSchema.optional(),
-      startDate: optionalDateSchema,
       dueDate: optionalDateSchema,
       weight: z.coerce.number().min(0).max(100).optional()
     })
     .refine((body) => Object.keys(body).length > 0, {
       message: 'Debes enviar al menos un campo para actualizar'
-    })
-    .refine(validateDateRange, {
-      message: 'La fecha de entrega debe ser posterior o igual a la fecha de inicio',
-      path: ['dueDate']
     }),
   params: z.object({
     id: mongoIdSchema

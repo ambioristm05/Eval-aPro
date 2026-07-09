@@ -24,11 +24,10 @@ import { getId } from '../../utils/getId.js';
 const emptyForm = {
   title: '',
   description: '',
-  group: '',
+  groups: [],
   students: [],
   instrument: '',
   status: 'pending',
-  startDate: '',
   dueDate: '',
   weight: 10,
 };
@@ -47,13 +46,22 @@ function getStudentName(student) {
   return student.name ?? student.email ?? 'Estudiante sin nombre';
 }
 
+function getGroupNames(task) {
+  const names = (task?.groups ?? []).map((group) => group.name).filter(Boolean);
+  return names.length ? names.join(', ') : 'Sin grupo';
+}
+
 function getStudentGroupIds(student) {
   return (student.groups ?? []).map(getId).filter(Boolean);
 }
 
 function studentBelongsToGroup(student, groupId) {
-  if (!groupId) return true;
   return getStudentGroupIds(student).includes(groupId);
+}
+
+function studentBelongsToAnyGroup(student, groupIds) {
+  if (!groupIds.length) return true;
+  return groupIds.some((groupId) => studentBelongsToGroup(student, groupId));
 }
 
 function normalizeTaskStatus(status) {
@@ -64,11 +72,10 @@ function buildTaskPayload(formData) {
   return {
     title: formData.title.trim(),
     description: formData.description.trim(),
-    group: formData.group || undefined,
+    groups: formData.groups,
     students: formData.students,
     instrument: formData.instrument || undefined,
     status: formData.status,
-    startDate: formData.startDate || undefined,
     dueDate: formData.dueDate || undefined,
     weight: Number(formData.weight) || 0,
   };
@@ -80,11 +87,10 @@ function buildFormData(task) {
   return {
     title: task.title,
     description: task.description ?? '',
-    group: task.group ? getId(task.group) : '',
+    groups: (task.groups ?? []).map(getId).filter(Boolean),
     students: (task.students ?? []).map(getId).filter(Boolean),
     instrument: task.instrument ? getId(task.instrument) : '',
     status: normalizeTaskStatus(task.status),
-    startDate: toInputDate(task.startDate),
     dueDate: toInputDate(task.dueDate),
     weight: task.weight ?? 0,
   };
@@ -106,6 +112,7 @@ function EvaluatorTaskDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const course = academicClass?.course;
   const module = academicClass?.module;
@@ -113,8 +120,8 @@ function EvaluatorTaskDetailPage() {
     course?.status === 'archived' || module?.status === 'archived' || academicClass?.status === 'archived';
 
   const assignableStudents = useMemo(
-    () => students.filter((student) => studentBelongsToGroup(student, formData.group)),
-    [students, formData.group]
+    () => students.filter((student) => studentBelongsToAnyGroup(student, formData.groups)),
+    [students, formData.groups]
   );
 
   const filteredAssignableStudents = useMemo(() => {
@@ -133,7 +140,6 @@ function EvaluatorTaskDetailPage() {
     [formData.students, students]
   );
 
-  const selectedGroup = groups.find((group) => getId(group) === formData.group);
   const selectedInstrument = instruments.find((instrument) => getId(instrument) === formData.instrument);
   const classTasksPath = `/evaluator/courses/${courseId}/modules/${moduleId}/classes/${classId}`;
 
@@ -145,6 +151,15 @@ function EvaluatorTaskDetailPage() {
       setError('');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
+    }
+  };
+
+  const retryLoadTask = async () => {
+    setIsRetrying(true);
+    try {
+      await loadTask();
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -199,15 +214,22 @@ function EvaluatorTaskDetailPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleGroupToggle = (groupId) => {
     setFormData((current) => {
-      if (name !== 'group') return { ...current, [name]: value };
+      const isSelected = current.groups.includes(groupId);
+      const nextGroups = isSelected
+        ? current.groups.filter((currentId) => currentId !== groupId)
+        : [...current.groups, groupId];
 
       return {
         ...current,
-        group: value,
+        groups: nextGroups,
         students: current.students.filter((studentId) => {
           const student = students.find((item) => getId(item) === studentId);
-          return student ? studentBelongsToGroup(student, value) : false;
+          return student ? studentBelongsToAnyGroup(student, nextGroups) : false;
         }),
       };
     });
@@ -222,6 +244,25 @@ function EvaluatorTaskDetailPage() {
           ? current.students.filter((currentId) => currentId !== studentId)
           : [...current.students, studentId],
       };
+    });
+  };
+
+  const handleSelectAllInGroup = (groupId) => {
+    const groupStudentIds = students
+      .filter((student) => studentBelongsToGroup(student, groupId))
+      .map(getId);
+    const allSelected = groupStudentIds.every((studentId) => formData.students.includes(studentId));
+
+    setFormData((current) => {
+      const nextStudents = new Set(current.students);
+      groupStudentIds.forEach((studentId) => {
+        if (allSelected) {
+          nextStudents.delete(studentId);
+        } else {
+          nextStudents.add(studentId);
+        }
+      });
+      return { ...current, students: [...nextStudents] };
     });
   };
 
@@ -318,8 +359,9 @@ function EvaluatorTaskDetailPage() {
       {error ? (
         <div className="form-message form-message-error">
           <span>{error}</span>
-          <button className="button button-secondary" type="button" onClick={loadTask} disabled={isLoading}>
-            Reintentar tarea
+          <button className="button button-secondary" type="button" onClick={retryLoadTask} disabled={isRetrying}>
+            {isRetrying ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
+            {isRetrying ? 'Reintentando...' : 'Reintentar tarea'}
           </button>
         </div>
       ) : null}
@@ -354,8 +396,8 @@ function EvaluatorTaskDetailPage() {
             <Weight size={20} aria-hidden="true" />
           </span>
           <div>
-            <strong>{isLoading ? '...' : `${task?.weight ?? 0}%`}</strong>
-            <span>Ponderación</span>
+            <strong>{isLoading ? '...' : String(task?.weight ?? 0)}</strong>
+            <span>Nota</span>
           </div>
         </article>
       </div>
@@ -369,20 +411,16 @@ function EvaluatorTaskDetailPage() {
 
           <div className="spaced-list">
             <div className="criterion-score">
-              <span>Grupo</span>
-              <strong>{selectedGroup?.name ?? task?.group?.name ?? 'Sin grupo'}</strong>
+              <span>Grupos</span>
+              <strong>{task ? getGroupNames(task) : 'Sin grupo'}</strong>
             </div>
             <div className="criterion-score">
               <span>Instrumento</span>
               <strong>{selectedInstrument?.title ?? task?.instrument?.title ?? 'Sin instrumento'}</strong>
             </div>
             <div className="criterion-score">
-              <span>Inicio</span>
-              <strong>{toInputDate(task?.startDate) || 'Sin inicio'}</strong>
-            </div>
-            <div className="criterion-score">
-              <span>Entrega</span>
-              <strong>{toInputDate(task?.dueDate) || 'Sin entrega'}</strong>
+              <span>Fecha</span>
+              <strong>{toInputDate(task?.dueDate) || 'Sin fecha'}</strong>
             </div>
           </div>
 
@@ -425,7 +463,7 @@ function EvaluatorTaskDetailPage() {
                   />
                 </label>
                 <label>
-                  Descripción
+                  Objetivo
                   <textarea
                     name="description"
                     value={formData.description}
@@ -441,34 +479,72 @@ function EvaluatorTaskDetailPage() {
             <details className="form-section" open>
               <summary>Asignación</summary>
               <div className="form-section-body">
-                <div className="form-two-columns">
-                  <label>
-                    Grupo
-                    <select name="group" value={formData.group} onChange={handleChange} disabled={isReadOnly}>
-                      <option value="">Sin grupo</option>
-                      {groups.map((group) => (
-                        <option key={getId(group)} value={getId(group)}>
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Instrumento
-                    <select
-                      name="instrument"
-                      value={formData.instrument}
-                      onChange={handleChange}
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Sin instrumento</option>
-                      {instruments.map((instrument) => (
-                        <option key={getId(instrument)} value={getId(instrument)}>
-                          {instrument.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                <label>
+                  Instrumento
+                  <select
+                    name="instrument"
+                    value={formData.instrument}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                  >
+                    <option value="">Sin instrumento</option>
+                    {instruments.map((instrument) => (
+                      <option key={getId(instrument)} value={getId(instrument)}>
+                        {instrument.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="assignment-selector">
+                  <div className="assignment-header">
+                    <span>Grupos</span>
+                    <strong>{formData.groups.length}</strong>
+                  </div>
+
+                  <div className="assignment-list" aria-label="Seleccionar grupos para esta tarea">
+                    {groups.map((group) => {
+                      const groupId = getId(group);
+                      const isSelected = formData.groups.includes(groupId);
+                      const groupStudentIds = students
+                        .filter((student) => studentBelongsToGroup(student, groupId))
+                        .map(getId);
+                      const allGroupStudentsSelected =
+                        groupStudentIds.length > 0 &&
+                        groupStudentIds.every((studentId) => formData.students.includes(studentId));
+
+                      return (
+                        <div className="group-option-row" key={groupId}>
+                          <label className={`assignment-option${isSelected ? ' assignment-option-selected' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleGroupToggle(groupId)}
+                              disabled={isReadOnly}
+                            />
+                            <span className="assignment-check" aria-hidden="true">
+                              <CheckCircle2 size={15} />
+                            </span>
+                            <span className="assignment-student">
+                              <strong>{group.name}</strong>
+                            </span>
+                          </label>
+                          {isSelected ? (
+                            <button
+                              className="button button-ghost button-compact"
+                              type="button"
+                              onClick={() => handleSelectAllInGroup(groupId)}
+                              disabled={isReadOnly || groupStudentIds.length === 0}
+                            >
+                              {allGroupStudentsSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+
+                    {groups.length === 0 ? <p className="assignment-empty">No hay grupos disponibles.</p> : null}
+                  </div>
                 </div>
 
                 <div className="assignment-selector">
@@ -530,8 +606,8 @@ function EvaluatorTaskDetailPage() {
 
                     {assignableStudents.length === 0 ? (
                       <p className="assignment-empty">
-                        {formData.group
-                          ? 'No hay estudiantes activos en este grupo.'
+                        {formData.groups.length
+                          ? 'No hay estudiantes activos en los grupos seleccionados.'
                           : 'Crea estudiantes o vincúlalos a un grupo para asignarlos.'}
                       </p>
                     ) : null}
@@ -545,24 +621,11 @@ function EvaluatorTaskDetailPage() {
             </details>
 
             <details className="form-section" open>
-              <summary>Fechas y ponderación</summary>
+              <summary>Fecha y nota</summary>
               <div className="form-section-body">
                 <div className="form-two-columns">
                   <label>
-                    Inicio
-                    <span className="date-field">
-                      <CalendarDays size={17} aria-hidden="true" />
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleChange}
-                        disabled={isReadOnly}
-                      />
-                    </span>
-                  </label>
-                  <label>
-                    Entrega
+                    Fecha
                     <span className="date-field">
                       <CalendarDays size={17} aria-hidden="true" />
                       <input
@@ -574,8 +637,6 @@ function EvaluatorTaskDetailPage() {
                       />
                     </span>
                   </label>
-                </div>
-                <div className="form-two-columns">
                   <label>
                     Estado
                     <select name="status" value={formData.status} onChange={handleChange} disabled={isReadOnly}>
@@ -583,19 +644,19 @@ function EvaluatorTaskDetailPage() {
                       <option value="completed">Evaluada</option>
                     </select>
                   </label>
-                  <label>
-                    Peso %
-                    <input
-                      type="number"
-                      name="weight"
-                      min="0"
-                      max="100"
-                      value={formData.weight}
-                      onChange={handleChange}
-                      disabled={isReadOnly}
-                    />
-                  </label>
                 </div>
+                <label>
+                  Nota
+                  <input
+                    type="number"
+                    name="weight"
+                    min="0"
+                    max="100"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                  />
+                </label>
               </div>
             </details>
 

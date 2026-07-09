@@ -5,7 +5,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = window.localStorage.getItem('evaluapro_token');
+  const token = window.sessionStorage.getItem('evaluapro_token');
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

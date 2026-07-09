@@ -3,6 +3,7 @@ import { USER_ROLES } from '../constants/user.constants.js';
 import {
   createInstrument,
   deleteInstrument,
+  deleteInstrumentPermanent,
   getInstrumentById,
   getInstruments,
   updateInstrument
@@ -32,5 +33,12 @@ router
   .get(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(instrumentIdSchema), getInstrumentById)
   .patch(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(updateInstrumentSchema), updateInstrument)
   .delete(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(instrumentIdSchema), deleteInstrument);
+
+router.delete(
+  '/:id/permanent',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(instrumentIdSchema),
+  deleteInstrumentPermanent
+);
 
 export default router;

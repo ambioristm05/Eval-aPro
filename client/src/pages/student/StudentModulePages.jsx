@@ -17,7 +17,8 @@ function formatDate(value) {
 }
 
 function getGroupName(task) {
-  return task.group?.name ?? 'Sin grupo';
+  const names = (task.groups ?? []).map((group) => group.name).filter(Boolean);
+  return names.length ? names.join(', ') : 'Sin grupo';
 }
 
 function getInstrumentName(task) {

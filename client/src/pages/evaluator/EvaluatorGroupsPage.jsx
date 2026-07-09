@@ -60,6 +60,7 @@ function EvaluatorGroupsPage() {
   const [isLinking, setIsLinking] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [reactivatingId, setReactivatingId] = useState('');
 
   const activeGroupsForSelect = useMemo(
     () => groups.filter((group) => group.status === 'active'),
@@ -233,9 +234,19 @@ function EvaluatorGroupsPage() {
     }
   };
 
+  const reactivateGroup = async (group) => {
+    const groupId = getId(group);
+    setReactivatingId(groupId);
+    try {
+      await toggleGroupStatus(group);
+    } finally {
+      setReactivatingId('');
+    }
+  };
+
   const handleToggleStatus = (group) => {
     if (group.status !== 'active') {
-      toggleGroupStatus(group);
+      reactivateGroup(group);
       return;
     }
 
@@ -607,8 +618,11 @@ function EvaluatorGroupsPage() {
                     onClick={() => handleToggleStatus(group)}
                     title={group.status === 'active' ? 'Archivar' : 'Reactivar'}
                     aria-label={group.status === 'active' ? `Archivar ${group.name}` : `Reactivar ${group.name}`}
+                    disabled={reactivatingId === getId(group)}
                   >
-                    {group.status === 'active' ? (
+                    {reactivatingId === getId(group) ? (
+                      <span className="button-spinner-ring" aria-hidden="true" />
+                    ) : group.status === 'active' ? (
                       <Archive size={17} aria-hidden="true" />
                     ) : (
                       <RotateCcw size={17} aria-hidden="true" />

@@ -1,31 +1,12 @@
-import {
-  CirclePause,
-  RotateCcw,
-  Save,
-  Search,
-  Trash2,
-  UserPlus,
-  Users,
-} from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { CirclePause, RotateCcw, Save, Search, Trash2, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
-import {
-  createResource,
-  deleteStudent,
-  listResource,
-  reactivateStudent,
-  suspendStudent,
-} from '../../services/resourceService.js';
+import PermanentDeleteDialog from '../../components/common/PermanentDeleteDialog.jsx';
+import { deleteUserPermanent } from '../../services/adminService.js';
+import { deleteStudent, listResource, reactivateStudent, suspendStudent } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
-
-const emptyForm = {
-  name: '',
-  email: '',
-  password: '',
-  group: '',
-};
 
 const statusLabels = {
   active: 'Activo',
@@ -38,19 +19,17 @@ function getGroupNames(student) {
   return student.groups.map((group) => group.name).filter(Boolean).join(', ') || 'Sin grupo';
 }
 
-function EvaluatorStudentsPage() {
-  const nameInputRef = useRef(null);
+function AdminStudentsPage() {
   const [students, setStudents] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [formData, setFormData] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [reactivatingId, setReactivatingId] = useState('');
 
   const filteredStudents = useMemo(() => {
@@ -74,29 +53,20 @@ function EvaluatorStudentsPage() {
 
   const loadStudents = async () => {
     const data = await listResource('students', { includeDeleted: true, limit: 100 });
-
     setStudents(data.students ?? []);
   };
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchInitialData() {
+    async function fetchStudents() {
       setIsLoading(true);
       setError('');
 
       try {
-        const [groupsData] = await Promise.all([
-          listResource('groups', { status: 'active', limit: 100 }),
-          loadStudents(),
-        ]);
-
+        const data = await listResource('students', { includeDeleted: true, limit: 100 });
         if (!isMounted) return;
-        setGroups(groupsData.groups ?? []);
-        setFormData((current) => ({
-          ...current,
-          group: current.group || (groupsData.groups?.[0] ? getId(groupsData.groups[0]) : ''),
-        }));
+        setStudents(data.students ?? []);
       } catch (requestError) {
         if (!isMounted) return;
         setError(getErrorMessage(requestError));
@@ -105,65 +75,12 @@ function EvaluatorStudentsPage() {
       }
     }
 
-    fetchInitialData();
+    fetchStudents();
 
     return () => {
       isMounted = false;
     };
   }, []);
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setMessage('');
-
-    const normalizedName = formData.name.trim();
-    const normalizedEmail = formData.email.trim().toLowerCase();
-
-    if (!normalizedName || !normalizedEmail || formData.password.length < 8) {
-      setError('Completa nombre, correo y una contraseña temporal de al menos 8 caracteres.');
-      return;
-    }
-
-    if (!formData.group) {
-      setError('Crea o selecciona un grupo activo antes de agregar estudiantes.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      await createResource('students', {
-        name: normalizedName,
-        email: normalizedEmail,
-        password: formData.password,
-        group: formData.group,
-      });
-
-      setMessage('Estudiante creado correctamente.');
-      setFormData((current) => ({
-        ...emptyForm,
-        group: current.group,
-      }));
-      await loadStudents();
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const focusStudentForm = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    nameInputRef.current?.focus();
-    nameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
 
   const applyStudentStatus = async (studentId, status) => {
     setError('');
@@ -171,17 +88,17 @@ function EvaluatorStudentsPage() {
 
     try {
       if (status === 'suspended') {
-        await suspendStudent(studentId, 'Suspendido por el evaluador');
+        await suspendStudent(studentId, 'Suspendido por el administrador');
         setMessage('Estudiante suspendido.');
       }
 
       if (status === 'active') {
-        await reactivateStudent(studentId, 'Reactivado por el evaluador');
+        await reactivateStudent(studentId, 'Reactivado por el administrador');
         setMessage('Estudiante reactivado.');
       }
 
       if (status === 'deleted') {
-        await deleteStudent(studentId, 'Eliminado lógicamente por el evaluador');
+        await deleteStudent(studentId, 'Eliminado lógicamente por el administrador');
         setMessage('Estudiante eliminado lógicamente.');
       }
 
@@ -229,6 +146,28 @@ function EvaluatorStudentsPage() {
     }
   };
 
+  const handlePermanentDelete = async ({ password }) => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await deleteUserPermanent(getId(deleteTarget), {
+        password,
+        reason: 'Eliminación definitiva por administrador',
+      });
+      setMessage('Estudiante eliminado de forma definitiva.');
+      setDeleteTarget(null);
+      await loadStudents();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <section className="management-page">
       <div className="module-hero">
@@ -236,11 +175,11 @@ function EvaluatorStudentsPage() {
           <Users size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Evaluador</p>
+          <p className="eyebrow">Administración</p>
           <h1>Estudiantes</h1>
           <p className="dashboard-description">
-            Gestiona participantes vinculados a tus clases, conserva su historial y controla
-            accesos con estados seguros.
+            Supervisa a todos los estudiantes del sistema, gestiona su estado y elimina cuentas de forma definitiva
+            cuando corresponda.
           </p>
         </div>
       </div>
@@ -278,137 +217,63 @@ function EvaluatorStudentsPage() {
         </article>
       </div>
 
-      <div className="management-grid">
-        <section className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Agregar estudiante</h2>
-            <p>Crea una cuenta de estudiante y vincúlala a un grupo activo.</p>
+      <section className="dashboard-panel">
+        <div className="panel-heading panel-heading-row">
+          <div>
+            <h2>Listado</h2>
+            <p>Busca por nombre, correo o grupo y filtra por estado.</p>
           </div>
+          <span className="count-pill">{filteredStudents.length}</span>
+        </div>
 
-          <form className="stacked-form compact-form" onSubmit={handleSubmit}>
-            <label>
-              Nombre completo
-              <input
-                ref={nameInputRef}
-                type="text"
-                name="name"
-                value={formData.name}
-                placeholder="Nombre del estudiante"
-                autoComplete="name"
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <label>
-              Correo electrónico
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                placeholder="estudiante@correo.com"
-                autoComplete="email"
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <label>
-              Contraseña temporal
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                placeholder="Mínimo 8 caracteres"
-                autoComplete="new-password"
-                onChange={handleChange}
-                required
-                minLength={8}
-              />
-            </label>
-            <label>
-              Grupo
-              <select name="group" value={formData.group} onChange={handleChange} required>
-                {groups.map((group) => (
-                  <option key={getId(group)} value={getId(group)}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <div className="toolbar">
+          <label className="search-field">
+            <Search size={18} aria-hidden="true" />
+            <input
+              type="search"
+              value={searchTerm}
+              placeholder="Buscar estudiante"
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </label>
+          <select
+            className="filter-select"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filtrar por estado"
+          >
+            <option value="all">Todos</option>
+            <option value="active">Activos</option>
+            <option value="suspended">Suspendidos</option>
+            <option value="deleted">Eliminados</option>
+          </select>
+        </div>
 
-            <button
-              className="button button-primary"
-              type="submit"
-              disabled={isSubmitting || !groups.length}
-            >
-              {isSubmitting ? (
-                <span className="button-spinner-ring" aria-hidden="true" />
-              ) : (
-                <UserPlus size={18} aria-hidden="true" />
-              )}
-              {isSubmitting ? 'Agregando...' : 'Agregar estudiante'}
-            </button>
-          </form>
-        </section>
-
-        <section className="dashboard-panel">
-          <div className="panel-heading panel-heading-row">
-            <div>
-              <h2>Listado</h2>
-              <p>Busca por nombre, correo o grupo y filtra por estado.</p>
-            </div>
-            <span className="count-pill">{filteredStudents.length}</span>
-          </div>
-
-          <div className="toolbar">
-            <label className="search-field">
-              <Search size={18} aria-hidden="true" />
-              <input
-                type="search"
-                value={searchTerm}
-                placeholder="Buscar estudiante"
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-            <select
-              className="filter-select"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              aria-label="Filtrar por estado"
-            >
-              <option value="all">Todos</option>
-              <option value="active">Activos</option>
-              <option value="suspended">Suspendidos</option>
-              <option value="deleted">Eliminados</option>
-            </select>
-          </div>
-
-          <div className="resource-list">
-            {isLoading ? (
-              <div className="skeleton-list" aria-label="Cargando estudiantes">
-                {[0, 1, 2].map((item) => (
-                  <div className="skeleton-card" key={item}>
-                    <span className="skeleton-line skeleton-line-title" />
-                    <span className="skeleton-line" />
-                    <div className="skeleton-chip-row">
-                      <span className="skeleton-chip" />
-                      <span className="skeleton-chip" />
-                    </div>
+        <div className="resource-list">
+          {isLoading ? (
+            <div className="skeleton-list" aria-label="Cargando estudiantes">
+              {[0, 1, 2].map((item) => (
+                <div className="skeleton-card" key={item}>
+                  <span className="skeleton-line skeleton-line-title" />
+                  <span className="skeleton-line" />
+                  <div className="skeleton-chip-row">
+                    <span className="skeleton-chip" />
+                    <span className="skeleton-chip" />
                   </div>
-                ))}
-              </div>
-            ) : filteredStudents.map((student) => (
+                </div>
+              ))}
+            </div>
+          ) : (
+            filteredStudents.map((student) => (
               <article className="resource-item" key={getId(student)}>
                 <div className="resource-main">
                   <div className="resource-title-row">
                     <h3>{student.name}</h3>
-                    <span className={`status-badge status-${student.status}`}>
-                      {statusLabels[student.status]}
-                    </span>
+                    <span className={`status-badge status-${student.status}`}>{statusLabels[student.status]}</span>
                   </div>
                   <p>{student.email}</p>
                   <div className="resource-meta">
                     <span>{getGroupNames(student)}</span>
-                    <span>Cuenta creada</span>
                   </div>
                 </div>
 
@@ -447,29 +312,27 @@ function EvaluatorStudentsPage() {
                     aria-label={`Eliminar lógicamente ${student.name}`}
                     disabled={student.status === 'deleted'}
                   >
-                    {student.status === 'deleted' ? (
-                      <Save size={17} aria-hidden="true" />
-                    ) : (
-                      <Trash2 size={17} aria-hidden="true" />
-                    )}
+                    {student.status === 'deleted' ? <Save size={17} aria-hidden="true" /> : <Trash2 size={17} aria-hidden="true" />}
+                  </button>
+                  <button
+                    className="icon-button danger"
+                    type="button"
+                    onClick={() => setDeleteTarget(student)}
+                    title="Eliminar definitivamente"
+                    aria-label={`Eliminar definitivamente a ${student.name}`}
+                  >
+                    <Trash2 size={17} aria-hidden="true" />
                   </button>
                 </div>
               </article>
-            ))}
+            ))
+          )}
 
-            {!isLoading && filteredStudents.length === 0 ? (
-              <EmptyState
-                title="No hay estudiantes"
-                description="Ajusta los filtros o agrega un estudiante nuevo."
-                action={{
-                  label: 'Agregar estudiante',
-                  onClick: focusStudentForm,
-                }}
-              />
-            ) : null}
-          </div>
-        </section>
-      </div>
+          {!isLoading && filteredStudents.length === 0 ? (
+            <EmptyState title="No hay estudiantes" description="Ajusta los filtros para ver otros resultados." />
+          ) : null}
+        </div>
+      </section>
 
       <ConfirmDialog
         open={Boolean(confirmAction)}
@@ -480,8 +343,18 @@ function EvaluatorStudentsPage() {
         onCancel={() => setConfirmAction(null)}
         onConfirm={handleConfirmAction}
       />
+
+      <PermanentDeleteDialog
+        open={Boolean(deleteTarget)}
+        title={`Eliminar definitivamente a ${deleteTarget?.name ?? ''}`}
+        description="Esta acción borra la cuenta de la base de datos y no se puede deshacer. El estudiante se quitará de sus grupos y tareas asignadas."
+        requirePassword
+        isBusy={isDeleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handlePermanentDelete}
+      />
     </section>
   );
 }
 
-export default EvaluatorStudentsPage;
+export default AdminStudentsPage;

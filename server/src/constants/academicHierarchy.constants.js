@@ -1,4 +1,5 @@
 export const ACADEMIC_STATUSES = Object.freeze({
   ACTIVE: 'active',
-  ARCHIVED: 'archived'
+  ARCHIVED: 'archived',
+  DELETED: 'deleted'
 });

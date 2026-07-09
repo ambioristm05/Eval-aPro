@@ -8,6 +8,7 @@ import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { writeAudit } from '../utils/audit.js';
 
 const taskPopulate = [
   { path: 'evaluator', select: 'name email role' },
@@ -19,7 +20,7 @@ const taskPopulate = [
       { path: 'module', select: 'name status' }
     ]
   },
-  { path: 'group', select: 'name status evaluator' },
+  { path: 'groups', select: 'name status evaluator' },
   { path: 'students', select: 'name email role status' },
   { path: 'instrument', select: 'title type status maxScore criteria indicators options' }
 ];
@@ -46,10 +47,10 @@ async function findTaskForUser(req, id) {
 }
 
 async function findClassForEvaluator(req, classId) {
-  const academicClass = await AcademicClass.findOne({
-    _id: classId,
-    evaluator: req.user._id
-  })
+  const filter = { _id: classId };
+  if (req.user.role !== USER_ROLES.ADMIN) filter.evaluator = req.user._id;
+
+  const academicClass = await AcademicClass.findOne(filter)
     .populate('course', 'status')
     .populate('module', 'status');
 
@@ -62,9 +63,9 @@ async function findClassForEvaluator(req, classId) {
 
 function isHierarchyArchived(academicClass) {
   return (
-    academicClass?.status === ACADEMIC_STATUSES.ARCHIVED ||
-    academicClass?.module?.status === ACADEMIC_STATUSES.ARCHIVED ||
-    academicClass?.course?.status === ACADEMIC_STATUSES.ARCHIVED
+    academicClass?.status !== ACADEMIC_STATUSES.ACTIVE ||
+    academicClass?.module?.status !== ACADEMIC_STATUSES.ACTIVE ||
+    academicClass?.course?.status !== ACADEMIC_STATUSES.ACTIVE
   );
 }
 
@@ -74,36 +75,29 @@ function ensureClassIsEditable(academicClass) {
   }
 }
 
-function ensureValidTaskDates(task) {
-  if (!task.startDate || !task.dueDate) return;
-
-  if (task.dueDate < task.startDate) {
-    throw new AppError('La fecha de entrega debe ser posterior o igual a la fecha de inicio', 400);
-  }
-}
-
-async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
-  let group = null;
+async function resolveTaskRelations(req, { groupIds = [], studentIds = [] }) {
+  const uniqueGroupIds = [...new Set(groupIds.map(String))];
   const uniqueStudentIds = [...new Set(studentIds.map(String))];
+  let groups = [];
 
-  if (groupId) {
+  if (uniqueGroupIds.length) {
     const groupFilter = {
-      _id: groupId
+      _id: { $in: uniqueGroupIds }
     };
 
     if (req.user.role === USER_ROLES.EVALUATOR) {
       groupFilter.evaluator = req.user._id;
     }
 
-    group = await Group.findOne(groupFilter);
-    if (!group) {
-      throw new AppError('Grupo no encontrado', 404);
+    groups = await Group.find(groupFilter);
+    if (groups.length !== uniqueGroupIds.length) {
+      throw new AppError('Uno o más grupos no son válidos para esta tarea', 400);
     }
   }
 
   if (!uniqueStudentIds.length) {
     return {
-      group,
+      groups,
       students: []
     };
   }
@@ -115,8 +109,8 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
   };
 
   if (req.user.role === USER_ROLES.EVALUATOR) {
-    if (group) {
-      studentFilter.groups = group._id;
+    if (groups.length) {
+      studentFilter.groups = { $in: groups.map((group) => group._id) };
     } else {
       const evaluatorGroupIds = await Group.find({ evaluator: req.user._id }).distinct('_id');
       studentFilter.groups = { $in: evaluatorGroupIds };
@@ -129,7 +123,7 @@ async function resolveTaskRelations(req, { groupId, studentIds = [] }) {
   }
 
   return {
-    group,
+    groups,
     students
   };
 }
@@ -139,17 +133,16 @@ export const createTask = asyncHandler(async (req, res) => {
     title,
     description,
     status,
-    group: groupId,
+    groups: groupIds,
     students: studentIds,
     instrument,
-    startDate,
     dueDate,
     weight,
     class: classId
   } = req.validated.body;
   const academicClass = await findClassForEvaluator(req, classId);
   ensureClassIsEditable(academicClass);
-  const relations = await resolveTaskRelations(req, { groupId, studentIds });
+  const relations = await resolveTaskRelations(req, { groupIds, studentIds });
   const resolvedInstrument = await ensureInstrumentForEvaluator({
     instrumentId: instrument,
     evaluatorId: req.user._id
@@ -161,10 +154,9 @@ export const createTask = asyncHandler(async (req, res) => {
     status,
     evaluator: req.user._id,
     class: academicClass._id,
-    group: relations.group?._id,
+    groups: relations.groups.map((group) => group._id),
     students: relations.students.map((student) => student._id),
     instrument: resolvedInstrument?._id,
-    startDate,
     dueDate,
     weight
   });
@@ -177,8 +169,8 @@ export const createTask = asyncHandler(async (req, res) => {
 export const createTaskForClass = asyncHandler(async (req, res) => {
   const academicClass = await findClassForEvaluator(req, req.validated.params.classId);
   ensureClassIsEditable(academicClass);
-  const { title, description, status, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
-  const relations = await resolveTaskRelations(req, { groupId, studentIds });
+  const { title, description, status, groups: groupIds, students: studentIds, instrument, dueDate, weight } = req.validated.body;
+  const relations = await resolveTaskRelations(req, { groupIds, studentIds });
   const resolvedInstrument = await ensureInstrumentForEvaluator({
     instrumentId: instrument,
     evaluatorId: req.user._id
@@ -190,10 +182,9 @@ export const createTaskForClass = asyncHandler(async (req, res) => {
     status,
     evaluator: req.user._id,
     class: academicClass._id,
-    group: relations.group?._id,
+    groups: relations.groups.map((group) => group._id),
     students: relations.students.map((student) => student._id),
     instrument: resolvedInstrument?._id,
-    startDate,
     dueDate,
     weight
   });
@@ -210,7 +201,7 @@ export const getTasks = asyncHandler(async (req, res) => {
   };
 
   if (status) filter.status = status;
-  if (groupId) filter.group = groupId;
+  if (groupId) filter.groups = groupId;
   if (studentId && req.user.role !== USER_ROLES.STUDENT) filter.students = studentId;
   if (search) filter.title = { $regex: search, $options: 'i' };
 
@@ -245,12 +236,12 @@ export const getClassTasks = asyncHandler(async (req, res) => {
   const academicClass = await findClassForEvaluator(req, req.validated.params.classId);
   const { search, status, groupId, studentId, page, limit } = req.validated.query;
   const filter = {
-    evaluator: req.user._id,
-    class: academicClass._id
+    class: academicClass._id,
+    ...(req.user.role !== USER_ROLES.ADMIN ? { evaluator: req.user._id } : {})
   };
 
   if (status) filter.status = status;
-  if (groupId) filter.group = groupId;
+  if (groupId) filter.groups = groupId;
   if (studentId) filter.students = studentId;
   if (search) filter.title = { $regex: search, $options: 'i' };
 
@@ -285,15 +276,15 @@ export const updateTask = asyncHandler(async (req, res) => {
     throw new AppError('No puedes editar una tarea de un curso, módulo o clase archivado', 409);
   }
 
-  const { title, description, status, group: groupId, students: studentIds, instrument, startDate, dueDate, weight } = req.validated.body;
+  const { title, description, status, groups: groupIds, students: studentIds, instrument, dueDate, weight } = req.validated.body;
 
-  if (groupId !== undefined || studentIds !== undefined) {
+  if (groupIds !== undefined || studentIds !== undefined) {
     const relations = await resolveTaskRelations(req, {
-      groupId: groupId ?? task.group?._id,
+      groupIds: groupIds ?? task.groups.map((group) => group._id),
       studentIds: studentIds ?? task.students.map((student) => student._id)
     });
 
-    task.group = relations.group?._id;
+    task.groups = relations.groups.map((group) => group._id);
     task.students = relations.students.map((student) => student._id);
   }
 
@@ -308,11 +299,8 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (title !== undefined) task.title = title;
   if (description !== undefined) task.description = description;
   if (status !== undefined) task.status = status;
-  if (startDate !== undefined) task.startDate = startDate;
   if (dueDate !== undefined) task.dueDate = dueDate;
   if (weight !== undefined) task.weight = weight;
-
-  ensureValidTaskDates(task);
 
   await task.save();
 
@@ -322,12 +310,22 @@ export const updateTask = asyncHandler(async (req, res) => {
 
 export const deleteTask = asyncHandler(async (req, res) => {
   const task = await findTaskForUser(req, req.validated.params.id);
+  const isAdmin = req.user.role === USER_ROLES.ADMIN;
 
-  if (isHierarchyArchived(task.class)) {
+  if (!isAdmin && isHierarchyArchived(task.class)) {
     throw new AppError('No puedes eliminar una tarea de un curso, módulo o clase archivado', 409);
   }
 
   await Task.deleteOne({ _id: task._id });
+
+  await writeAudit({
+    actor: req.user._id,
+    action: isAdmin ? 'task.permanentDelete' : 'task.delete',
+    entity: 'Task',
+    entityId: task._id,
+    before: task.toObject(),
+    after: null
+  });
 
   res.json({
     message: 'Tarea eliminada correctamente'

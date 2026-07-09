@@ -14,7 +14,7 @@ import { calculatePercentage } from '../utils/calculateGrades.js';
 const evaluationPopulate = [
   { path: 'student', select: 'name email role status' },
   { path: 'evaluator', select: 'name email role' },
-  { path: 'task', select: 'title status weight dueDate group students' },
+  { path: 'task', select: 'title status weight dueDate groups students' },
   { path: 'instrument', select: 'title type status maxScore criteria indicators options' }
 ];
 
@@ -98,7 +98,8 @@ async function ensureTaskAndStudentForEvaluator({ evaluatorId, taskId, studentId
   }
 
   const assignedDirectly = task.students.some((id) => id.equals(student._id));
-  const assignedByGroup = task.group && (await Group.exists({ _id: task.group, students: student._id }));
+  const assignedByGroup =
+    task.groups.length && (await Group.exists({ _id: { $in: task.groups }, students: student._id }));
 
   if (!assignedDirectly && !assignedByGroup) {
     throw new AppError('El estudiante no está asignado a esta tarea', 400);

@@ -259,7 +259,7 @@ function CourseDetailPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>{editingId ? 'Editar módulo' : 'Crear módulo'}</h2>
-            <p>Divide el curso en bloques académicos ordenados.</p>
+            <p>Define fechas y capacidad del módulo dentro del curso.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -276,18 +276,18 @@ function CourseDetailPage() {
               />
             </label>
             <label>
-              Descripción
+              Fecha de inicio y fin
               <textarea
                 name="description"
                 value={formData.description}
                 rows="4"
-                placeholder="Tema o alcance del módulo"
+                placeholder="Ej. Del 12 de agosto al 20 de septiembre"
                 onChange={handleChange}
                 disabled={isCourseArchived}
               />
             </label>
             <label>
-              Orden
+              Cantidad de estudiantes
               <input
                 type="number"
                 name="order"
@@ -336,7 +336,7 @@ function CourseDetailPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Módulos</h2>
-              <p>Ordena y prepara la estructura de clases del curso.</p>
+              <p>Consulta fechas, capacidad y clases de cada módulo.</p>
             </div>
             <span className="count-pill">{filteredModules.length}</span>
           </div>
@@ -386,9 +386,9 @@ function CourseDetailPage() {
                       {statusLabels[module.status]}
                     </span>
                   </div>
-                  <p>{module.description || 'Sin descripción registrada.'}</p>
+                  <p>{module.description || 'Sin fecha de inicio y fin registrada.'}</p>
                   <div className="chip-row">
-                    <span className="metadata-chip">Orden {module.order ?? 0}</span>
+                    <span className="metadata-chip">{module.order ?? 0} estudiantes</span>
                   </div>
                 </div>
 

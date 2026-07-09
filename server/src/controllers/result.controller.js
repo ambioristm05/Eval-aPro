@@ -8,7 +8,7 @@ import { calculateFinalGrade } from '../utils/calculateGrades.js';
 const resultPopulate = [
   { path: 'student', select: 'name email role status' },
   { path: 'evaluator', select: 'name email role' },
-  { path: 'task', select: 'title description status weight dueDate group' },
+  { path: 'task', select: 'title description status weight dueDate groups' },
   { path: 'instrument', select: 'title description type maxScore criteria indicators options' }
 ];
 

@@ -96,7 +96,7 @@ async function ensureTaskForStats(req, taskId) {
   const task = await Task.findOne({
     _id: taskId,
     ...evaluatorScope(req)
-  }).populate('group', 'name status students');
+  }).populate('groups', 'name status students');
 
   if (!task) throw new AppError('Tarea no encontrada', 404);
   return task;
@@ -211,7 +211,9 @@ export const getTaskStatistics = asyncHandler(async (req, res) => {
     scoreDistribution(match),
     Evaluation.countDocuments(match)
   ]);
-  const assignedCount = task.group?.students?.length || task.students.length;
+  const groupStudentIds = (task.groups ?? []).flatMap((group) => (group.students ?? []).map(String));
+  const directStudentIds = (task.students ?? []).map(String);
+  const assignedCount = new Set([...groupStudentIds, ...directStudentIds]).size;
 
   res.json({
     statistics: {

@@ -1,6 +1,6 @@
 import { LogIn, LogOut, Menu, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
 
@@ -8,7 +8,9 @@ function Header() {
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const showGuestLinks = !user && location.pathname !== '/';
   const hasNavigation = Boolean(user) || showGuestLinks;
 
@@ -16,18 +18,30 @@ function Header() {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
-  const handleLogout = async () => {
+  const handleLogout = async ({ redirectHome = false } = {}) => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
     try {
       await logout();
     } finally {
       clearSession();
       setIsMenuOpen(false);
+      setIsLoggingOut(false);
+      if (redirectHome) navigate('/');
     }
+  };
+
+  const handleBrandClick = async (event) => {
+    if (!user) return;
+
+    event.preventDefault();
+    await handleLogout({ redirectHome: true });
   };
 
   return (
     <header className="site-header">
-      <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro">
+      <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro" onClick={handleBrandClick}>
         <img className="brand-mark" src="/icono-plano.svg" width="40" height="40" alt="" aria-hidden="true" />
         <span>EvalúaPro</span>
       </Link>
@@ -54,9 +68,14 @@ function Header() {
           {user ? (
             <>
               <span className="user-pill">{user.name}</span>
-              <button className="nav-button" type="button" onClick={handleLogout}>
-                <LogOut size={18} aria-hidden="true" />
-                Salir
+              <button
+                className="nav-button"
+                type="button"
+                onClick={() => handleLogout()}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? <span className="button-spinner-ring" aria-hidden="true" /> : <LogOut size={18} aria-hidden="true" />}
+                {isLoggingOut ? 'Saliendo...' : 'Salir'}
               </button>
             </>
           ) : (

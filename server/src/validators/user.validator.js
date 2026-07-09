@@ -44,6 +44,28 @@ export const listStudentsSchema = z.object({
   })
 });
 
+export const listEvaluatorsSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({}).optional(),
+  query: z.object({
+    search: z.string().trim().max(100).optional(),
+    status: z.enum(Object.values(USER_STATUSES)).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20)
+  })
+});
+
+export const deleteUserPermanentSchema = z.object({
+  body: z.object({
+    password: z.string().min(1, 'La contraseña es requerida'),
+    reason: z.string().trim().max(300, 'La razón no puede exceder 300 caracteres').optional()
+  }),
+  params: z.object({
+    id: mongoIdSchema
+  }),
+  query: z.object({ cascade: booleanQuerySchema }).optional()
+});
+
 export const studentIdSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({

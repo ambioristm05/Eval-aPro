@@ -9,5 +9,6 @@ export const INSTRUMENT_TYPES = Object.freeze({
 export const INSTRUMENT_STATUSES = Object.freeze({
   DRAFT: 'draft',
   ACTIVE: 'active',
-  ARCHIVED: 'archived'
+  ARCHIVED: 'archived',
+  DELETED: 'deleted'
 });

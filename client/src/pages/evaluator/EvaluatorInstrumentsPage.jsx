@@ -12,7 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import {
@@ -33,6 +33,12 @@ const emptyForm = {
   criteriaCount: 1,
 };
 
+const emptyStructure = {
+  criteria: [],
+  indicators: [],
+  options: [],
+};
+
 const typeLabels = {
   rubric: 'Rúbrica',
   checklist: 'Lista de cotejo',
@@ -45,6 +51,7 @@ const statusLabels = {
   draft: 'Borrador',
   active: 'Activo',
   archived: 'Archivado',
+  deleted: 'Eliminado',
 };
 
 const typeIcons = {
@@ -55,21 +62,26 @@ const typeIcons = {
   questionnaire: FileQuestion,
 };
 
+const builderPaths = {
+  rubric: '/evaluator/instruments/rubric-builder',
+  checklist: '/evaluator/instruments/checklist-builder',
+};
+
 function getCriteriaCount(instrument) {
   return (instrument.criteria?.length ?? 0) + (instrument.indicators?.length ?? 0);
 }
 
-function getBuilderEditPath(instrument) {
-  const id = getId(instrument);
-  if (instrument.type === 'rubric') return `/evaluator/instruments/rubric-builder/${id}`;
-  if (instrument.type === 'checklist') return `/evaluator/instruments/checklist-builder/${id}`;
-  return null;
+function getStructureMaxScore(structure) {
+  const fromCriteria = structure.criteria.reduce((total, criterion) => total + Number(criterion.maxScore || 0), 0);
+  const fromIndicators = structure.indicators.reduce((total, indicator) => total + Number(indicator.score || 0), 0);
+  return fromCriteria + fromIndicators;
 }
 
-function buildInstrumentPayload(formData) {
-  const count = Math.max(Number(formData.criteriaCount) || 1, 1);
-  const maxScore = Math.max(Number(formData.maxScore) || 0, 0);
-  const score = count > 0 ? Number((maxScore / count).toFixed(2)) : 0;
+function hasBuilder(type) {
+  return type === 'rubric' || type === 'checklist';
+}
+
+function buildInstrumentPayload(formData, structureDraft) {
   const basePayload = {
     title: formData.title.trim(),
     description: formData.description.trim(),
@@ -77,7 +89,21 @@ function buildInstrumentPayload(formData) {
     status: formData.status,
     criteria: [],
     indicators: [],
+    options: [],
   };
+
+  if (hasBuilder(formData.type)) {
+    return {
+      ...basePayload,
+      criteria: structureDraft.criteria,
+      indicators: structureDraft.indicators,
+      options: structureDraft.options,
+    };
+  }
+
+  const count = Math.max(Number(formData.criteriaCount) || 1, 1);
+  const maxScore = Math.max(Number(formData.maxScore) || 0, 0);
+  const score = count > 0 ? Number((maxScore / count).toFixed(2)) : 0;
 
   if (formData.type === 'checklist') {
     return {
@@ -101,8 +127,11 @@ function buildInstrumentPayload(formData) {
 }
 
 function EvaluatorInstrumentsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [instruments, setInstruments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
+  const [structureDraft, setStructureDraft] = useState(emptyStructure);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -114,10 +143,15 @@ function EvaluatorInstrumentsPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  const visibleInstruments = useMemo(
+    () => instruments.filter((instrument) => instrument.status !== 'deleted'),
+    [instruments]
+  );
+
   const filteredInstruments = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return instruments.filter((instrument) => {
+    return visibleInstruments.filter((instrument) => {
       const matchesType = typeFilter === 'all' || instrument.type === typeFilter;
       const matchesStatus = statusFilter === 'all' || instrument.status === statusFilter;
       const matchesSearch =
@@ -128,11 +162,13 @@ function EvaluatorInstrumentsPage() {
 
       return matchesType && matchesStatus && matchesSearch;
     });
-  }, [instruments, searchTerm, typeFilter, statusFilter]);
+  }, [visibleInstruments, searchTerm, typeFilter, statusFilter]);
 
-  const activeCount = instruments.filter((instrument) => instrument.status === 'active').length;
-  const draftCount = instruments.filter((instrument) => instrument.status === 'draft').length;
-  const totalCriteria = instruments.reduce((total, instrument) => total + getCriteriaCount(instrument), 0);
+  const activeCount = visibleInstruments.filter((instrument) => instrument.status === 'active').length;
+  const draftCount = visibleInstruments.filter((instrument) => instrument.status === 'draft').length;
+  const totalCriteria = visibleInstruments.reduce((total, instrument) => total + getCriteriaCount(instrument), 0);
+  const structureCriteriaCount = structureDraft.criteria.length + structureDraft.indicators.length;
+  const structureMaxScore = getStructureMaxScore(structureDraft);
 
   const loadInstruments = async () => {
     const data = await listResource('instruments', { limit: 100 });
@@ -165,6 +201,15 @@ function EvaluatorInstrumentsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!location.state?.restoreStructure) return;
+
+    setFormData(location.state.restoreFicha ?? emptyForm);
+    setEditingId(location.state.restoreEditingId ?? null);
+    setStructureDraft(location.state.restoreStructure);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location, navigate]);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
@@ -172,6 +217,7 @@ function EvaluatorInstrumentsPage() {
 
   const resetForm = () => {
     setFormData(emptyForm);
+    setStructureDraft(emptyStructure);
     setEditingId(null);
   };
 
@@ -186,7 +232,7 @@ function EvaluatorInstrumentsPage() {
     setIsSubmitting(true);
 
     try {
-      const payload = buildInstrumentPayload(formData);
+      const payload = buildInstrumentPayload(formData, structureDraft);
 
       if (editingId) {
         await updateResource('instruments', editingId, payload);
@@ -214,6 +260,24 @@ function EvaluatorInstrumentsPage() {
       status: instrument.status,
       maxScore: instrument.maxScore ?? 0,
       criteriaCount: getCriteriaCount(instrument) || 1,
+    });
+    setStructureDraft({
+      criteria: instrument.criteria ?? [],
+      indicators: instrument.indicators ?? [],
+      options: instrument.options ?? [],
+    });
+  };
+
+  const openStructureBuilder = () => {
+    const builderPath = builderPaths[formData.type];
+    if (!builderPath) return;
+
+    navigate(builderPath, {
+      state: {
+        structure: structureDraft,
+        ficha: formData,
+        editingId,
+      },
     });
   };
 
@@ -254,7 +318,7 @@ function EvaluatorInstrumentsPage() {
 
     try {
       await deleteResource('instruments', instrumentId);
-      setMessage('Instrumento archivado correctamente.');
+      setMessage('Instrumento eliminado correctamente.');
       if (editingId === instrumentId) resetForm();
       await loadInstruments();
     } catch (requestError) {
@@ -265,7 +329,7 @@ function EvaluatorInstrumentsPage() {
   const handleDeleteInstrument = (instrument) => {
     setConfirmAction({
       title: `Eliminar ${instrument.title}`,
-      description: 'Esta acción no se puede deshacer desde esta pantalla.',
+      description: 'El instrumento se eliminará de este listado y no podrá usarse en nuevas tareas.',
       confirmLabel: 'Eliminar instrumento',
       onConfirm: () => deleteInstrument(instrument),
     });
@@ -336,7 +400,7 @@ function EvaluatorInstrumentsPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>{editingId ? 'Editar instrumento' : 'Crear instrumento'}</h2>
-            <p>Define la ficha general antes del constructor específico.</p>
+            <p>Define la ficha general y su estructura. El guardado definitivo ocurre aquí.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -381,28 +445,44 @@ function EvaluatorInstrumentsPage() {
                 </select>
               </label>
             </div>
-            <div className="form-two-columns">
-              <label>
-                Puntuación máxima
-                <input
-                  type="number"
-                  name="maxScore"
-                  min="0"
-                  value={formData.maxScore}
-                  onChange={handleChange}
-                />
-              </label>
-              <label>
-                Criterios o indicadores
-                <input
-                  type="number"
-                  name="criteriaCount"
-                  min="1"
-                  value={formData.criteriaCount}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+            {hasBuilder(formData.type) ? (
+              <div className="structure-summary">
+                <div>
+                  <strong>{structureCriteriaCount}</strong>
+                  <span>{formData.type === 'checklist' ? 'indicadores' : 'criterios'} definidos</span>
+                </div>
+                <div>
+                  <strong>{structureMaxScore}</strong>
+                  <span>puntos máximos</span>
+                </div>
+                <button className="button button-secondary" type="button" onClick={openStructureBuilder}>
+                  {structureCriteriaCount ? 'Editar estructura' : 'Diseñar estructura'}
+                </button>
+              </div>
+            ) : (
+              <div className="form-two-columns">
+                <label>
+                  Puntuación máxima
+                  <input
+                    type="number"
+                    name="maxScore"
+                    min="0"
+                    value={formData.maxScore}
+                    onChange={handleChange}
+                  />
+                </label>
+                <label>
+                  Criterios o indicadores
+                  <input
+                    type="number"
+                    name="criteriaCount"
+                    min="1"
+                    value={formData.criteriaCount}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+            )}
 
             <div className="form-actions">
               <button className="button button-primary" type="submit" disabled={isSubmitting}>
@@ -422,28 +502,6 @@ function EvaluatorInstrumentsPage() {
               ) : null}
             </div>
           </form>
-
-          <div className="builder-shortcut">
-            <ClipboardCheck size={22} aria-hidden="true" />
-            <div>
-              <h3>Constructor de rúbricas</h3>
-              <p>Crea criterios, niveles y descripciones por desempeño.</p>
-            </div>
-            <Link className="button button-secondary" to="/evaluator/instruments/rubric-builder">
-              Abrir
-            </Link>
-          </div>
-
-          <div className="builder-shortcut">
-            <CheckSquare size={22} aria-hidden="true" />
-            <div>
-              <h3>Constructor de listas</h3>
-              <p>Crea indicadores, opciones y puntajes de cotejo.</p>
-            </div>
-            <Link className="button button-secondary" to="/evaluator/instruments/checklist-builder">
-              Abrir
-            </Link>
-          </div>
         </section>
 
         <section className="dashboard-panel">
@@ -452,7 +510,12 @@ function EvaluatorInstrumentsPage() {
               <h2>Listado</h2>
               <p>Busca por nombre, descripción o tipo y filtra el estado.</p>
             </div>
-            <span className="count-pill">{filteredInstruments.length}</span>
+            <div className="panel-heading-actions">
+              <span className="count-pill">{filteredInstruments.length}</span>
+              <Link className="button button-secondary" to="/evaluator/instruments/archive">
+                Archivados y eliminados
+              </Link>
+            </div>
           </div>
 
           <div className="toolbar toolbar-wide">
@@ -508,7 +571,6 @@ function EvaluatorInstrumentsPage() {
               </div>
             ) : filteredInstruments.map((instrument) => {
               const TypeIcon = typeIcons[instrument.type];
-              const builderEditPath = getBuilderEditPath(instrument);
 
               return (
                 <article className="resource-item" key={getId(instrument)}>
@@ -531,26 +593,18 @@ function EvaluatorInstrumentsPage() {
                   </div>
 
                   <div className="resource-actions" aria-label={`Acciones para ${instrument.title}`}>
-                    {builderEditPath ? (
-                      <Link
-                        className="icon-button"
-                        to={builderEditPath}
-                        title="Editar en constructor"
-                        aria-label={`Editar ${instrument.title} en constructor`}
-                      >
-                        <Pencil size={17} aria-hidden="true" />
-                      </Link>
-                    ) : (
-                      <button
-                        className="icon-button"
-                        type="button"
-                        onClick={() => handleEdit(instrument)}
-                        title="Editar"
-                        aria-label={`Editar ${instrument.title}`}
-                      >
-                        <Pencil size={17} aria-hidden="true" />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button"
+                      type="button"
+                      onClick={() => {
+                        handleEdit(instrument);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      title="Editar"
+                      aria-label={`Editar ${instrument.title}`}
+                    >
+                      <Pencil size={17} aria-hidden="true" />
+                    </button>
                     <button
                       className="icon-button"
                       type="button"

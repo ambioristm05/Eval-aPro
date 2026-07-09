@@ -86,7 +86,7 @@ async function findTaskForReport(req, taskId) {
     _id: taskId,
     ...evaluatorScope(req)
   })
-    .populate('group', 'name status')
+    .populate('groups', 'name status')
     .populate('students', 'name email status')
     .populate('instrument', 'title type status maxScore');
 

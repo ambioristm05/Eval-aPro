@@ -6,9 +6,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
-import { createResource, getResource, updateResource } from '../../services/resourceService.js';
+import { getResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -48,29 +48,9 @@ function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
 }
 
-function buildRubricPayload(rubric, criteria, levels) {
-  return {
-    title: rubric.title,
-    description: rubric.description,
-    type: 'rubric',
-    status: rubric.status,
-    criteria: criteria.map((criterion) => ({
-      name: criterion.name,
-      description: '',
-      maxScore: Number(criterion.maxScore) || 0,
-      levels: levels.map((level) => ({
-        name: level.name,
-        description: criterion.descriptions[level.id] ?? '',
-        score: Number(level.score) || 0,
-      })),
-    })),
-    indicators: [],
-  };
-}
-
-function normalizeRubricInstrument(instrument) {
-  const sourceCriteria = instrument.criteria?.length ? instrument.criteria : initialCriteria;
-  const sourceLevels = sourceCriteria.find((criterion) => criterion.levels?.length)?.levels;
+function normalizeCriteria(sourceCriteria) {
+  const criteria = sourceCriteria?.length ? sourceCriteria : initialCriteria;
+  const sourceLevels = criteria.find((criterion) => criterion.levels?.length)?.levels;
   const normalizedLevels = sourceLevels?.length
     ? sourceLevels.map((level, index) => ({
         id: `level-${index}`,
@@ -79,7 +59,7 @@ function normalizeRubricInstrument(instrument) {
       }))
     : initialLevels;
 
-  const normalizedCriteria = sourceCriteria.map((criterion, criterionIndex) => ({
+  const normalizedCriteria = criteria.map((criterion, criterionIndex) => ({
     id: getId(criterion, `criterion-${criterionIndex}`),
     name: criterion.name,
     maxScore: Number(criterion.maxScore) || 0,
@@ -89,33 +69,34 @@ function normalizeRubricInstrument(instrument) {
     }, {}),
   }));
 
-  return {
-    rubric: {
-      title: instrument.title ?? '',
-      description: instrument.description ?? '',
-      status: instrument.status ?? 'draft',
-    },
-    levels: normalizedLevels,
-    criteria: normalizedCriteria,
-  };
+  return { levels: normalizedLevels, criteria: normalizedCriteria };
+}
+
+function buildCriteriaStructure(criteria, levels) {
+  return criteria.map((criterion) => ({
+    name: criterion.name,
+    description: '',
+    maxScore: Number(criterion.maxScore) || 0,
+    levels: levels.map((level) => ({
+      name: level.name,
+      description: criterion.descriptions[level.id] ?? '',
+      score: Number(level.score) || 0,
+    })),
+  }));
 }
 
 function RubricBuilderPage() {
   const { id: instrumentId } = useParams();
-  const [rubric, setRubric] = useState({
-    title: 'Rúbrica analítica de lectura',
-    description: 'Instrumento para valorar comprensión, organización y argumentación.',
-    status: 'draft',
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const incomingState = location.state;
   const [levels, setLevels] = useState(initialLevels);
   const [criteria, setCriteria] = useState(initialCriteria);
-  const [savedMessage, setSavedMessage] = useState('');
+  const [fichaTitle, setFichaTitle] = useState(incomingState?.ficha?.title ?? '');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(Boolean(instrumentId));
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(!incomingState?.structure && Boolean(instrumentId));
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
-  const isEditing = Boolean(instrumentId);
 
   const maxScore = useMemo(
     () => criteria.reduce((total, criterion) => total + Number(criterion.maxScore || 0), 0),
@@ -123,6 +104,13 @@ function RubricBuilderPage() {
   );
 
   useEffect(() => {
+    if (incomingState?.structure) {
+      const nextState = normalizeCriteria(incomingState.structure.criteria);
+      setLevels(nextState.levels);
+      setCriteria(nextState.criteria);
+      return;
+    }
+
     if (!instrumentId) return undefined;
 
     let isMounted = true;
@@ -142,10 +130,10 @@ function RubricBuilderPage() {
           return;
         }
 
-        const nextState = normalizeRubricInstrument(instrument);
-        setRubric(nextState.rubric);
+        const nextState = normalizeCriteria(instrument.criteria);
         setLevels(nextState.levels);
         setCriteria(nextState.criteria);
+        setFichaTitle(instrument.title ?? '');
       } catch (requestError) {
         if (!isMounted) return;
         setError(getErrorMessage(requestError));
@@ -160,11 +148,6 @@ function RubricBuilderPage() {
       isMounted = false;
     };
   }, [instrumentId]);
-
-  const handleRubricChange = (event) => {
-    const { name, value } = event.target;
-    setRubric((current) => ({ ...current, [name]: value }));
-  };
 
   const updateLevel = (levelId, field, value) => {
     setLevels((current) =>
@@ -295,27 +278,26 @@ function RubricBuilderPage() {
     }
   };
 
-  const handleSave = async () => {
-    setError('');
-    setSavedMessage('');
-    setIsSaving(true);
+  const goBackToInstruments = (structureOverride) => {
+    navigate('/evaluator/instruments', {
+      state: {
+        restoreFicha: incomingState?.ficha,
+        restoreEditingId: incomingState?.editingId ?? null,
+        restoreStructure: {
+          criteria: structureOverride,
+          indicators: [],
+          options: [],
+        },
+      },
+    });
+  };
 
-    try {
-      const payload = buildRubricPayload(rubric, criteria, levels);
+  const handleUseStructure = () => {
+    goBackToInstruments(buildCriteriaStructure(criteria, levels));
+  };
 
-      if (isEditing) {
-        await updateResource('instruments', instrumentId, payload);
-      } else {
-        await createResource('instruments', payload);
-      }
-
-      setSavedMessage(isEditing ? 'Rúbrica actualizada correctamente.' : 'Rúbrica guardada correctamente.');
-      window.setTimeout(() => setSavedMessage(''), 2600);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
-    } finally {
-      setIsSaving(false);
-    }
+  const handleCancel = () => {
+    goBackToInstruments(incomingState?.structure?.criteria ?? []);
   };
 
   return (
@@ -326,13 +308,16 @@ function RubricBuilderPage() {
         </span>
         <div>
           <p className="eyebrow">Instrumentos</p>
-          <h1>{isEditing ? 'Editar rúbrica' : 'Constructor de rúbricas'}</h1>
+          <h1>Constructor de rúbricas</h1>
           <p className="dashboard-description">
-            Define criterios, niveles de desempeño, puntajes y descripciones para una
-            rúbrica analítica reutilizable.
+            {fichaTitle
+              ? `Define criterios, niveles y descripciones para "${fichaTitle}".`
+              : 'Define criterios, niveles de desempeño, puntajes y descripciones. El título y el guardado se manejan desde Instrumentos.'}
           </p>
         </div>
       </div>
+
+      {error ? <p className="form-message form-message-error">{error}</p> : null}
 
       <div className="metric-grid" aria-label="Resumen de rúbrica">
         <article className="metric-card">
@@ -367,53 +352,18 @@ function RubricBuilderPage() {
       <div className="builder-layout">
         <aside className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Ficha de la rúbrica</h2>
-            <p>Datos generales del instrumento.</p>
+            <h2>Estructura de la rúbrica</h2>
+            <p>Estos cambios se aplican al volver a Instrumentos; ahí se guardan definitivamente.</p>
           </div>
 
-          <form className="stacked-form compact-form">
-            <label>
-              Título
-              <input name="title" value={rubric.title} onChange={handleRubricChange} />
-            </label>
-            <label>
-              Descripción
-              <textarea
-                name="description"
-                value={rubric.description}
-                rows="4"
-                onChange={handleRubricChange}
-              />
-            </label>
-            <label>
-              Estado
-              <select name="status" value={rubric.status} onChange={handleRubricChange}>
-                <option value="draft">Borrador</option>
-                <option value="active">Activo</option>
-                <option value="archived">Archivado</option>
-              </select>
-            </label>
-          </form>
-
           <div className="builder-actions">
-            <button
-              className="button button-primary"
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || isLoading}
-            >
-              {isSaving ? (
-                <span className="button-spinner-ring" aria-hidden="true" />
-              ) : (
-                <Save size={18} aria-hidden="true" />
-              )}
-              {isSaving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar rúbrica'}
+            <button className="button button-primary" type="button" onClick={handleUseStructure} disabled={isLoading}>
+              <Save size={18} aria-hidden="true" />
+              Usar esta estructura
             </button>
-            <Link className="button button-secondary" to="/evaluator/instruments">
-              Volver a instrumentos
-            </Link>
-            {error ? <p className="form-message form-message-error">{error}</p> : null}
-            {savedMessage ? <p className="form-message form-message-success">{savedMessage}</p> : null}
+            <button className="button button-secondary" type="button" onClick={handleCancel}>
+              Volver sin guardar cambios
+            </button>
           </div>
         </aside>
 

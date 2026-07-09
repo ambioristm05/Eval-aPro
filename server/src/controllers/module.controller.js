@@ -1,15 +1,18 @@
 import { ACADEMIC_STATUSES } from '../constants/academicHierarchy.constants.js';
+import { USER_ROLES } from '../constants/user.constants.js';
 import { Class as AcademicClass } from '../models/Class.js';
 import { Module as AcademicModule } from '../models/Module.js';
+import { Task } from '../models/Task.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { bulkArchive } from '../utils/cascadeArchive.js';
+import { writeAudit } from '../utils/audit.js';
 
 async function findModuleForEvaluator(req, id) {
-  const module = await AcademicModule.findOne({
-    _id: id,
-    evaluator: req.user._id
-  }).populate('course', 'name description status');
+  const filter = { _id: id };
+  if (req.user.role !== USER_ROLES.ADMIN) filter.evaluator = req.user._id;
+
+  const module = await AcademicModule.findOne(filter).populate('course', 'name description status');
 
   if (!module) {
     throw new AppError('Módulo no encontrado', 404);
@@ -79,7 +82,7 @@ export const getModuleClasses = asyncHandler(async (req, res) => {
     {
       module: module._id,
       course: module.course._id || module.course,
-      evaluator: req.user._id
+      ...(req.user.role !== USER_ROLES.ADMIN ? { evaluator: req.user._id } : {})
     },
     search
   );
@@ -119,4 +122,46 @@ export const createClassForModule = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({ class: academicClass, module });
+});
+
+export const deleteModulePermanent = asyncHandler(async (req, res) => {
+  const module = await AcademicModule.findById(req.validated.params.id).populate('course', 'name description status');
+  if (!module) {
+    throw new AppError('Módulo no encontrado', 404);
+  }
+
+  const cascade = req.validated.query?.cascade;
+  const classIds = await AcademicClass.find({ module: module._id }).distinct('_id');
+  const taskCount = await Task.countDocuments({ class: { $in: classIds } });
+
+  if ((classIds.length > 0 || taskCount > 0) && !cascade) {
+    throw new AppError('Este módulo tiene clases o tareas asociadas. Confirma la eliminación en cascada.', 409);
+  }
+
+  const [tasksDeleted, classesDeleted] = await Promise.all([
+    Task.deleteMany({ class: { $in: classIds } }),
+    AcademicClass.deleteMany({ module: module._id })
+  ]);
+
+  await AcademicModule.deleteOne({ _id: module._id });
+
+  const cascadeCounts = {
+    classes: classesDeleted.deletedCount ?? 0,
+    tasks: tasksDeleted.deletedCount ?? 0
+  };
+
+  await writeAudit({
+    actor: req.user._id,
+    action: 'module.permanentDelete',
+    entity: 'Module',
+    entityId: module._id,
+    before: module.toObject(),
+    after: null,
+    metadata: { cascade: cascadeCounts }
+  });
+
+  res.json({
+    message: 'Módulo eliminado de forma definitiva',
+    cascade: cascadeCounts
+  });
 });

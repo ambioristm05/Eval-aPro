@@ -1,5 +1,9 @@
 import { USER_ROLES, USER_STATUSES } from '../constants/user.constants.js';
+import { Class as AcademicClass } from '../models/Class.js';
+import { Course } from '../models/Course.js';
 import { Group } from '../models/Group.js';
+import { Module as AcademicModule } from '../models/Module.js';
+import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -196,6 +200,40 @@ export const getStudents = asyncHandler(async (req, res) => {
   });
 });
 
+export const getEvaluators = asyncHandler(async (req, res) => {
+  const { search, status, page, limit } = req.validated.query;
+  const filter = { role: USER_ROLES.EVALUATOR };
+
+  if (status) filter.status = status;
+
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+  const [evaluators, total] = await Promise.all([
+    User.find(filter)
+      .select('-password')
+      .sort({ name: 1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    User.countDocuments(filter)
+  ]);
+
+  res.json({
+    evaluators,
+    pagination: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit) || 1
+    }
+  });
+});
+
 export const getStudentById = asyncHandler(async (req, res) => {
   const { id } = req.validated.params;
   const filter = {
@@ -299,6 +337,85 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   res.json({
     message: 'Estudiante eliminado lógicamente',
     student
+  });
+});
+
+export const deleteUserPermanent = asyncHandler(async (req, res) => {
+  const { id } = req.validated.params;
+  const { password, reason } = req.validated.body;
+  const cascade = req.validated.query?.cascade;
+
+  const target = await User.findById(id);
+  if (!target) {
+    throw new AppError('Usuario no encontrado', 404);
+  }
+
+  if (target.role === USER_ROLES.ADMIN) {
+    throw new AppError('No puedes eliminar cuentas de administrador', 403);
+  }
+
+  if (target._id.equals(req.user._id)) {
+    throw new AppError('No puedes eliminar tu propia cuenta desde aquí', 403);
+  }
+
+  const admin = await getCurrentUserWithPassword(req.user._id);
+  const passwordMatches = await admin.comparePassword(password);
+  if (!passwordMatches) {
+    throw new AppError('Contraseña incorrecta', 401);
+  }
+
+  const before = userStatusAuditSnapshot(target);
+  const cascadeCounts = {};
+
+  if (target.role === USER_ROLES.EVALUATOR) {
+    const classIds = await AcademicClass.find({ evaluator: target._id }).distinct('_id');
+    const hasContent =
+      classIds.length > 0 ||
+      (await Course.exists({ evaluator: target._id })) ||
+      (await AcademicModule.exists({ evaluator: target._id }));
+
+    if (hasContent && !cascade) {
+      throw new AppError(
+        'Este evaluador tiene cursos, módulos, clases o tareas asociadas. Confirma la eliminación en cascada.',
+        409
+      );
+    }
+
+    const [tasksDeleted, classesDeleted, modulesDeleted, coursesDeleted] = await Promise.all([
+      Task.deleteMany({ evaluator: target._id }),
+      AcademicClass.deleteMany({ evaluator: target._id }),
+      AcademicModule.deleteMany({ evaluator: target._id }),
+      Course.deleteMany({ evaluator: target._id })
+    ]);
+
+    cascadeCounts.courses = coursesDeleted.deletedCount ?? 0;
+    cascadeCounts.modules = modulesDeleted.deletedCount ?? 0;
+    cascadeCounts.classes = classesDeleted.deletedCount ?? 0;
+    cascadeCounts.tasks = tasksDeleted.deletedCount ?? 0;
+  }
+
+  if (target.role === USER_ROLES.STUDENT) {
+    await Promise.all([
+      Group.updateMany({ students: target._id }, { $pull: { students: target._id } }),
+      Task.updateMany({ students: target._id }, { $pull: { students: target._id } })
+    ]);
+  }
+
+  await User.deleteOne({ _id: target._id });
+
+  await writeAudit({
+    actor: req.user._id,
+    action: 'user.permanentDelete',
+    entity: 'User',
+    entityId: target._id,
+    before,
+    after: null,
+    metadata: { reason, cascade: cascadeCounts }
+  });
+
+  res.json({
+    message: 'Cuenta eliminada de forma definitiva',
+    cascade: cascadeCounts
   });
 });
 

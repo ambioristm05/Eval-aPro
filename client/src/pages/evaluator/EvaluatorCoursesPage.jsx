@@ -15,7 +15,7 @@ const emptyForm = {
 
 const statusLabels = {
   active: 'Activo',
-  archived: 'Archivado',
+  archived: 'Cerrado',
 };
 
 function EvaluatorCoursesPage() {
@@ -141,17 +141,17 @@ function EvaluatorCoursesPage() {
       const cascade = data.cascade;
       setMessage(
         cascade?.modulesArchived
-          ? `Curso archivado junto con ${cascade.modulesArchived} módulo(s) y ${cascade.classesArchived} clase(s).`
-          : 'Curso archivado correctamente.'
+          ? `Curso cerrado junto con ${cascade.modulesArchived} módulo(s) y ${cascade.classesArchived} clase(s).`
+          : 'Curso cerrado correctamente.'
       );
       if (editingId === getId(course)) resetForm();
       await loadCourses();
     } catch (requestError) {
       if (requestError?.response?.status === 409 && !options.cascade) {
         setConfirmAction({
-          title: `Archivar ${course.name} y su contenido`,
-          description: `${getErrorMessage(requestError)} Puedes archivar el curso junto con sus módulos y clases activos; las evaluaciones ya publicadas no se verán afectadas.`,
-          confirmLabel: 'Archivar todo',
+          title: `Cerrar ${course.name} y su contenido`,
+          description: `${getErrorMessage(requestError)} Puedes cerrar el curso junto con sus módulos y clases activos; las evaluaciones ya publicadas no se verán afectadas.`,
+          confirmLabel: 'Cerrar todo',
           onConfirm: () => archiveCourse(course, { cascade: true }),
         });
         throw requestError;
@@ -162,9 +162,9 @@ function EvaluatorCoursesPage() {
 
   const handleArchive = (course) => {
     setConfirmAction({
-      title: `Archivar ${course.name}`,
+      title: `Cerrar ${course.name}`,
       description: 'El curso quedará oculto para nuevos contenidos, pero no se afectarán las evaluaciones publicadas.',
-      confirmLabel: 'Archivar curso',
+      confirmLabel: 'Cerrar curso',
       onConfirm: () => archiveCourse(course),
     });
   };
@@ -227,7 +227,7 @@ function EvaluatorCoursesPage() {
           </span>
           <div>
             <strong>{isLoading ? '...' : String(archivedCount)}</strong>
-            <span>Archivados</span>
+            <span>Cerrados</span>
           </div>
         </article>
       </div>
@@ -252,12 +252,12 @@ function EvaluatorCoursesPage() {
               />
             </label>
             <label>
-              Descripción
+              Lugar y fecha del curso
               <textarea
                 name="description"
                 value={formData.description}
                 rows="4"
-                placeholder="Alcance o propósito del curso"
+                placeholder="Ej. Aula 3, lunes 12 de agosto"
                 onChange={handleChange}
               />
             </label>
@@ -266,7 +266,7 @@ function EvaluatorCoursesPage() {
                 Estado
                 <select name="status" value={formData.status} onChange={handleChange}>
                   <option value="active">Activo</option>
-                  <option value="archived">Archivado</option>
+                  <option value="archived">Cerrado</option>
                 </select>
               </label>
             ) : null}
@@ -295,7 +295,7 @@ function EvaluatorCoursesPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Listado</h2>
-              <p>Busca cursos y entra a sus módulos.</p>
+              <p>Busca cursos por nombre, lugar o fecha y entra a sus módulos.</p>
             </div>
             <span className="count-pill">{filteredCourses.length}</span>
           </div>
@@ -318,7 +318,7 @@ function EvaluatorCoursesPage() {
             >
               <option value="all">Todos</option>
               <option value="active">Activos</option>
-              <option value="archived">Archivados</option>
+              <option value="archived">Cerrados</option>
             </select>
           </div>
 
@@ -345,7 +345,7 @@ function EvaluatorCoursesPage() {
                       {statusLabels[course.status]}
                     </span>
                   </div>
-                  <p>{course.description || 'Sin descripción registrada.'}</p>
+                  <p>{course.description || 'Sin lugar y fecha registrados.'}</p>
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${course.name}`}>
@@ -372,12 +372,12 @@ function EvaluatorCoursesPage() {
                     className="icon-button labeled"
                     type="button"
                     onClick={() => handleArchive(course)}
-                    title="Archivar"
-                    aria-label={`Archivar ${course.name}`}
+                    title="Cerrar"
+                    aria-label={`Cerrar ${course.name}`}
                     disabled={course.status === 'archived'}
                   >
                     <Archive size={17} aria-hidden="true" />
-                    <span>Archivar</span>
+                    <span>Cerrar</span>
                   </button>
                 </div>
               </article>

@@ -4,6 +4,7 @@ import {
   createCourse,
   createModuleForCourse,
   deleteCourse,
+  deleteCoursePermanent,
   getCourseById,
   getCourseModules,
   getCourses,
@@ -24,22 +25,33 @@ import {
 
 const router = Router();
 
-router.use(protect, checkUserStatus, authorize(USER_ROLES.EVALUATOR));
+router.use(protect, checkUserStatus);
 
 router
   .route('/')
-  .post(validateRequest(createCourseSchema), createCourse)
-  .get(validateRequest(listCoursesSchema), getCourses);
+  .post(authorize(USER_ROLES.EVALUATOR), validateRequest(createCourseSchema), createCourse)
+  .get(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(listCoursesSchema), getCourses);
 
 router
   .route('/:courseId/modules')
-  .post(validateRequest(createModuleSchema), createModuleForCourse)
-  .get(validateRequest(courseModulesSchema), getCourseModules);
+  .post(authorize(USER_ROLES.EVALUATOR), validateRequest(createModuleSchema), createModuleForCourse)
+  .get(
+    authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+    validateRequest(courseModulesSchema),
+    getCourseModules
+  );
 
 router
   .route('/:id')
-  .get(validateRequest(courseIdSchema), getCourseById)
-  .patch(validateRequest(updateCourseSchema), updateCourse)
-  .delete(validateRequest(courseIdSchema), deleteCourse);
+  .get(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(courseIdSchema), getCourseById)
+  .patch(authorize(USER_ROLES.EVALUATOR), validateRequest(updateCourseSchema), updateCourse)
+  .delete(authorize(USER_ROLES.EVALUATOR), validateRequest(courseIdSchema), deleteCourse);
+
+router.delete(
+  '/:id/permanent',
+  authorize(USER_ROLES.ADMIN),
+  validateRequest(courseIdSchema),
+  deleteCoursePermanent
+);
 
 export default router;

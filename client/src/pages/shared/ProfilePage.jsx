@@ -51,7 +51,8 @@ function ProfilePage({ role, mode = 'view' }) {
   const [isSaving, setIsSaving] = useState(false);
 
   const groupNames = useMemo(() => getGroupNames(user), [user]);
-  const roleLabel = role === 'evaluator' ? 'Evaluador' : 'Estudiante';
+  const roleLabels = { admin: 'Administrador', evaluator: 'Evaluador', student: 'Estudiante' };
+  const roleLabel = roleLabels[role] ?? 'Usuario';
   const profilePath = `/${role}/profile`;
   const editPath = `/${role}/profile/edit`;
   const deletePath = `/${role}/profile/delete`;

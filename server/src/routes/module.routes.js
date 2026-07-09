@@ -3,6 +3,7 @@ import { USER_ROLES } from '../constants/user.constants.js';
 import {
   createClassForModule,
   deleteModule,
+  deleteModulePermanent,
   getModuleById,
   getModuleClasses,
   updateModule
@@ -20,17 +21,28 @@ import {
 
 const router = Router();
 
-router.use(protect, checkUserStatus, authorize(USER_ROLES.EVALUATOR));
+router.use(protect, checkUserStatus);
 
 router
   .route('/:moduleId/classes')
-  .post(validateRequest(createClassSchema), createClassForModule)
-  .get(validateRequest(moduleClassesSchema), getModuleClasses);
+  .post(authorize(USER_ROLES.EVALUATOR), validateRequest(createClassSchema), createClassForModule)
+  .get(
+    authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+    validateRequest(moduleClassesSchema),
+    getModuleClasses
+  );
 
 router
   .route('/:id')
-  .get(validateRequest(moduleIdSchema), getModuleById)
-  .patch(validateRequest(updateModuleSchema), updateModule)
-  .delete(validateRequest(moduleIdSchema), deleteModule);
+  .get(authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR), validateRequest(moduleIdSchema), getModuleById)
+  .patch(authorize(USER_ROLES.EVALUATOR), validateRequest(updateModuleSchema), updateModule)
+  .delete(authorize(USER_ROLES.EVALUATOR), validateRequest(moduleIdSchema), deleteModule);
+
+router.delete(
+  '/:id/permanent',
+  authorize(USER_ROLES.ADMIN),
+  validateRequest(moduleIdSchema),
+  deleteModulePermanent
+);
 
 export default router;

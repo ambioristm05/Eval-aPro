@@ -1,5 +1,7 @@
 import { ArrowRight, FileText, GraduationCap, Printer } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore.js';
+import { getDashboardPath } from '../../utils/auth.js';
 
 const moduleCards = [
   {
@@ -20,6 +22,17 @@ const moduleCards = [
 ];
 
 function PublicHomePage() {
+  const user = useAuthStore((state) => state.user);
+  const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
+
+  if (isBootstrapping) {
+    return <div className="route-loader">Cargando sesión...</div>;
+  }
+
+  if (user) {
+    return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
+
   return (
     <section className="home-grid">
       <div className="intro-panel">

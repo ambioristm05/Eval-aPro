@@ -5,38 +5,6 @@ import { createEvaluatorInvitation } from '../../services/authService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { moduleIcons } from '../../utils/navigation.jsx';
 
-export function AdminEvaluatorsPage() {
-  return (
-    <ModulePage
-      eyebrow="Administración"
-      title="Gestionar evaluadores"
-      description="Espacio privado para crear, aprobar, suspender y revisar cuentas de evaluadores."
-      icon={moduleIcons.UserCog}
-      status="in-progress"
-      statusDescription="La gestión completa de evaluadores está definida, pero el alta y los cambios de estado todavía se operan desde invitaciones y controles protegidos."
-      primaryItems={[
-        {
-          title: 'Crear cuenta',
-          description: 'Alta manual de evaluadores con rol protegido.',
-        },
-        {
-          title: 'Cambiar estado',
-          description: 'Suspender o reactivar evaluadores según las reglas del sistema.',
-        },
-        {
-          title: 'Auditoría básica',
-          description: 'Registrar quién crea o modifica cuentas sensibles.',
-        },
-      ]}
-      statusItems={[
-        { label: 'Ruta privada', value: 'Disponible' },
-        { label: 'Acceso', value: 'Protegido' },
-        { label: 'Registro', value: 'Por invitación' },
-      ]}
-    />
-  );
-}
-
 export function AdminInvitationsPage() {
   const [formData, setFormData] = useState({ email: '', expiresInDays: 7 });
   const [invitation, setInvitation] = useState(null);
