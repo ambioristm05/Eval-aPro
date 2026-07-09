@@ -229,6 +229,52 @@ describe('auth routes', () => {
   });
 });
 
+describe('student user routes', () => {
+  it('lets an evaluator create and manage a student without assigning a group', async () => {
+    await User.create({
+      name: 'Eva Sin Grupo',
+      email: 'evaluator-without-groups@example.com',
+      password: 'Password123',
+      role: USER_ROLES.EVALUATOR,
+      status: USER_STATUSES.ACTIVE
+    });
+    const token = await login('evaluator-without-groups@example.com', 'Password123');
+
+    const createResponse = await request(app)
+      .post('/api/users/students')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Luis Sin Grupo',
+        email: 'luis.sin.grupo@example.com',
+        password: 'Password123'
+      })
+      .expect(201);
+
+    expect(createResponse.body.student.groups).toEqual([]);
+
+    const studentId = createResponse.body.student.id || createResponse.body.student._id;
+
+    const listResponse = await request(app)
+      .get('/api/users/students')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(listResponse.body.students).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          email: 'luis.sin.grupo@example.com',
+          groups: []
+        })
+      ])
+    );
+
+    await request(app)
+      .get(`/api/users/students/${studentId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+  });
+});
+
 describe('instrument routes', () => {
   it('updates checklist instruments with options and indicator metadata', async () => {
     const evaluatorPassword = 'Password123';

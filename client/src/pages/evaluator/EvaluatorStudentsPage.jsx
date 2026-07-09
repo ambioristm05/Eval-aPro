@@ -95,7 +95,7 @@ function EvaluatorStudentsPage() {
         setGroups(groupsData.groups ?? []);
         setFormData((current) => ({
           ...current,
-          group: current.group || (groupsData.groups?.[0] ? getId(groupsData.groups[0]) : ''),
+          group: current.group,
         }));
       } catch (requestError) {
         if (!isMounted) return;
@@ -130,11 +130,6 @@ function EvaluatorStudentsPage() {
       return;
     }
 
-    if (!formData.group) {
-      setError('Crea o selecciona un grupo activo antes de agregar estudiantes.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -142,7 +137,7 @@ function EvaluatorStudentsPage() {
         name: normalizedName,
         email: normalizedEmail,
         password: formData.password,
-        group: formData.group,
+        ...(formData.group ? { group: formData.group } : {}),
       });
 
       setMessage('Estudiante creado correctamente.');
@@ -282,7 +277,7 @@ function EvaluatorStudentsPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>Agregar estudiante</h2>
-            <p>Crea una cuenta de estudiante y vincúlala a un grupo activo.</p>
+            <p>Crea una cuenta de estudiante y vincúlala a un grupo activo cuando aplique.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -326,7 +321,8 @@ function EvaluatorStudentsPage() {
             </label>
             <label>
               Grupo
-              <select name="group" value={formData.group} onChange={handleChange} required>
+              <select name="group" value={formData.group} onChange={handleChange}>
+                <option value="">Sin grupo por ahora</option>
                 {groups.map((group) => (
                   <option key={getId(group)} value={getId(group)}>
                     {group.name}
@@ -338,7 +334,7 @@ function EvaluatorStudentsPage() {
             <button
               className="button button-primary"
               type="submit"
-              disabled={isSubmitting || !groups.length}
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <span className="button-spinner-ring" aria-hidden="true" />

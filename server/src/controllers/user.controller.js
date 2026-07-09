@@ -13,6 +13,16 @@ async function getEvaluatorGroupIds(evaluatorId) {
   return Group.find({ evaluator: evaluatorId }).distinct('_id');
 }
 
+function buildEvaluatorStudentOwnershipFilter(evaluatorId, evaluatorGroupIds) {
+  const ownershipFilters = [{ createdBy: evaluatorId }];
+
+  if (evaluatorGroupIds.length) {
+    ownershipFilters.push({ groups: { $in: evaluatorGroupIds } });
+  }
+
+  return { $or: ownershipFilters };
+}
+
 async function buildStudentFilter(req) {
   const { availableForGroup, groupId, includeDeleted, search, status } = req.validated.query;
   const filter = {
@@ -50,12 +60,10 @@ async function buildStudentFilter(req) {
     if (!ownsGroup) throw new AppError('Grupo no encontrado', 404);
 
     filter.status = USER_STATUSES.ACTIVE;
-    filter.groups = { $ne: availableForGroup };
-    return filter;
-  }
-
-  if (!evaluatorGroupIds.length) {
-    filter._id = { $in: [] };
+    filter.$and = [
+      buildEvaluatorStudentOwnershipFilter(req.user._id, evaluatorGroupIds),
+      { groups: { $ne: availableForGroup } }
+    ];
     return filter;
   }
 
@@ -66,7 +74,13 @@ async function buildStudentFilter(req) {
     return filter;
   }
 
-  filter.groups = { $in: evaluatorGroupIds };
+  const ownershipFilter = buildEvaluatorStudentOwnershipFilter(req.user._id, evaluatorGroupIds);
+  if (filter.$or) {
+    filter.$and = [{ $or: filter.$or }, ownershipFilter];
+    delete filter.$or;
+  } else {
+    Object.assign(filter, ownershipFilter);
+  }
   return filter;
 }
 
@@ -78,7 +92,7 @@ async function findManageableStudent(req, id) {
 
   if (req.user.role === USER_ROLES.EVALUATOR) {
     const evaluatorGroupIds = await getEvaluatorGroupIds(req.user._id);
-    filter.groups = { $in: evaluatorGroupIds };
+    Object.assign(filter, buildEvaluatorStudentOwnershipFilter(req.user._id, evaluatorGroupIds));
   }
 
   const student = await User.findOne(filter);
@@ -139,10 +153,6 @@ export const createStudent = asyncHandler(async (req, res) => {
     if (!group) {
       throw new AppError('Grupo no encontrado', 404);
     }
-  }
-
-  if (req.user.role === USER_ROLES.EVALUATOR && !group) {
-    throw new AppError('Debes seleccionar un grupo para crear estudiantes', 400);
   }
 
   const student = await User.create({
@@ -244,7 +254,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
 
   if (req.user.role === USER_ROLES.EVALUATOR) {
     const evaluatorGroupIds = await getEvaluatorGroupIds(req.user._id);
-    filter.groups = { $in: evaluatorGroupIds };
+    Object.assign(filter, buildEvaluatorStudentOwnershipFilter(req.user._id, evaluatorGroupIds));
   }
 
   const student = await User.findOne(filter).populate({
