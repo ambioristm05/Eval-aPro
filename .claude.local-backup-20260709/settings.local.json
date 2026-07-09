@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat vite.config.js)",
+      "Bash(cat vite.config.mjs)",
+      "Bash(cat vite.config.ts)",
+      "Bash(npx eslint *)",
+      "Bash(npx vitest *)",
+      "Bash(npm run *)",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}
