@@ -10,6 +10,7 @@ import {
   listModuleClasses,
   listResource,
 } from '../../services/resourceService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -38,8 +39,8 @@ function AdminCoursesPage() {
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cascadeWarning, setCascadeWarning] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);

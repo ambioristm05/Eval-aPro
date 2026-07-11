@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PermanentDeleteDialog from '../../components/common/PermanentDeleteDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   deleteResourcePermanent,
   listResource,
@@ -51,8 +52,8 @@ function InstrumentArchivePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [restoringId, setRestoringId] = useState('');
   const [permanentTarget, setPermanentTarget] = useState(null);

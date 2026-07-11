@@ -8,6 +8,7 @@ import {
   updateMyProfile,
 } from '../../services/studentService.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
 function getGroupNames(user) {
@@ -45,8 +46,8 @@ function ProfilePage({ role, mode = 'view' }) {
     password: '',
     reason: '',
   });
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 

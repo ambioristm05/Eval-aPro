@@ -10,7 +10,7 @@
     "seed:admin": "node src/scripts/seedAdmin.js",
     "migrate:academic-hierarchy": "node src/scripts/migrateAcademicHierarchy.js",
     "lint": "eslint src",
-    "test": "vitest run"
+    "test": "vitest run --configLoader runner"
   },
   "dependencies": {
     "@faker-js/faker": "^9.4.0",

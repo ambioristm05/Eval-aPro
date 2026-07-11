@@ -6,6 +6,7 @@ import {
   getStudentResults,
   getStudentTasks,
 } from '../../services/studentService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
 function formatGrade(grade) {
@@ -17,7 +18,7 @@ function StudentDashboard() {
   const [tasks, setTasks] = useState([]);
   const [results, setResults] = useState([]);
   const [finalGrade, setFinalGrade] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

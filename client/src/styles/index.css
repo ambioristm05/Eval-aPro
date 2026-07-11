@@ -649,6 +649,15 @@ input[aria-invalid="true"] {
   margin-top: 0;
 }
 
+.form-field-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.form-field-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .task-form {
   gap: 0.85rem;
 }
@@ -752,9 +761,33 @@ input[aria-invalid="true"] {
   background: var(--color-primary-soft);
 }
 
+.assignment-group-selector {
+  display: grid;
+  gap: 0.55rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .assignment-list {
   display: grid;
   gap: 0.45rem;
+}
+
+.assignment-list.assignment-list-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+}
+
+.assignment-list.assignment-list-inline .assignment-option {
+  flex: 0 0 auto;
+  width: auto;
 }
 
 .group-option-row {
@@ -776,6 +809,7 @@ input[aria-invalid="true"] {
 }
 
 .assignment-option {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -892,6 +926,8 @@ span.student-chip {
 }
 
 .form-message {
+  width: fit-content;
+  max-width: 100%;
   margin: 0;
   padding: 0.75rem 0.85rem;
   border-radius: 8px;
@@ -1344,9 +1380,9 @@ a.action-item:focus-visible {
 }
 
 .search-field {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
   box-sizing: border-box;
   min-width: 0;
   min-height: 2.75rem;
@@ -1357,8 +1393,17 @@ a.action-item:focus-visible {
   color: var(--color-muted-soft);
 }
 
+.search-field-half {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
 .search-field svg {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  right: 0.8rem;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .search-field input {
@@ -1366,7 +1411,7 @@ a.action-item:focus-visible {
   width: 100%;
   min-width: 0;
   min-height: 1.5rem;
-  padding: 0;
+  padding: 0 2rem 0 0;
   border: 0;
   outline: 0;
   background: transparent;
@@ -1386,6 +1431,11 @@ a.action-item:focus-visible {
 .assignment-search {
   width: 100%;
   height: 2.75rem;
+}
+
+.assignment-search-half {
+  width: 50%;
+  margin-left: auto;
 }
 
 .filter-select {
@@ -1440,6 +1490,22 @@ a.action-item:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface-raised);
+}
+
+.resource-list.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+}
+
+.resource-list.history-list .resource-item {
+  flex: 1 1 100%;
+}
+
+.resource-list.history-list .resource-item-compact {
+  flex: 0 0 auto;
+  width: auto;
+  grid-template-columns: minmax(0, auto);
 }
 
 .skeleton-list {
@@ -2853,6 +2919,25 @@ a.action-item:focus-visible {
   .role-nav-submenu {
     flex-wrap: wrap;
   }
+
+  .rubric-sheet-header {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .rubric-sheet-brand {
+    place-items: start;
+    min-height: auto;
+  }
+
+  .rubric-sheet-brand img {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .rubric-sheet-heading {
+    text-align: left;
+  }
 }
 
 @media (max-width: 760px) {
@@ -2933,6 +3018,7 @@ a.action-item:focus-visible {
   .toolbar,
   .toolbar-wide,
   .resource-item,
+  .form-field-grid-two,
   .form-two-columns,
   .structure-summary,
   .level-item,
@@ -3129,5 +3215,24 @@ a.action-item:focus-visible {
   .report-table th,
   .report-table td {
     border-color: var(--color-heading);
+  }
+
+  .rubric-sheet-header {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .rubric-sheet-brand {
+    place-items: start;
+    min-height: auto;
+  }
+
+  .rubric-sheet-brand img {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .rubric-sheet-heading {
+    text-align: left;
   }
 }

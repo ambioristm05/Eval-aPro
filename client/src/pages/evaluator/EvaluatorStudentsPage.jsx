@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   createResource,
   deleteStudent,
@@ -45,8 +46,8 @@ function EvaluatorStudentsPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);

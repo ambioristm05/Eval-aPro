@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../../components/dashboard/DashboardShell.jsx';
 import { listResource } from '../../services/resourceService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
 const defaultTotals = {
@@ -25,7 +26,7 @@ function getTotal(data, key) {
 
 function EvaluatorDashboard() {
   const [totals, setTotals] = useState(defaultTotals);
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import {
   getStudentFinalGrade,
   getStudentResults,
 } from '../../services/studentService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { openPrintableHtml } from '../../utils/printReport.js';
@@ -12,7 +13,7 @@ import { openPrintableHtml } from '../../utils/printReport.js';
 function useStudentResults() {
   const [results, setResults] = useState([]);
   const [finalGrade, setFinalGrade] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -132,7 +133,7 @@ export function StudentEvaluationsRealPage() {
 export function StudentResultsRealPage() {
   const { results, finalGrade, error, isLoading } = useStudentResults();
   const user = useAuthStore((state) => state.user);
-  const [printError, setPrintError] = useState('');
+  const [printError, setPrintError] = useTimedState();
   const [isPrinting, setIsPrinting] = useState(false);
   const suggestionsCount = results.reduce(
     (total, result) => total + (result.suggestions?.length ?? 0) + (result.improvements?.length ?? 0),

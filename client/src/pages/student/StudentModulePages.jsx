@@ -1,5 +1,6 @@
 import { CalendarClock, ClipboardList, Search, Users, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getStudentTasks } from '../../services/studentService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
@@ -33,7 +34,7 @@ export function StudentTasksPage() {
   const [tasks, setTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchTasks = async () => {

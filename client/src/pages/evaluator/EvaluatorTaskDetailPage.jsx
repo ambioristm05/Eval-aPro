@@ -12,12 +12,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import HierarchyBreadcrumb from '../../components/common/HierarchyBreadcrumb.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   deleteResource,
   getResource,
   listResource,
   updateResource,
 } from '../../services/resourceService.js';
+import { useCourseNavStore } from '../../stores/courseNavStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -99,6 +101,7 @@ function buildFormData(task) {
 function EvaluatorTaskDetailPage() {
   const { courseId, moduleId, classId, taskId } = useParams();
   const navigate = useNavigate();
+  const setLastClass = useCourseNavStore((state) => state.setClass);
   const [academicClass, setAcademicClass] = useState(null);
   const [task, setTask] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -106,13 +109,17 @@ function EvaluatorTaskDetailPage() {
   const [instruments, setInstruments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+
+  useEffect(() => {
+    if (courseId && moduleId && classId) setLastClass(courseId, moduleId, classId);
+  }, [courseId, moduleId, classId, setLastClass]);
 
   const course = academicClass?.course;
   const module = academicClass?.module;
@@ -464,11 +471,11 @@ function EvaluatorTaskDetailPage() {
                 </label>
                 <label>
                   Objetivo
-                  <textarea
+                  <input
+                    type="text"
                     name="description"
                     value={formData.description}
                     placeholder="Instrucciones o alcance de la tarea"
-                    rows="4"
                     onChange={handleChange}
                     disabled={isReadOnly}
                   />

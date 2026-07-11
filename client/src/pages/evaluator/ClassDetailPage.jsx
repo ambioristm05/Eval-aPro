@@ -25,6 +25,8 @@ import {
   listResource,
   updateResource,
 } from '../../services/resourceService.js';
+import { useCourseNavStore } from '../../stores/courseNavStore.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -94,6 +96,7 @@ function buildTaskPayload(formData) {
 
 function ClassDetailPage() {
   const { courseId, moduleId, classId } = useParams();
+  const setLastClass = useCourseNavStore((state) => state.setClass);
   const [academicClass, setAcademicClass] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -104,8 +107,8 @@ function ClassDetailPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
@@ -113,10 +116,14 @@ function ClassDetailPage() {
   const [isRetryingTasks, setIsRetryingTasks] = useState(false);
   const [updatingStatusId, setUpdatingStatusId] = useState('');
 
+  useEffect(() => {
+    if (courseId && moduleId && classId) setLastClass(courseId, moduleId, classId);
+  }, [courseId, moduleId, classId, setLastClass]);
+
   const course = academicClass?.course;
   const module = academicClass?.module;
   const isReadOnly =
-    course?.status !== 'active' || module?.status !== 'active' || academicClass?.status !== 'active';
+    course?.status === 'archived' || module?.status === 'archived' || academicClass?.status === 'archived';
 
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -428,7 +435,7 @@ function ClassDetailPage() {
       {message ? <p className="form-message form-message-success">{message}</p> : null}
       {isReadOnly ? (
         <p className="form-message form-message-warning">
-          Este nivel no está activo. Puedes revisar sus tareas, pero no crear nuevos contenidos.
+          Este nivel está archivado. Puedes revisar sus tareas, pero no crear nuevos contenidos.
         </p>
       ) : null}
 
@@ -487,11 +494,11 @@ function ClassDetailPage() {
                 </label>
                 <label>
                   Objetivo
-                  <textarea
+                  <input
+                    type="text"
                     name="description"
                     value={formData.description}
                     placeholder="Instrucciones o alcance de la tarea"
-                    rows="4"
                     onChange={handleChange}
                     disabled={isReadOnly}
                   />

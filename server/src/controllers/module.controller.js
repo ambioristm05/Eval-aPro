@@ -34,10 +34,12 @@ export const getModuleById = asyncHandler(async (req, res) => {
 
 export const updateModule = asyncHandler(async (req, res) => {
   const module = await findModuleForEvaluator(req, req.validated.params.id);
-  const { name, description, status, order } = req.validated.body;
+  const { name, description, startDate, endDate, status, order } = req.validated.body;
 
   if (name !== undefined) module.name = name;
   if (description !== undefined) module.description = description;
+  if (startDate !== undefined) module.startDate = startDate;
+  if (endDate !== undefined) module.endDate = endDate;
   if (status !== undefined) module.status = status;
   if (order !== undefined) module.order = order;
 

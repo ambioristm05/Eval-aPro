@@ -2,6 +2,7 @@ import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useCourseNavStore } from '../../stores/courseNavStore.js';
 import { roleNavigation } from '../../utils/navigation.jsx';
 
 function getPathname(to) {
@@ -13,8 +14,58 @@ function getHash(to) {
   return hashIndex === -1 ? '' : to.slice(hashIndex);
 }
 
+function matchesEvaluatorCourseSection(link, pathname, hash) {
+  if (link.to === '/evaluator/courses' && link.label === 'Cursos') {
+    return pathname === '/evaluator/courses' && !hash;
+  }
+
+  if (link.to === '/evaluator/courses/groups' || link.to === '/evaluator/groups') {
+    return pathname === '/evaluator/courses/groups' || pathname === '/evaluator/groups';
+  }
+
+  if (link.label === 'Módulos') {
+    return /^\/evaluator\/courses\/[^/]+$/.test(pathname);
+  }
+
+  if (link.label === 'Clases') {
+    return /^\/evaluator\/courses\/[^/]+\/modules\/[^/]+(?:\/classes\/archive)?$/.test(pathname);
+  }
+
+  if (link.label === 'Tareas') {
+    return /^\/evaluator\/courses\/[^/]+\/modules\/[^/]+\/classes\/[^/]+/.test(pathname);
+  }
+
+  return null;
+}
+
+function getEvaluatorCourseNavTarget(label, courseNav) {
+  const { courseId, moduleId, classId } = courseNav;
+
+  if (label === 'Módulos') {
+    return courseId ? `/evaluator/courses/${courseId}` : '/evaluator/courses';
+  }
+
+  if (label === 'Clases') {
+    if (courseId && moduleId) return `/evaluator/courses/${courseId}/modules/${moduleId}`;
+    if (courseId) return `/evaluator/courses/${courseId}`;
+    return '/evaluator/courses';
+  }
+
+  if (label === 'Tareas') {
+    if (courseId && moduleId && classId) {
+      return `/evaluator/courses/${courseId}/modules/${moduleId}/classes/${classId}`;
+    }
+    if (courseId && moduleId) return `/evaluator/courses/${courseId}/modules/${moduleId}`;
+    if (courseId) return `/evaluator/courses/${courseId}`;
+    return '/evaluator/courses';
+  }
+
+  return null;
+}
+
 function RoleNav() {
   const user = useAuthStore((state) => state.user);
+  const courseNav = useCourseNavStore();
   const location = useLocation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState({});
@@ -39,7 +90,14 @@ function RoleNav() {
     return null;
   }
 
-  const linkMatchesLocation = (link, { exact = false } = {}) => {
+  const linkMatchesLocation = (link, { exact = false, includeChildren = true } = {}) => {
+    if (role === 'evaluator') {
+      const evaluatorCourseMatch = matchesEvaluatorCourseSection(link, location.pathname, location.hash);
+      if (evaluatorCourseMatch !== null && (!includeChildren || evaluatorCourseMatch)) {
+        return evaluatorCourseMatch;
+      }
+    }
+
     const pathname = getPathname(link.to);
     const hash = getHash(link.to);
     const matchesOwnPath =
@@ -47,7 +105,13 @@ function RoleNav() {
       (!exact && !hash && location.pathname.startsWith(`${pathname}/`));
     const matchesOwnHash = !hash || (location.pathname === pathname && location.hash === hash);
 
-    return (matchesOwnPath && matchesOwnHash) || link.children?.some((child) => linkMatchesLocation(child));
+    return (
+      matchesOwnPath &&
+      matchesOwnHash
+    ) || (
+      includeChildren &&
+      link.children?.some((child) => linkMatchesLocation(child, { exact: true, includeChildren: false }))
+    );
   };
 
   const isOverflowActive = overflowLinks.some((link) => linkMatchesLocation(link));
@@ -80,7 +144,11 @@ function RoleNav() {
         'role-nav-link',
         isOverflow ? 'role-nav-link-overflow' : '',
         getWorkflowClassName(link),
-        isActive || linkMatchesLocation(link) ? 'active' : '',
+        (link.children?.length
+          ? linkMatchesLocation(link, { includeChildren: false })
+          : isActive || linkMatchesLocation(link))
+          ? 'active'
+          : '',
       ]
         .filter(Boolean)
         .join(' ');
@@ -129,12 +197,18 @@ function RoleNav() {
           <div className="role-nav-submenu" aria-label={`${link.label}: subsecciones`}>
             {link.children.map((child) => {
               const ChildIcon = child.icon;
+              const dynamicTo = role === 'evaluator' ? getEvaluatorCourseNavTarget(child.label, courseNav) : null;
+              const childTo = dynamicTo ?? child.to;
 
               return (
                 <NavLink
-                  className={() => `role-nav-submenu-link${linkMatchesLocation(child, { exact: true }) ? ' active' : ''}`}
-                  end={child.to === link.to}
-                  to={child.to}
+                  className={() =>
+                    `role-nav-submenu-link${
+                      linkMatchesLocation(child, { exact: true, includeChildren: false }) ? ' active' : ''
+                    }`
+                  }
+                  end={childTo === link.to}
+                  to={childTo}
                   key={`${link.to}-${child.label}`}
                 >
                   <ChildIcon size={15} aria-hidden="true" />

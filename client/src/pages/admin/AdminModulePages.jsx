@@ -1,6 +1,7 @@
 import { Copy, MailPlus } from 'lucide-react';
 import { useState } from 'react';
 import ModulePage from '../../components/dashboard/ModulePage.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { createEvaluatorInvitation } from '../../services/authService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { moduleIcons } from '../../utils/navigation.jsx';
@@ -8,8 +9,8 @@ import { moduleIcons } from '../../utils/navigation.jsx';
 export function AdminInvitationsPage() {
   const [formData, setFormData] = useState({ email: '', expiresInDays: 7 });
   const [invitation, setInvitation] = useState(null);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useTimedState();
+  const [error, setError] = useTimedState();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {

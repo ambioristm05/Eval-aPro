@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { login, requestPasswordReset } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getDashboardPath } from '../../utils/auth.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
 function LoginPage() {
@@ -15,8 +16,8 @@ function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [forgotEmailError, setForgotEmailError] = useState('');
-  const [error, setError] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [resetMessage, setResetMessage] = useTimedState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetSubmitting, setIsResetSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

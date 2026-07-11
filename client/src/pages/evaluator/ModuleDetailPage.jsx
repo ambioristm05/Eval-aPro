@@ -4,12 +4,14 @@ import { Link, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import HierarchyBreadcrumb from '../../components/common/HierarchyBreadcrumb.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   createModuleClass,
   deleteResource,
   listModuleClasses,
   updateResource,
 } from '../../services/resourceService.js';
+import { useCourseNavStore } from '../../stores/courseNavStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -25,20 +27,61 @@ const statusLabels = {
   deleted: 'Eliminado',
 };
 
+const MONTH_NAMES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+function toInputDate(value) {
+  if (!value) return '';
+  const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
+  return match ? match[0] : '';
+}
+
+function formatDisplayDate(value) {
+  const isoDate = toInputDate(value);
+  if (!isoDate) return '';
+
+  const [year, month, day] = isoDate.split('-');
+  const monthName = MONTH_NAMES[Number(month) - 1];
+  if (!monthName) return '';
+
+  return `${Number(day)} de ${monthName.charAt(0).toUpperCase()}${monthName.slice(1)} ${year}`;
+}
+
+function getClassDateText(academicClass) {
+  return formatDisplayDate(academicClass.description) || academicClass.description || 'Sin fecha registrada.';
+}
+
 function ModuleDetailPage() {
   const { courseId, moduleId } = useParams();
+  const setLastModule = useCourseNavStore((state) => state.setModule);
   const [module, setModule] = useState(null);
   const [classes, setClasses] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    if (courseId && moduleId) setLastModule(courseId, moduleId);
+  }, [courseId, moduleId, setLastModule]);
 
   const filteredClasses = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -306,11 +349,10 @@ function ModuleDetailPage() {
             </label>
             <label>
               Fecha
-              <textarea
+              <input
+                type="date"
                 name="description"
-                value={formData.description}
-                rows="4"
-                placeholder="Ej. 18 de agosto de 2026"
+                value={toInputDate(formData.description)}
                 onChange={handleChange}
                 disabled={isReadOnly}
               />
@@ -408,7 +450,7 @@ function ModuleDetailPage() {
                       {statusLabels[academicClass.status]}
                     </span>
                   </div>
-                  <p>{academicClass.description || 'Sin fecha registrada.'}</p>
+                  <p>{getClassDateText(academicClass)}</p>
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${academicClass.name}`}>

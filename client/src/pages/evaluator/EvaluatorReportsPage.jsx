@@ -1,5 +1,6 @@
 import { Download, Printer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   getPrintableReport,
   getReport,
@@ -71,8 +72,8 @@ function EvaluatorReportsPage() {
     instrument: '',
   });
   const [report, setReport] = useState(null);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);

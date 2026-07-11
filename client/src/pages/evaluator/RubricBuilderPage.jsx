@@ -8,6 +8,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
@@ -93,7 +94,7 @@ function RubricBuilderPage() {
   const [levels, setLevels] = useState(initialLevels);
   const [criteria, setCriteria] = useState(initialCriteria);
   const [fichaTitle, setFichaTitle] = useState(incomingState?.ficha?.title ?? '');
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(!incomingState?.structure && Boolean(instrumentId));
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);

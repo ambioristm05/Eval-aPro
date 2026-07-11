@@ -555,22 +555,32 @@ describe('academic hierarchy routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Operaciones básicas de oficina',
-        description: 'Curso de práctica digital'
+        description: 'Curso de práctica digital',
+        location: 'Aula 3',
+        startDate: '2026-08-12',
+        endDate: '2026-08-20'
       })
       .expect(201);
 
     const courseId = courseResponse.body.course.id || courseResponse.body.course._id;
+    expect(courseResponse.body.course.location).toBe('Aula 3');
+    expect(courseResponse.body.course.startDate).toContain('2026-08-12');
+    expect(courseResponse.body.course.endDate).toContain('2026-08-20');
 
     const moduleResponse = await request(app)
       .post(`/api/courses/${courseId}/modules`)
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Manejo del sistema operativo',
-        order: 1
+        order: 1,
+        startDate: '2026-07-12',
+        endDate: '2026-08-13'
       })
       .expect(201);
 
     const moduleId = moduleResponse.body.module.id || moduleResponse.body.module._id;
+    expect(moduleResponse.body.module.startDate).toContain('2026-07-12');
+    expect(moduleResponse.body.module.endDate).toContain('2026-08-13');
 
     const classResponse = await request(app)
       .post(`/api/modules/${moduleId}/classes`)
@@ -583,10 +593,15 @@ describe('academic hierarchy routes', () => {
 
     const classId = classResponse.body.class.id || classResponse.body.class._id;
 
-    const [coursesList, modulesList, classesList, updatedClass] = await Promise.all([
+    const [coursesList, modulesList, classesList, updatedCourse, updatedClass] = await Promise.all([
       request(app).get('/api/courses').set('Authorization', `Bearer ${token}`).expect(200),
       request(app).get(`/api/courses/${courseId}/modules`).set('Authorization', `Bearer ${token}`).expect(200),
       request(app).get(`/api/modules/${moduleId}/classes`).set('Authorization', `Bearer ${token}`).expect(200),
+      request(app)
+        .patch(`/api/courses/${courseId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ location: 'Laboratorio 2', endDate: '2026-08-22' })
+        .expect(200),
       request(app)
         .patch(`/api/classes/${classId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -596,7 +611,10 @@ describe('academic hierarchy routes', () => {
 
     expect(coursesList.body.courses).toHaveLength(1);
     expect(modulesList.body.modules[0].course.toString()).toBe(courseId);
+    expect(modulesList.body.modules[0].participantCount).toBe(0);
     expect(classesList.body.classes[0].module.toString()).toBe(moduleId);
+    expect(updatedCourse.body.course.location).toBe('Laboratorio 2');
+    expect(updatedCourse.body.course.endDate).toContain('2026-08-22');
     expect(updatedClass.body.class.name).toBe('Práctica de mouse');
   });
 
@@ -872,10 +890,15 @@ describe('academic hierarchy routes', () => {
       .get(`/api/classes/${classId}/tasks`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
+    const modulesResponse = await request(app)
+      .get(`/api/courses/${courseId}/modules`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
     expect(taskResponse.body.task.class._id || taskResponse.body.task.class.id).toBe(classId);
     expect(listResponse.body.tasks).toHaveLength(1);
     expect(listResponse.body.tasks[0].title).toBe('Práctica contextual');
+    expect(modulesResponse.body.modules[0].participantCount).toBe(1);
   });
 
   it('exposes the archived status of a task\'s course and module through the class populate', async () => {

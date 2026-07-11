@@ -1,6 +1,7 @@
 import { CheckCircle2, FileText, Printer, Save, Search, Send, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import EmptyState from '../../components/common/EmptyState.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   createResource,
   listResource,
@@ -40,12 +41,16 @@ function getStudentGroupIds(student) {
   return (student.groups ?? []).map(getId).filter(Boolean);
 }
 
+function getTaskGroupIds(task) {
+  return (task?.groups ?? []).map(getId).filter(Boolean);
+}
+
 function studentCanBeEvaluatedForTask(student, task) {
   if (!task) return true;
 
   const studentId = getId(student);
   const directStudentIds = (task.students ?? []).map(getId).filter(Boolean);
-  const taskGroupIds = (task.groups ?? []).map(getId).filter(Boolean);
+  const taskGroupIds = getTaskGroupIds(task);
   const studentGroupIds = getStudentGroupIds(student);
 
   return (
@@ -163,6 +168,25 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function buildCommentsHtml(comments) {
+  const trimmed = comments.trim();
+  if (!trimmed) return '';
+
+  const commentLines = trimmed
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<li>${escapeHtml(line)}</li>`)
+    .join('');
+
+  return `
+    <section class="evaluation-print-comments">
+      <h3>Comentarios</h3>
+      <ul>${commentLines}</ul>
+    </section>
+  `;
+}
+
 function buildEvaluationPrintHtml({ title, content }) {
   const safeTitle = escapeHtml(title);
 
@@ -192,6 +216,23 @@ function buildEvaluationPrintHtml({ title, content }) {
 
           .evaluation-print-document .rubric-sheet-table-wrap {
             overflow: visible;
+          }
+
+          .evaluation-print-comments {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border: 1px solid #d8dee8;
+            border-radius: 6px;
+          }
+
+          .evaluation-print-comments h3 {
+            margin: 0 0 8px;
+            font-size: 14px;
+          }
+
+          .evaluation-print-comments ul {
+            margin: 0;
+            padding-left: 18px;
           }
 
           @media print {
@@ -229,12 +270,13 @@ function EvaluatorEvaluationsPage() {
   const [students, setStudents] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [draft, setDraft] = useState(defaultDraft);
+  const [selectedGroupIds, setSelectedGroupIds] = useState([]);
   const [scores, setScores] = useState({});
   const [choices, setChoices] = useState({});
   const [query, setQuery] = useState('');
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -253,21 +295,32 @@ function EvaluatorEvaluationsPage() {
   const rubricMaxScore = getRubricMaxScore(selectedInstrument, rubricCriteria);
   const checklistTotalScore = instrumentItems.reduce((total, item) => total + Number(scores[item.id] || 0), 0);
   const checklistMaxScore = instrumentItems.reduce((total, item) => total + Number(item.maxScore || 0), 0);
-  const isGroupTask = Boolean(selectedTask?.groups?.length);
+  const taskGroups = selectedTask?.groups ?? [];
+  const taskGroupIds = useMemo(() => getTaskGroupIds(selectedTask), [selectedTask]);
+  const isGroupTask = Boolean(taskGroupIds.length);
   const eligibleStudents = useMemo(
     () => students.filter((student) => studentCanBeEvaluatedForTask(student, selectedTask)),
     [students, selectedTask]
   );
+  const groupFilteredEligibleStudents = useMemo(() => {
+    if (!isGroupTask) return eligibleStudents;
+    if (!selectedGroupIds.length) return [];
+
+    const selectedGroupIdSet = new Set(selectedGroupIds);
+    return eligibleStudents.filter((student) =>
+      getStudentGroupIds(student).some((groupId) => selectedGroupIdSet.has(groupId))
+    );
+  }, [eligibleStudents, isGroupTask, selectedGroupIds]);
   const filteredEligibleStudents = useMemo(() => {
     const normalizedSearch = studentSearchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return eligibleStudents;
+    if (!normalizedSearch) return groupFilteredEligibleStudents;
 
-    return eligibleStudents.filter(
+    return groupFilteredEligibleStudents.filter(
       (student) =>
         student.name.toLowerCase().includes(normalizedSearch) ||
         (student.email ?? '').toLowerCase().includes(normalizedSearch)
     );
-  }, [eligibleStudents, studentSearchTerm]);
+  }, [groupFilteredEligibleStudents, studentSearchTerm]);
   const selectedStudents = useMemo(
     () => students.filter((student) => draft.studentIds.includes(getId(student))),
     [draft.studentIds, students],
@@ -345,13 +398,22 @@ function EvaluatorEvaluationsPage() {
     const taskChanged = previousTaskIdRef.current !== draft.taskId;
     previousTaskIdRef.current = draft.taskId;
 
+    if (taskChanged) {
+      setSelectedGroupIds(taskGroupIds);
+    }
+
     if (!eligibleIds.length) {
       setDraft((current) => (current.studentIds.length ? { ...current, studentIds: [] } : current));
       return;
     }
 
     if (taskChanged) {
-      const defaultIds = isGroupTask ? eligibleIds : [eligibleIds[0]];
+      const taskGroupIdSet = new Set(taskGroupIds);
+      const defaultIds = isGroupTask
+        ? eligibleStudents
+            .filter((student) => getStudentGroupIds(student).some((groupId) => taskGroupIdSet.has(groupId)))
+            .map(getId)
+        : [eligibleIds[0]];
       setDraft((current) => ({ ...current, studentIds: defaultIds }));
       return;
     }
@@ -362,7 +424,7 @@ function EvaluatorEvaluationsPage() {
       if (stillEligible.length === current.studentIds.length) return current;
       return { ...current, studentIds: stillEligible.length ? stillEligible : [eligibleIds[0]] };
     });
-  }, [eligibleStudents, draft.taskId, isGroupTask]);
+  }, [eligibleStudents, draft.taskId, isGroupTask, taskGroupIds]);
 
   useEffect(() => {
     const existingEvaluation = findExistingEvaluation(evaluations, primaryStudentId, draft.taskId);
@@ -449,6 +511,36 @@ function EvaluatorEvaluationsPage() {
     setDraft((current) => ({ ...current, studentIds: [studentId] }));
   };
 
+  const syncStudentSelectionToGroups = (groupIds) => {
+    const groupIdSet = new Set(groupIds);
+    const nextStudentIds = eligibleStudents
+      .filter((student) => getStudentGroupIds(student).some((groupId) => groupIdSet.has(groupId)))
+      .map(getId);
+
+    setDraft((current) => ({ ...current, studentIds: nextStudentIds }));
+  };
+
+  const handleGroupToggle = (groupId) => {
+    setSelectedGroupIds((current) => {
+      const nextGroupIds = current.includes(groupId)
+        ? current.filter((id) => id !== groupId)
+        : [...current, groupId];
+
+      syncStudentSelectionToGroups(nextGroupIds);
+      return nextGroupIds;
+    });
+  };
+
+  const handleSelectAllGroups = () => {
+    setSelectedGroupIds(taskGroupIds);
+    syncStudentSelectionToGroups(taskGroupIds);
+  };
+
+  const handleClearGroups = () => {
+    setSelectedGroupIds([]);
+    setDraft((current) => ({ ...current, studentIds: [] }));
+  };
+
   const handleScoreChange = (itemId, value) => {
     setScores((current) => ({ ...current, [itemId]: Number(value) }));
   };
@@ -475,14 +567,34 @@ function EvaluatorEvaluationsPage() {
     setError('');
     setMessage('');
 
-    if (!draft.studentIds.length || !draft.taskId) {
-      setError('Selecciona al menos un estudiante y una tarea.');
+    if (!draft.taskId) {
+      setError('Selecciona una tarea.');
+      return;
+    }
+
+    if (isGroupTask && !selectedGroupIds.length) {
+      setError('Selecciona al menos un grupo para evaluar.');
+      return;
+    }
+
+    if (!draft.studentIds.length) {
+      setError('Selecciona al menos un estudiante.');
       return;
     }
 
     if (!selectedInstrument) {
       setError('La tarea seleccionada no tiene instrumento asignado.');
       return;
+    }
+
+    if (targetStatus === 'published' && (isRubricEvaluation || isChecklistEvaluation)) {
+      const missingLabels = instrumentItems.filter((item) => !choices[item.id]).map((item) => item.label);
+      if (missingLabels.length) {
+        setError(
+          `Debes calificar todos los criterios antes de publicar. Falta calificar: ${missingLabels.join(', ')}.`
+        );
+        return;
+      }
     }
 
     const targetStudents = draft.studentIds
@@ -639,10 +751,11 @@ function EvaluatorEvaluationsPage() {
 
     try {
       const printableContent = cloneElementWithCurrentValues(printableInstrumentRef.current).outerHTML;
+      const commentsContent = buildCommentsHtml(draft.suggestions);
       openPrintableHtml(
         buildEvaluationPrintHtml({
           title: `${selectedInstrument.title} - Evaluación`,
-          content: printableContent,
+          content: printableContent + commentsContent,
         })
       );
     } catch (printError) {
@@ -664,9 +777,6 @@ function EvaluatorEvaluationsPage() {
           </p>
         </div>
       </div>
-
-      {error ? <p className="form-message form-message-error">{error}</p> : null}
-      {message ? <p className="form-message form-message-success">{message}</p> : null}
 
       <div className="metric-grid">
         <article className="metric-card">
@@ -708,9 +818,55 @@ function EvaluatorEvaluationsPage() {
           <form className="stacked-form compact-form">
             <details className="form-section" ref={studentBannerRef}>
               <summary>
-                Estudiantes ({selectedStudents.length} de {eligibleStudents.length} seleccionado(s))
+                Estudiantes ({selectedStudents.length} de {groupFilteredEligibleStudents.length} seleccionado(s))
               </summary>
               <div className="form-section-body">
+                {isGroupTask ? (
+                  <div className="assignment-group-selector" aria-label="Seleccionar grupos para evaluar">
+                    <div className="assignment-header">
+                      <span>Grupos</span>
+                      <strong>{selectedGroupIds.length}/{taskGroups.length}</strong>
+                    </div>
+                    <div className="assignment-actions">
+                      <button className="button button-ghost button-compact" type="button" onClick={handleSelectAllGroups}>
+                        Seleccionar todos
+                      </button>
+                      <button className="button button-ghost button-compact" type="button" onClick={handleClearGroups}>
+                        Deseleccionar todos
+                      </button>
+                    </div>
+                    <div className="assignment-list assignment-list-inline">
+                      {taskGroups.map((group) => {
+                        const groupId = getId(group);
+                        const isSelected = selectedGroupIds.includes(groupId);
+                        const groupStudentCount = eligibleStudents.filter((student) =>
+                          getStudentGroupIds(student).includes(groupId)
+                        ).length;
+
+                        return (
+                          <label
+                            className={`assignment-option${isSelected ? ' assignment-option-selected' : ''}`}
+                            key={groupId}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleGroupToggle(groupId)}
+                            />
+                            <span className="assignment-check" aria-hidden="true">
+                              <CheckCircle2 size={15} />
+                            </span>
+                            <span className="assignment-student">
+                              <strong>{group.name}</strong>
+                              <small>{groupStudentCount} {groupStudentCount === 1 ? 'estudiante' : 'estudiantes'}</small>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
                 {selectedStudents.length ? (
                   <div className="selected-student-chips" aria-label="Estudiantes seleccionados">
                     {selectedStudents.map((student) => (
@@ -723,7 +879,7 @@ function EvaluatorEvaluationsPage() {
                   <p className="assignment-empty">Ningún estudiante seleccionado todavía.</p>
                 )}
 
-                <label className="search-field assignment-search">
+                <label className="search-field assignment-search assignment-search-half">
                   <Search size={18} aria-hidden="true" />
                   <input
                     ref={studentSearchInputRef}
@@ -735,7 +891,7 @@ function EvaluatorEvaluationsPage() {
                 </label>
 
                 <div
-                  className="assignment-list"
+                  className="assignment-list assignment-list-inline"
                   aria-label={isGroupTask ? 'Seleccionar integrantes del grupo' : 'Seleccionar estudiante para evaluar'}
                 >
                   {filteredEligibleStudents.map((student) => {
@@ -763,32 +919,32 @@ function EvaluatorEvaluationsPage() {
                     );
                   })}
 
-                  {eligibleStudents.length > 0 && filteredEligibleStudents.length === 0 ? (
+                  {groupFilteredEligibleStudents.length > 0 && filteredEligibleStudents.length === 0 ? (
                     <p className="assignment-empty">No hay estudiantes que coincidan con la búsqueda.</p>
+                  ) : null}
+
+                  {isGroupTask && !selectedGroupIds.length ? (
+                    <p className="assignment-empty">Selecciona uno o más grupos para ver sus estudiantes.</p>
                   ) : null}
                 </div>
               </div>
             </details>
-            <label>
-              Tarea
-              <select name="taskId" value={draft.taskId} onChange={handleDraftChange}>
-                {tasks.map((task) => (
-                  <option value={getId(task)} key={getId(task)}>
-                    {task.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Instrumento
-              <input value={selectedInstrument?.title ?? 'Sin instrumento'} readOnly />
-            </label>
-
-            {eligibleStudents.length === 0 ? (
-              <p className="form-message form-message-error">
-                La tarea seleccionada no tiene estudiantes asignados directamente ni por grupo.
-              </p>
-            ) : null}
+            <div className="form-two-columns">
+              <label>
+                Tarea
+                <select name="taskId" value={draft.taskId} onChange={handleDraftChange}>
+                  {tasks.map((task) => (
+                    <option value={getId(task)} key={getId(task)}>
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Instrumento
+                <input value={selectedInstrument?.title ?? 'Sin instrumento'} readOnly />
+              </label>
+            </div>
 
             <div className="evaluation-print-area" ref={printableInstrumentRef}>
               {isRubricEvaluation ? (
@@ -1025,20 +1181,16 @@ function EvaluatorEvaluationsPage() {
               </div>
             ) : null}
 
-            <label>
-              Retroalimentación
-              <textarea name="feedback" value={draft.feedback} rows="4" onChange={handleDraftChange} />
-            </label>
-            <label>
-              Sugerencias
-              <textarea
-                name="suggestions"
-                value={draft.suggestions}
-                rows="3"
-                placeholder="Una sugerencia por línea"
-                onChange={handleDraftChange}
-              />
-            </label>
+            <div className="form-two-columns">
+              <label>
+                Comentarios
+                <input type="text" name="feedback" value={draft.feedback} onChange={handleDraftChange} />
+              </label>
+              <label>
+                Retroalimentación
+                <input type="text" name="suggestions" value={draft.suggestions} onChange={handleDraftChange} />
+              </label>
+            </div>
           </form>
 
           <div className="form-actions evaluation-form-actions">
@@ -1060,19 +1212,23 @@ function EvaluatorEvaluationsPage() {
               <Send size={18} aria-hidden="true" />
               Publicar resultado
             </button>
+            {error ? <p className="form-message form-message-error">{error}</p> : null}
+            {message ? <p className="form-message form-message-success">{message}</p> : null}
           </div>
         </section>
 
         <section className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Historial</h2>
-            <p>Evaluaciones recientes generadas o publicadas.</p>
+          <div className="panel-heading panel-heading-row">
+            <div>
+              <h2>Historial</h2>
+              <p>Evaluaciones recientes generadas o publicadas.</p>
+            </div>
+            <label className="search-field search-field-half">
+              <Search size={18} aria-hidden="true" />
+              <input value={query} placeholder="Buscar evaluación" onChange={(event) => setQuery(event.target.value)} />
+            </label>
           </div>
-          <label className="search-field">
-            <Search size={18} aria-hidden="true" />
-            <input value={query} placeholder="Buscar evaluación" onChange={(event) => setQuery(event.target.value)} />
-          </label>
-          <div className="resource-list spaced-list">
+          <div className="resource-list spaced-list history-list">
             {isLoading ? (
               <div className="skeleton-list" aria-label="Cargando evaluaciones">
                 {[0, 1, 2].map((item) => (
@@ -1088,7 +1244,10 @@ function EvaluatorEvaluationsPage() {
                 ))}
               </div>
             ) : filteredEvaluations.map((evaluation) => (
-              <article className="resource-item" key={getId(evaluation)}>
+              <article
+                className={`resource-item${evaluation.status === 'published' ? ' resource-item-compact' : ''}`}
+                key={getId(evaluation)}
+              >
                 <div className="resource-main">
                   <div className="resource-title-row">
                     <h3>{getStudentName(evaluation)}</h3>

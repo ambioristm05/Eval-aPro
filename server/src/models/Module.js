@@ -13,6 +13,8 @@ const moduleSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    startDate: Date,
+    endDate: Date,
     status: {
       type: String,
       enum: Object.values(ACADEMIC_STATUSES),

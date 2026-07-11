@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { registerStudent } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getDashboardPath } from '../../utils/auth.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
 function StudentRegisterPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {

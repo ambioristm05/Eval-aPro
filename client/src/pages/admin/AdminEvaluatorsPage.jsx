@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import PermanentDeleteDialog from '../../components/common/PermanentDeleteDialog.jsx';
 import { deleteUserPermanent, getEvaluators } from '../../services/adminService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -17,8 +18,8 @@ function AdminEvaluatorsPage() {
   const [evaluators, setEvaluators] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cascadeWarning, setCascadeWarning] = useState(null);

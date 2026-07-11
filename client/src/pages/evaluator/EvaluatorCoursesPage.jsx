@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { createResource, deleteResource, listResource, updateResource } from '../../services/resourceService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
@@ -10,6 +11,9 @@ import { getId } from '../../utils/getId.js';
 const emptyForm = {
   name: '',
   description: '',
+  location: '',
+  startDate: '',
+  endDate: '',
   status: 'active',
 };
 
@@ -18,14 +22,46 @@ const statusLabels = {
   archived: 'Cerrado',
 };
 
+function toInputDate(value) {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+}
+
+function formatDisplayDate(value) {
+  if (!value) return '';
+  const [year, month, day] = toInputDate(value).split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
+function getCourseDateText(course) {
+  const startDate = formatDisplayDate(course.startDate);
+  const endDate = formatDisplayDate(course.endDate);
+
+  if (startDate && endDate) return startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+  if (startDate) return `Desde ${startDate}`;
+  if (endDate) return `Hasta ${endDate}`;
+  return '';
+}
+
+function getCourseDetails(course) {
+  const location = course.location?.trim();
+  const dateText = getCourseDateText(course);
+
+  if (location && dateText) return `${location} | ${dateText}`;
+  if (location) return location;
+  if (dateText) return dateText;
+  return course.description || 'Sin lugar y fecha registrados.';
+}
+
 function EvaluatorCoursesPage() {
   const [courses, setCourses] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
@@ -39,6 +75,7 @@ function EvaluatorCoursesPage() {
       const matchesSearch =
         !normalizedSearch ||
         course.name.toLowerCase().includes(normalizedSearch) ||
+        getCourseDetails(course).toLowerCase().includes(normalizedSearch) ||
         (course.description ?? '').toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
@@ -95,14 +132,28 @@ function EvaluatorCoursesPage() {
     setMessage('');
 
     const normalizedName = formData.name.trim();
+    const normalizedLocation = formData.location.trim();
     if (!normalizedName) return;
+    if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+      setError('La fecha de término no puede ser anterior a la fecha de inicio.');
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
+      const summaryParts = [
+        normalizedLocation,
+        formData.startDate || formData.endDate
+          ? [formatDisplayDate(formData.startDate), formatDisplayDate(formData.endDate)].filter(Boolean).join(' - ')
+          : '',
+      ].filter(Boolean);
       const payload = {
         name: normalizedName,
-        description: formData.description.trim(),
+        description: summaryParts.join(' | '),
+        location: normalizedLocation,
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
         status: formData.status,
       };
 
@@ -128,6 +179,9 @@ function EvaluatorCoursesPage() {
     setFormData({
       name: course.name,
       description: course.description ?? '',
+      location: course.location ?? '',
+      startDate: toInputDate(course.startDate),
+      endDate: toInputDate(course.endDate),
       status: course.status,
     });
   };
@@ -251,13 +305,34 @@ function EvaluatorCoursesPage() {
                 required
               />
             </label>
+            <div className="form-field-grid form-field-grid-two">
+              <label>
+                Fecha de inicio
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                Fecha de término
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  min={formData.startDate || undefined}
+                  onChange={handleChange}
+                />
+              </label>
+            </div>
             <label>
-              Lugar y fecha del curso
-              <textarea
-                name="description"
-                value={formData.description}
-                rows="4"
-                placeholder="Ej. Aula 3, lunes 12 de agosto"
+              Lugar del curso
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                placeholder="Indique el lugar del curso"
                 onChange={handleChange}
               />
             </label>
@@ -345,7 +420,7 @@ function EvaluatorCoursesPage() {
                       {statusLabels[course.status]}
                     </span>
                   </div>
-                  <p>{course.description || 'Sin lugar y fecha registrados.'}</p>
+                  <p>{getCourseDetails(course)}</p>
                 </div>
 
                 <div className="resource-actions" aria-label={`Acciones para ${course.name}`}>

@@ -32,16 +32,55 @@ async function findCourseForEvaluator(req, id) {
 }
 
 function applySearch(filter, search) {
-  if (search) filter.name = { $regex: search, $options: 'i' };
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { location: { $regex: search, $options: 'i' } }
+    ];
+  }
   return filter;
 }
 
+async function addModuleParticipantCounts(modules) {
+  const plainModules = modules.map((module) => (typeof module.toObject === 'function' ? module.toObject() : module));
+  const moduleIds = plainModules.map((module) => module._id);
+
+  if (!moduleIds.length) return plainModules;
+
+  const classes = await AcademicClass.find({ module: { $in: moduleIds } }).select('_id module').lean();
+  const classToModule = new Map(classes.map((academicClass) => [academicClass._id.toString(), academicClass.module.toString()]));
+  const participantSets = new Map(moduleIds.map((moduleId) => [moduleId.toString(), new Set()]));
+
+  if (classes.length) {
+    const tasks = await Task.find({ class: { $in: classes.map((academicClass) => academicClass._id) } })
+      .select('class students')
+      .lean();
+
+    tasks.forEach((task) => {
+      const moduleId = classToModule.get(task.class.toString());
+      const participants = participantSets.get(moduleId);
+      if (!participants) return;
+
+      task.students?.forEach((studentId) => participants.add(studentId.toString()));
+    });
+  }
+
+  return plainModules.map((module) => ({
+    ...module,
+    participantCount: participantSets.get(module._id.toString())?.size ?? 0
+  }));
+}
+
 export const createCourse = asyncHandler(async (req, res) => {
-  const { name, description, status } = req.validated.body;
+  const { name, description, location, startDate, endDate, status } = req.validated.body;
 
   const course = await Course.create({
     name,
     description,
+    location,
+    startDate,
+    endDate,
     status,
     evaluator: req.user._id
   });
@@ -84,10 +123,13 @@ export const getCourseById = asyncHandler(async (req, res) => {
 
 export const updateCourse = asyncHandler(async (req, res) => {
   const course = await findCourseForEvaluator(req, req.validated.params.id);
-  const { name, description, status } = req.validated.body;
+  const { name, description, location, startDate, endDate, status } = req.validated.body;
 
   if (name !== undefined) course.name = name;
   if (description !== undefined) course.description = description;
+  if (location !== undefined) course.location = location;
+  if (startDate !== undefined) course.startDate = startDate;
+  if (endDate !== undefined) course.endDate = endDate;
   if (status !== undefined) course.status = status;
 
   await course.save();
@@ -146,9 +188,10 @@ export const getCourseModules = asyncHandler(async (req, res) => {
     AcademicModule.find(filter).sort({ order: 1, createdAt: 1 }).skip(skip).limit(limit),
     AcademicModule.countDocuments(filter)
   ]);
+  const modulesWithParticipantCounts = await addModuleParticipantCounts(modules);
 
   res.json({
-    modules,
+    modules: modulesWithParticipantCounts,
     course,
     pagination: {
       total,
@@ -161,11 +204,13 @@ export const getCourseModules = asyncHandler(async (req, res) => {
 
 export const createModuleForCourse = asyncHandler(async (req, res) => {
   const course = await findCourseForEvaluator(req, req.validated.params.courseId);
-  const { name, description, status, order } = req.validated.body;
+  const { name, description, startDate, endDate, status, order } = req.validated.body;
 
   const module = await AcademicModule.create({
     name,
     description,
+    startDate,
+    endDate,
     status,
     order,
     course: course._id,

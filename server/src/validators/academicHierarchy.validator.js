@@ -2,6 +2,13 @@ import { z } from 'zod';
 import { ACADEMIC_STATUSES } from '../constants/academicHierarchy.constants.js';
 
 const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Id inválido');
+const optionalDateSchema = z
+  .preprocess((value) => {
+    if (value === '' || value === null) return null;
+    if (value === undefined) return undefined;
+    return value;
+  }, z.coerce.date().nullable())
+  .optional();
 
 const booleanQuerySchema = z
   .preprocess((value) => {
@@ -19,11 +26,39 @@ const baseBodyShape = {
   status: z.enum(Object.values(ACADEMIC_STATUSES)).default(ACADEMIC_STATUSES.ACTIVE)
 };
 
+const courseBodyShape = {
+  ...baseBodyShape,
+  location: z.string().trim().max(200).default(''),
+  startDate: optionalDateSchema,
+  endDate: optionalDateSchema
+};
+
+const moduleBodyShape = {
+  ...baseBodyShape,
+  startDate: optionalDateSchema,
+  endDate: optionalDateSchema
+};
+
 const updateBodyShape = {
   name: baseBodyShape.name.optional(),
   description: z.string().trim().max(1000).optional(),
   status: z.enum(Object.values(ACADEMIC_STATUSES)).optional()
 };
+
+const updateCourseBodyShape = {
+  ...updateBodyShape,
+  location: z.string().trim().max(200).optional(),
+  startDate: optionalDateSchema,
+  endDate: optionalDateSchema
+};
+
+const updateModuleBodyShape = {
+  ...updateBodyShape,
+  startDate: optionalDateSchema,
+  endDate: optionalDateSchema
+};
+
+const courseDateOrderRefinement = (body) => !body.startDate || !body.endDate || body.endDate >= body.startDate;
 
 const listQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
@@ -34,7 +69,10 @@ const listQuerySchema = z.object({
 });
 
 export const createCourseSchema = z.object({
-  body: z.object(baseBodyShape),
+  body: z.object(courseBodyShape).refine(courseDateOrderRefinement, {
+    message: 'La fecha de término no puede ser anterior a la fecha de inicio',
+    path: ['endDate']
+  }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
 });
@@ -52,9 +90,15 @@ export const courseIdSchema = z.object({
 });
 
 export const updateCourseSchema = z.object({
-  body: z.object(updateBodyShape).refine((body) => Object.keys(body).length > 0, {
-    message: 'Debes enviar al menos un campo para actualizar'
-  }),
+  body: z
+    .object(updateCourseBodyShape)
+    .refine((body) => Object.keys(body).length > 0, {
+      message: 'Debes enviar al menos un campo para actualizar'
+    })
+    .refine(courseDateOrderRefinement, {
+      message: 'La fecha de término no puede ser anterior a la fecha de inicio',
+      path: ['endDate']
+    }),
   params: z.object({ id: mongoIdSchema }),
   query: z.object({}).optional()
 });
@@ -67,8 +111,11 @@ export const courseModulesSchema = z.object({
 
 export const createModuleSchema = z.object({
   body: z.object({
-    ...baseBodyShape,
+    ...moduleBodyShape,
     order: z.coerce.number().int().min(0).default(0)
+  }).refine(courseDateOrderRefinement, {
+    message: 'La fecha de término no puede ser anterior a la fecha de inicio',
+    path: ['endDate']
   }),
   params: z.object({ courseId: mongoIdSchema }),
   query: z.object({}).optional()
@@ -83,11 +130,15 @@ export const moduleIdSchema = z.object({
 export const updateModuleSchema = z.object({
   body: z
     .object({
-      ...updateBodyShape,
+      ...updateModuleBodyShape,
       order: z.coerce.number().int().min(0).optional()
     })
     .refine((body) => Object.keys(body).length > 0, {
       message: 'Debes enviar al menos un campo para actualizar'
+    })
+    .refine(courseDateOrderRefinement, {
+      message: 'La fecha de término no puede ser anterior a la fecha de inicio',
+      path: ['endDate']
     }),
   params: z.object({ id: mongoIdSchema }),
   query: z.object({}).optional()

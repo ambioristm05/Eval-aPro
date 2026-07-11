@@ -8,6 +8,13 @@
       "cwd": "client",
       "port": 5173,
       "autoPort": true
+    },
+    {
+      "name": "server-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "server",
+      "port": 5000
     }
   ]
 }

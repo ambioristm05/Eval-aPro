@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import {
   addStudentToGroup,
   createResource,
@@ -53,8 +54,8 @@ function EvaluatorGroupsPage() {
   const [studentSearch, setStudentSearch] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useTimedState();
+  const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLinking, setIsLinking] = useState(false);

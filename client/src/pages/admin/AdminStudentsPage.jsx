@@ -5,6 +5,7 @@ import EmptyState from '../../components/common/EmptyState.jsx';
 import PermanentDeleteDialog from '../../components/common/PermanentDeleteDialog.jsx';
 import { deleteUserPermanent } from '../../services/adminService.js';
 import { deleteStudent, listResource, reactivateStudent, suspendStudent } from '../../services/resourceService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -23,8 +24,8 @@ function AdminStudentsPage() {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);

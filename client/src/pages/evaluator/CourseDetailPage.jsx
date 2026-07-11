@@ -10,13 +10,16 @@ import {
   listCourseModules,
   updateResource,
 } from '../../services/resourceService.js';
+import { useCourseNavStore } from '../../stores/courseNavStore.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
 const emptyForm = {
   name: '',
   description: '',
-  order: 0,
+  startDate: '',
+  endDate: '',
   status: 'active',
 };
 
@@ -25,20 +28,51 @@ const statusLabels = {
   archived: 'Archivado',
 };
 
+function toInputDate(value) {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+}
+
+function formatDisplayDate(value) {
+  if (!value) return '';
+  const [year, month, day] = toInputDate(value).split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
+function getModuleDateText(module) {
+  const startDate = formatDisplayDate(module.startDate);
+  const endDate = formatDisplayDate(module.endDate);
+
+  if (startDate && endDate) return startDate === endDate ? startDate : `${startDate} a ${endDate}`;
+  if (startDate) return `Desde ${startDate}`;
+  if (endDate) return `Hasta ${endDate}`;
+  return module.description || 'Sin fecha de inicio y término registrada.';
+}
+
+function formatParticipantCount(count = 0) {
+  return `${count} ${count === 1 ? 'estudiante' : 'estudiantes'}`;
+}
+
 function CourseDetailPage() {
   const { courseId } = useParams();
+  const setLastCourse = useCourseNavStore((state) => state.setCourse);
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    if (courseId) setLastCourse(courseId);
+  }, [courseId, setLastCourse]);
 
   const filteredModules = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -48,6 +82,7 @@ function CourseDetailPage() {
       const matchesSearch =
         !normalizedSearch ||
         module.name.toLowerCase().includes(normalizedSearch) ||
+        getModuleDateText(module).toLowerCase().includes(normalizedSearch) ||
         (module.description ?? '').toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
@@ -110,14 +145,22 @@ function CourseDetailPage() {
 
     const normalizedName = formData.name.trim();
     if (!normalizedName) return;
+    if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+      setError('La fecha de término no puede ser anterior a la fecha de inicio.');
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
+      const dateSummary = [formatDisplayDate(formData.startDate), formatDisplayDate(formData.endDate)]
+        .filter(Boolean)
+        .join(' a ');
       const payload = {
         name: normalizedName,
-        description: formData.description.trim(),
-        order: Number(formData.order) || 0,
+        description: dateSummary,
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
         status: formData.status,
       };
 
@@ -143,7 +186,8 @@ function CourseDetailPage() {
     setFormData({
       name: module.name,
       description: module.description ?? '',
-      order: module.order ?? 0,
+      startDate: toInputDate(module.startDate),
+      endDate: toInputDate(module.endDate),
       status: module.status,
     });
   };
@@ -259,7 +303,7 @@ function CourseDetailPage() {
         <section className="dashboard-panel">
           <div className="panel-heading">
             <h2>{editingId ? 'Editar módulo' : 'Crear módulo'}</h2>
-            <p>Define fechas y capacidad del módulo dentro del curso.</p>
+            <p>Define el rango de fechas del módulo dentro del curso.</p>
           </div>
 
           <form className="stacked-form compact-form" onSubmit={handleSubmit}>
@@ -275,28 +319,29 @@ function CourseDetailPage() {
                 required
               />
             </label>
-            <label>
-              Fecha de inicio y fin
-              <textarea
-                name="description"
-                value={formData.description}
-                rows="4"
-                placeholder="Ej. Del 12 de agosto al 20 de septiembre"
-                onChange={handleChange}
-                disabled={isCourseArchived}
-              />
-            </label>
-            <label>
-              Cantidad de estudiantes
-              <input
-                type="number"
-                name="order"
-                min="0"
-                value={formData.order}
-                onChange={handleChange}
-                disabled={isCourseArchived}
-              />
-            </label>
+            <div className="form-field-grid form-field-grid-two">
+              <label>
+                Fecha de inicio
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  disabled={isCourseArchived}
+                />
+              </label>
+              <label>
+                Fecha de término
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  min={formData.startDate || undefined}
+                  onChange={handleChange}
+                  disabled={isCourseArchived}
+                />
+              </label>
+            </div>
             {editingId ? (
               <label>
                 Estado
@@ -336,7 +381,7 @@ function CourseDetailPage() {
           <div className="panel-heading panel-heading-row">
             <div>
               <h2>Módulos</h2>
-              <p>Consulta fechas, capacidad y clases de cada módulo.</p>
+              <p>Consulta fechas, participantes y clases de cada módulo.</p>
             </div>
             <span className="count-pill">{filteredModules.length}</span>
           </div>
@@ -386,9 +431,9 @@ function CourseDetailPage() {
                       {statusLabels[module.status]}
                     </span>
                   </div>
-                  <p>{module.description || 'Sin fecha de inicio y fin registrada.'}</p>
+                  <p>{getModuleDateText(module)}</p>
                   <div className="chip-row">
-                    <span className="metadata-chip">{module.order ?? 0} estudiantes</span>
+                    <span className="metadata-chip">{formatParticipantCount(module.participantCount ?? 0)}</span>
                   </div>
                 </div>
 

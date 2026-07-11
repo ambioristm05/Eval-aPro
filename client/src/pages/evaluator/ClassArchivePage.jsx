@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import HierarchyBreadcrumb from '../../components/common/HierarchyBreadcrumb.jsx';
 import { listModuleClasses, updateResource } from '../../services/resourceService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
 
@@ -18,8 +19,8 @@ function ClassArchivePage() {
   const [classes, setClasses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useTimedState();
+  const [message, setMessage] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
   const [isRestoring, setIsRestoring] = useState('');
 

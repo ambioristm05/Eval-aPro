@@ -2,6 +2,7 @@ import { UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { registerEvaluatorWithInvitation, validateInvitation } from '../../services/authService.js';
+import { useTimedState } from '../../hooks/useTimedState.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getDashboardPath } from '../../utils/auth.js';
 import { getErrorMessage } from '../../utils/errors.js';
@@ -13,7 +14,7 @@ function EvaluatorRegisterPage() {
   const setSession = useAuthStore((state) => state.setSession);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [status, setStatus] = useState('validating');
-  const [error, setError] = useState('');
+  const [error, setError] = useTimedState();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
