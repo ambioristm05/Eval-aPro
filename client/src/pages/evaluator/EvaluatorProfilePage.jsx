@@ -1,6 +1,6 @@
 import { ArrowLeft, KeyRound, Pencil, Save, Trash2, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DirectMessagesPanel from '../../components/common/DirectMessagesPanel.jsx';
 import {
   changeMyPassword,
@@ -8,15 +8,9 @@ import {
   getMyProfile,
   updateMyProfile,
 } from '../../services/studentService.js';
-import { useAuthStore } from '../../stores/authStore.js';
 import { useTimedState } from '../../hooks/useTimedState.js';
+import { useAuthStore } from '../../stores/authStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
-
-function getGroupNames(user) {
-  const groups = user?.groups ?? [];
-  if (!groups.length) return 'Sin grupo asignado';
-  return groups.map((group) => group.name).join(', ');
-}
 
 function getStatusLabel(status) {
   const labels = {
@@ -28,11 +22,12 @@ function getStatusLabel(status) {
   return labels[status] ?? status ?? 'Sin estado';
 }
 
-function ProfilePage({ role, mode = 'view' }) {
+function EvaluatorProfilePage({ mode = 'view' }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const storeUser = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
-  const [searchParams] = useSearchParams();
   const [user, setLocalUser] = useState(storeUser);
   const [profile, setProfile] = useState({
     name: storeUser?.name ?? '',
@@ -53,12 +48,9 @@ function ProfilePage({ role, mode = 'view' }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const groupNames = useMemo(() => getGroupNames(user), [user]);
-  const roleLabels = { admin: 'Administrador', evaluator: 'Evaluador', student: 'Estudiante' };
-  const roleLabel = roleLabels[role] ?? 'Usuario';
-  const profilePath = `/${role}/profile`;
-  const editPath = `/${role}/profile/edit`;
-  const deletePath = `/${role}/profile/delete`;
+  const profilePath = '/evaluator/profile';
+  const editPath = '/evaluator/profile/edit';
+  const deletePath = '/evaluator/profile/delete';
   const initialContactId = searchParams.get('contact') ?? '';
 
   useEffect(() => {
@@ -90,7 +82,7 @@ function ProfilePage({ role, mode = 'view' }) {
     return () => {
       isMounted = false;
     };
-  }, [setUser]);
+  }, [setUser, setError]);
 
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
@@ -114,9 +106,7 @@ function ProfilePage({ role, mode = 'view' }) {
     setIsSaving(true);
 
     try {
-      const updatedUser = await updateMyProfile({
-        name: profile.name,
-      });
+      const updatedUser = await updateMyProfile({ name: profile.name });
       setLocalUser(updatedUser);
       setUser(updatedUser);
       setMessage('Perfil actualizado correctamente.');
@@ -167,6 +157,7 @@ function ProfilePage({ role, mode = 'view' }) {
         reason: deleteForm.reason || undefined,
       });
       clearSession();
+      navigate('/login', { replace: true });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -180,8 +171,8 @@ function ProfilePage({ role, mode = 'view' }) {
         <section className="dashboard-panel">
           <div className="panel-heading panel-heading-row">
             <div>
-              <h2>Datos personales</h2>
-              <p>Información principal del usuario logueado.</p>
+              <h2>Datos del evaluador</h2>
+              <p>Consulta y administra la cuenta con la que trabajas cursos, instrumentos y evaluaciones.</p>
             </div>
             <Link className="button button-primary profile-inline-button" to={editPath}>
               <Pencil size={18} aria-hidden="true" />
@@ -199,56 +190,56 @@ function ProfilePage({ role, mode = 'view' }) {
             </div>
             <div>
               <span>Rol</span>
-              <strong>{roleLabel}</strong>
+              <strong>Evaluador</strong>
             </div>
             <div>
               <span>Estado</span>
               <strong>{getStatusLabel(user?.status)}</strong>
             </div>
-            {role === 'student' ? (
-              <div>
-                <span>Grupo</span>
-                <strong>{groupNames}</strong>
-              </div>
-            ) : null}
           </div>
         </section>
 
         <aside className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Seguridad</h2>
-            <p>Los cambios sensibles se realizan desde la vista de modificación.</p>
+            <h2>Acceso y seguridad</h2>
+            <p>Cambia tu clave o ve a la vista dedicada de baja lógica de la cuenta.</p>
           </div>
-          <Link className="button button-secondary" to={editPath}>
-            <KeyRound size={18} aria-hidden="true" />
-            Cambiar contraseña
-          </Link>
+          <div className="form-actions">
+            <Link className="button button-secondary" to={editPath}>
+              <KeyRound size={18} aria-hidden="true" />
+              Cambiar contraseña
+            </Link>
+            <Link className="button button-danger" to={deletePath}>
+              <Trash2 size={18} aria-hidden="true" />
+              Eliminar cuenta
+            </Link>
+          </div>
         </aside>
       </div>
 
-      {(role === 'student' || role === 'admin') ? (
-        <DirectMessagesPanel role={role} initialContactId={initialContactId} />
-      ) : null}
+      <DirectMessagesPanel role="evaluator" initialContactId={initialContactId} />
     </>
   );
 
   const renderEditMode = () => (
     <div className="management-grid">
       <section className="dashboard-panel">
-        <div className="panel-heading"><h2>Modificar perfil</h2><p>El correo de la cuenta no se puede modificar.</p></div>
+        <div className="panel-heading">
+          <h2>Modificar perfil</h2>
+          <p>El correo del evaluador se conserva como identificador principal.</p>
+        </div>
         <form className="stacked-form compact-form" onSubmit={saveProfile}>
-          <label>Nombre<input name="name" value={profile.name} onChange={handleProfileChange} disabled={isLoading} /></label>
-          <label>Correo<input name="email" type="email" value={profile.email} disabled readOnly /></label>
-          {role === 'student' ? (
-            <label>Grupo<input name="group" value={groupNames} disabled readOnly /></label>
-          ) : null}
+          <label>
+            Nombre
+            <input name="name" value={profile.name} onChange={handleProfileChange} disabled={isLoading} />
+          </label>
+          <label>
+            Correo
+            <input name="email" type="email" value={profile.email} disabled readOnly />
+          </label>
           <div className="form-actions">
             <button className="button button-primary" type="submit" disabled={isSaving || isLoading}>
-              {isSaving ? (
-                <span className="button-spinner-ring" aria-hidden="true" />
-              ) : (
-                <Save size={18} aria-hidden="true" />
-              )}
+              {isSaving ? <span className="button-spinner-ring" aria-hidden="true" /> : <Save size={18} aria-hidden="true" />}
               {isSaving ? 'Guardando...' : 'Guardar cambios'}
             </button>
             <Link className="button button-secondary" to={profilePath}>
@@ -260,7 +251,10 @@ function ProfilePage({ role, mode = 'view' }) {
       </section>
 
       <aside className="dashboard-panel">
-        <div className="panel-heading"><h2>Cambiar contraseña</h2><p>Confirma la nueva contraseña antes de actualizar.</p></div>
+        <div className="panel-heading">
+          <h2>Cambiar contraseña</h2>
+          <p>Confirma la nueva contraseña antes de actualizarla.</p>
+        </div>
         <form className="stacked-form compact-form" onSubmit={updatePassword}>
           <label>
             Contraseña actual
@@ -298,16 +292,14 @@ function ProfilePage({ role, mode = 'view' }) {
           </button>
         </form>
 
-        {role === 'student' ? (
-          <div className="danger-zone">
-            <h3>Eliminar cuenta</h3>
-            <p>Esta acción está separada para evitar eliminaciones accidentales.</p>
-            <Link className="button button-danger" to={deletePath}>
-              <Trash2 size={18} aria-hidden="true" />
-              Ir a eliminar cuenta
-            </Link>
-          </div>
-        ) : null}
+        <div className="danger-zone">
+          <h3>Baja lógica de la cuenta</h3>
+          <p>La cuenta del evaluador se marca como eliminada y la sesión se cierra de inmediato.</p>
+          <Link className="button button-danger" to={deletePath}>
+            <Trash2 size={18} aria-hidden="true" />
+            Ir a eliminar cuenta
+          </Link>
+        </div>
       </aside>
     </div>
   );
@@ -316,8 +308,8 @@ function ProfilePage({ role, mode = 'view' }) {
     <div className="management-grid">
       <section className="dashboard-panel">
         <div className="panel-heading">
-          <h2>Eliminar cuenta</h2>
-          <p>La eliminación es lógica y cierra la sesión automáticamente.</p>
+          <h2>Eliminar cuenta de evaluador</h2>
+          <p>Esta acción es lógica: la cuenta se desactiva y el acceso se cierra inmediatamente.</p>
         </div>
         <div className="danger-zone">
           <input
@@ -357,14 +349,16 @@ function ProfilePage({ role, mode = 'view' }) {
   return (
     <section className="management-page">
       <div className="module-hero">
-        <span className="module-hero-icon"><UserRound size={28} aria-hidden="true" /></span>
+        <span className="module-hero-icon">
+          <UserRound size={28} aria-hidden="true" />
+        </span>
         <div>
-          <p className="eyebrow">{roleLabel}</p>
+          <p className="eyebrow">Evaluador</p>
           <h1>{mode === 'edit' ? 'Modificar perfil' : mode === 'delete' ? 'Eliminar cuenta' : 'Perfil'}</h1>
           <p className="dashboard-description">
             {mode === 'view'
-              ? 'Consulta la información de la cuenta con la que iniciaste sesión.'
-              : 'Gestiona cambios de cuenta desde una vista dedicada.'}
+              ? 'Gestiona los datos y accesos de tu cuenta de evaluación.'
+              : 'Realiza cambios sensibles desde una vista dedicada para evitar errores.'}
           </p>
         </div>
       </div>
@@ -377,4 +371,4 @@ function ProfilePage({ role, mode = 'view' }) {
   );
 }
 
-export default ProfilePage;
+export default EvaluatorProfilePage;

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import MessageNotificationCenter from './MessageNotificationCenter.jsx';
 
 function Header() {
   const user = useAuthStore((state) => state.user);
@@ -47,16 +48,19 @@ function Header() {
       </Link>
 
       {hasNavigation ? (
-        <button
-          className="header-menu-button"
-          type="button"
-          aria-expanded={isMenuOpen}
-          aria-controls="primary-navigation"
-          aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          {isMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
-        </button>
+        <div className="header-actions">
+          {user ? <MessageNotificationCenter /> : null}
+          <button
+            className="header-menu-button"
+            type="button"
+            aria-expanded={isMenuOpen}
+            aria-controls="primary-navigation"
+            aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            {isMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+          </button>
+        </div>
       ) : null}
 
       {hasNavigation ? (

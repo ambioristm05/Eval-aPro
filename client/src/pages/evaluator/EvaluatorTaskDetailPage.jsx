@@ -338,14 +338,12 @@ function EvaluatorTaskDetailPage() {
     <section className="management-page">
       <HierarchyBreadcrumb
         items={[
-          course ? { label: course.name, to: `/evaluator/courses/${getId(course) || courseId}` } : { label: 'Curso' },
-          module
-            ? {
-                label: module.name,
-                to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
-              }
-            : { label: 'Módulo' },
-          academicClass ? { label: academicClass.name, to: classTasksPath } : { label: 'Clase' },
+          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
+          {
+            label: 'Clases',
+            to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
+          },
+          { label: 'Tareas', to: classTasksPath },
           task ? { label: task.title } : { label: 'Tarea' },
         ]}
       />
@@ -486,7 +484,7 @@ function EvaluatorTaskDetailPage() {
             <details className="form-section" open>
               <summary>Asignación</summary>
               <div className="form-section-body">
-                <label>
+                <label className="label-inline">
                   Instrumento
                   <select
                     name="instrument"
@@ -509,7 +507,7 @@ function EvaluatorTaskDetailPage() {
                     <strong>{formData.groups.length}</strong>
                   </div>
 
-                  <div className="assignment-list" aria-label="Seleccionar grupos para esta tarea">
+                  <div className="assignment-list assignment-list-inline" aria-label="Seleccionar grupos para esta tarea">
                     {groups.map((group) => {
                       const groupId = getId(group);
                       const isSelected = formData.groups.includes(groupId);
@@ -587,7 +585,7 @@ function EvaluatorTaskDetailPage() {
                     />
                   </label>
 
-                  <div className="assignment-list" aria-label="Seleccionar estudiantes para esta tarea">
+                  <div className="assignment-list assignment-list-inline" aria-label="Seleccionar estudiantes para esta tarea">
                     {filteredAssignableStudents.map((student) => {
                       const studentId = getId(student);
                       const isSelected = formData.students.includes(studentId);
@@ -630,7 +628,7 @@ function EvaluatorTaskDetailPage() {
             <details className="form-section" open>
               <summary>Fecha y nota</summary>
               <div className="form-section-body">
-                <div className="form-two-columns">
+                <div className="form-fields-inline">
                   <label>
                     Fecha
                     <span className="date-field">
@@ -651,19 +649,19 @@ function EvaluatorTaskDetailPage() {
                       <option value="completed">Evaluada</option>
                     </select>
                   </label>
+                  <label>
+                    Nota
+                    <input
+                      type="number"
+                      name="weight"
+                      min="0"
+                      max="100"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                    />
+                  </label>
                 </div>
-                <label>
-                  Nota
-                  <input
-                    type="number"
-                    name="weight"
-                    min="0"
-                    max="100"
-                    value={formData.weight}
-                    onChange={handleChange}
-                    disabled={isReadOnly}
-                  />
-                </label>
               </div>
             </details>
 

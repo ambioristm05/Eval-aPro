@@ -273,6 +273,58 @@ describe('student user routes', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
   });
+
+  it('lets an evaluator delete their own account logically', async () => {
+    const evaluatorPassword = 'Password123';
+    await User.create({
+      name: 'Ernesto Evaluador',
+      email: 'evaluator-self-delete@example.com',
+      password: evaluatorPassword,
+      role: USER_ROLES.EVALUATOR,
+      status: USER_STATUSES.ACTIVE
+    });
+
+    const token = await login('evaluator-self-delete@example.com', evaluatorPassword);
+
+    const response = await request(app)
+      .delete('/api/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        password: evaluatorPassword,
+        reason: 'Solicitud propia'
+      })
+      .expect(200);
+
+    expect(response.body.message).toContain('Cuenta eliminada lógicamente');
+
+    const deletedEvaluator = await User.findOne({ email: 'evaluator-self-delete@example.com' });
+    expect(deletedEvaluator.status).toBe(USER_STATUSES.DELETED);
+    expect(deletedEvaluator.statusReason).toBe('Solicitud propia');
+    expect(deletedEvaluator.deletedAt).toBeTruthy();
+  });
+
+  it('keeps admin self-delete blocked', async () => {
+    const adminPassword = 'Password123';
+    await User.create({
+      name: 'Ada Admin',
+      email: 'admin-self-delete@example.com',
+      password: adminPassword,
+      role: USER_ROLES.ADMIN,
+      status: USER_STATUSES.ACTIVE
+    });
+
+    const token = await login('admin-self-delete@example.com', adminPassword);
+
+    const response = await request(app)
+      .delete('/api/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        password: adminPassword
+      })
+      .expect(403);
+
+    expect(response.body.message).toContain('Solo estudiantes y evaluadores');
+  });
 });
 
 describe('instrument routes', () => {
@@ -1199,6 +1251,125 @@ describe('evaluation routes', () => {
 
     expect(listResponse.body.evaluations).toHaveLength(1);
     expect(listResponse.body.evaluations[0].status).toBe(EVALUATION_STATUSES.PUBLISHED);
+  });
+});
+
+describe('message routes', () => {
+  it('lets a student message their evaluator and read the thread', async () => {
+    const graph = await seedEvaluationGraph('messages-student');
+    const studentToken = await login(graph.student.email, graph.studentPassword);
+
+    const contactsResponse = await request(app)
+      .get('/api/messages/contacts')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .expect(200);
+
+    expect(contactsResponse.body.contacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          user: expect.objectContaining({
+            id: String(graph.evaluator._id),
+            role: USER_ROLES.EVALUATOR,
+          }),
+        }),
+      ])
+    );
+
+    await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({
+        recipientId: String(graph.evaluator._id),
+        body: 'Hola profesor, tengo una duda.',
+      })
+      .expect(201);
+
+    const threadResponse = await request(app)
+      .get(`/api/messages/thread/${graph.evaluator._id}`)
+      .set('Authorization', `Bearer ${studentToken}`)
+      .expect(200);
+
+    expect(threadResponse.body.contact.id).toBe(String(graph.evaluator._id));
+    expect(threadResponse.body.messages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          body: 'Hola profesor, tengo una duda.',
+          direction: 'outgoing',
+        }),
+      ])
+    );
+  });
+
+  it('lets an evaluator message an admin directly', async () => {
+    const graph = await seedEvaluationGraph('messages-evaluator');
+    const adminPassword = 'Password123';
+    const admin = await User.create({
+      name: 'Ada Admin',
+      email: 'messages-admin@example.com',
+      password: adminPassword,
+      role: USER_ROLES.ADMIN,
+      status: USER_STATUSES.ACTIVE,
+    });
+    const evaluatorToken = await login(graph.evaluator.email, graph.evaluatorPassword);
+    const adminToken = await login(admin.email, adminPassword);
+
+    await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${evaluatorToken}`)
+      .send({
+        recipientId: String(admin._id),
+        body: 'Necesito apoyo con una evaluación.',
+      })
+      .expect(201);
+
+    const contactsResponse = await request(app)
+      .get('/api/messages/contacts')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(contactsResponse.body.contacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          unreadCount: 1,
+          user: expect.objectContaining({
+            id: String(graph.evaluator._id),
+            role: USER_ROLES.EVALUATOR,
+          }),
+        }),
+      ])
+    );
+  });
+
+  it('blocks admins from messaging students directly', async () => {
+    const adminPassword = 'Password123';
+    const studentPassword = 'Password123';
+    await User.create({
+      name: 'Admin Mensajes',
+      email: 'messages-admin-blocked@example.com',
+      password: adminPassword,
+      role: USER_ROLES.ADMIN,
+      status: USER_STATUSES.ACTIVE,
+    });
+    const student = await User.create({
+      name: 'Sonia Estudiante',
+      email: 'messages-student-blocked@example.com',
+      password: studentPassword,
+      role: USER_ROLES.STUDENT,
+      status: USER_STATUSES.ACTIVE,
+    });
+
+    const adminToken = await login('messages-admin-blocked@example.com', adminPassword);
+
+    const response = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        recipientId: String(student._id),
+        body: 'Hola',
+      })
+      .expect(403);
+
+    expect(response.body.message).toContain('No puedes enviar mensajes');
   });
 });
 

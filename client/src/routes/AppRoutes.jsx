@@ -23,6 +23,7 @@ import EvaluatorInstrumentsPage from '../pages/evaluator/EvaluatorInstrumentsPag
 import InstrumentArchivePage from '../pages/evaluator/InstrumentArchivePage.jsx';
 import ChecklistBuilderPage from '../pages/evaluator/ChecklistBuilderPage.jsx';
 import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
+import EvaluatorProfilePage from '../pages/evaluator/EvaluatorProfilePage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
@@ -92,8 +93,9 @@ function AppRoutes() {
             <Route path="evaluator/instruments/checklist-builder/:id" element={<ChecklistBuilderPage />} />
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
-            <Route path="evaluator/profile" element={<ProfilePage role="evaluator" />} />
-            <Route path="evaluator/profile/edit" element={<ProfilePage role="evaluator" mode="edit" />} />
+            <Route path="evaluator/profile" element={<EvaluatorProfilePage />} />
+            <Route path="evaluator/profile/edit" element={<EvaluatorProfilePage mode="edit" />} />
+            <Route path="evaluator/profile/delete" element={<EvaluatorProfilePage mode="delete" />} />
           </Route>
           <Route element={<RoleRoute allowedRoles={['student']} />}>
             <Route path="student" element={<StudentDashboard />} />

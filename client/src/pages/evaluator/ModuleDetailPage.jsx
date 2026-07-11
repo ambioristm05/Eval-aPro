@@ -271,7 +271,7 @@ function ModuleDetailPage() {
     <section className="management-page">
       <HierarchyBreadcrumb
         items={[
-          course ? { label: course.name, to: `/evaluator/courses/${getId(course) || courseId}` } : { label: 'Curso' },
+          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
           module ? { label: module.name } : { label: 'Módulo' },
         ]}
       />

@@ -85,12 +85,8 @@ function ClassArchivePage() {
     <section className="management-page">
       <HierarchyBreadcrumb
         items={[
-          module?.course
-            ? { label: module.course.name, to: `/evaluator/courses/${getId(module.course) || courseId}` }
-            : { label: 'Curso', to: `/evaluator/courses/${courseId}` },
-          module
-            ? { label: module.name, to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}` }
-            : { label: 'Módulo', to: `/evaluator/courses/${courseId}/modules/${moduleId}` },
+          { label: 'Módulos', to: `/evaluator/courses/${getId(module?.course) || courseId}` },
+          { label: 'Clases', to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}` },
           { label: 'Clases archivadas y eliminadas' },
         ]}
       />

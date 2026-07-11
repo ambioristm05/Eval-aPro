@@ -466,8 +466,9 @@ export const changeMyPassword = asyncHandler(async (req, res) => {
 export const deleteMyAccount = asyncHandler(async (req, res) => {
   const { password, reason } = req.validated.body;
 
-  if (req.user.role !== USER_ROLES.STUDENT) {
-    throw new AppError('Solo los estudiantes pueden eliminar su propia cuenta desde este endpoint', 403);
+  const allowedSelfDeleteRoles = [USER_ROLES.STUDENT, USER_ROLES.EVALUATOR];
+  if (!allowedSelfDeleteRoles.includes(req.user.role)) {
+    throw new AppError('Solo estudiantes y evaluadores pueden eliminar su propia cuenta desde este endpoint', 403);
   }
 
   const user = await getCurrentUserWithPassword(req.user._id);
@@ -479,7 +480,9 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
 
   user.status = USER_STATUSES.DELETED;
   user.deletedAt = new Date();
-  user.statusReason = reason || 'Cuenta eliminada por el estudiante';
+  const defaultReason =
+    req.user.role === USER_ROLES.EVALUATOR ? 'Cuenta eliminada por el evaluador titular' : 'Cuenta eliminada por el estudiante';
+  user.statusReason = reason || defaultReason;
   user.actionBy = user._id;
 
   await user.save();
@@ -490,7 +493,7 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
     entityId: user._id,
     before,
     after: userStatusAuditSnapshot(user),
-    metadata: { reason: reason || 'Cuenta eliminada por el estudiante' }
+    metadata: { reason: reason || defaultReason }
   });
 
   res.json({

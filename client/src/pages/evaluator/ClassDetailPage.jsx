@@ -394,13 +394,11 @@ function ClassDetailPage() {
     <section className="management-page">
       <HierarchyBreadcrumb
         items={[
-          course ? { label: course.name, to: `/evaluator/courses/${getId(course) || courseId}` } : { label: 'Curso' },
-          module
-            ? {
-                label: module.name,
-                to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
-              }
-            : { label: 'Módulo' },
+          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
+          {
+            label: 'Clases',
+            to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
+          },
           academicClass ? { label: academicClass.name } : { label: 'Clase' },
         ]}
       />
