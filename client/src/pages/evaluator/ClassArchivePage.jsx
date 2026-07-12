@@ -83,14 +83,6 @@ function ClassArchivePage() {
 
   return (
     <section className="management-page">
-      <HierarchyBreadcrumb
-        items={[
-          { label: 'Módulos', to: `/evaluator/courses/${getId(module?.course) || courseId}` },
-          { label: 'Clases', to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}` },
-          { label: 'Clases archivadas y eliminadas' },
-        ]}
-      />
-
       <div className="module-hero">
         <span className="module-hero-icon">
           <Archive size={28} aria-hidden="true" />
@@ -136,6 +128,14 @@ function ClassArchivePage() {
           </div>
         </article>
       </div>
+
+      <HierarchyBreadcrumb
+        items={[
+          { label: 'Módulos', to: `/evaluator/courses/${getId(module?.course) || courseId}` },
+          { label: 'Clases', to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}` },
+          { label: 'Clases archivadas y eliminadas' },
+        ]}
+      />
 
       <section className="dashboard-panel">
         <div className="panel-heading panel-heading-row">

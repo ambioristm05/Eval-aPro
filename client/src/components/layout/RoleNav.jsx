@@ -222,8 +222,10 @@ function RoleNav() {
     );
   };
 
+  const hasOpenSubmenu = Object.values(openSubmenus).some(Boolean);
+
   return (
-    <nav className="role-nav" aria-label="Navegación del rol">
+    <nav className={`role-nav${hasOpenSubmenu ? ' role-nav-submenu-active' : ''}`} aria-label="Navegación del rol">
       {primaryLinks.map((link) => renderNavItem(link))}
 
       {overflowLinks.map((link) => renderNavItem(link, true))}

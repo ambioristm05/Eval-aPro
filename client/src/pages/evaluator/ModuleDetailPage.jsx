@@ -269,13 +269,6 @@ function ModuleDetailPage() {
 
   return (
     <section className="management-page">
-      <HierarchyBreadcrumb
-        items={[
-          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
-          module ? { label: module.name } : { label: 'Módulo' },
-        ]}
-      />
-
       <div className="module-hero">
         <span className="module-hero-icon">
           <BookOpenCheck size={28} aria-hidden="true" />
@@ -326,6 +319,13 @@ function ModuleDetailPage() {
           </div>
         </article>
       </div>
+
+      <HierarchyBreadcrumb
+        items={[
+          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
+          module ? { label: module.name } : { label: 'Módulo' },
+        ]}
+      />
 
       <div className="management-grid">
         <section className="dashboard-panel">

@@ -284,7 +284,7 @@ function AdminCoursesPage() {
           </label>
         </div>
 
-        <div className="resource-list">
+        <div className="resource-list resource-list-inline">
           {isLoading ? (
             <div className="skeleton-list" aria-label="Cargando">
               {[0, 1, 2].map((item) => (

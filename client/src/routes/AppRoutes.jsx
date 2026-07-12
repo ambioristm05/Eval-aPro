@@ -4,11 +4,10 @@ import AdminDashboard from '../pages/admin/AdminDashboard.jsx';
 import AdminEvaluatorsPage from '../pages/admin/AdminEvaluatorsPage.jsx';
 import AdminStudentsPage from '../pages/admin/AdminStudentsPage.jsx';
 import AdminCoursesPage from '../pages/admin/AdminCoursesPage.jsx';
-import {
-  AdminInvitationsPage,
-  AdminSettingsPage,
-  AdminStatisticsPage,
-} from '../pages/admin/AdminModulePages.jsx';
+import { AdminInvitationsPage } from '../pages/admin/AdminModulePages.jsx';
+import AdminSettingsPage from '../pages/admin/AdminSettingsPage.jsx';
+import AdminStatisticsPage from '../pages/admin/AdminStatisticsPage.jsx';
+import EvaluatorStatisticsPage from '../pages/evaluator/EvaluatorStatisticsPage.jsx';
 import ClassDetailPage from '../pages/evaluator/ClassDetailPage.jsx';
 import ClassArchivePage from '../pages/evaluator/ClassArchivePage.jsx';
 import CourseDetailPage from '../pages/evaluator/CourseDetailPage.jsx';
@@ -93,6 +92,7 @@ function AppRoutes() {
             <Route path="evaluator/instruments/checklist-builder/:id" element={<ChecklistBuilderPage />} />
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
+            <Route path="evaluator/statistics" element={<EvaluatorStatisticsPage />} />
             <Route path="evaluator/profile" element={<EvaluatorProfilePage />} />
             <Route path="evaluator/profile/edit" element={<EvaluatorProfilePage mode="edit" />} />
             <Route path="evaluator/profile/delete" element={<EvaluatorProfilePage mode="delete" />} />

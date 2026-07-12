@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -139,14 +140,14 @@ function EvaluatorDashboard() {
           </div>
         </div>
         <div className="report-preview">
-          <Printer size={28} aria-hidden="true" />
+          <BarChart3 size={28} aria-hidden="true" />
           <p>
             {totals.publishedEvaluations
-              ? 'Ya puedes generar reportes imprimibles con los resultados publicados.'
-              : 'Publica una evaluación para habilitar reportes con datos reales.'}
+              ? 'Consulta el rendimiento de tus grupos, tareas e instrumentos con datos reales.'
+              : 'Publica evaluaciones para ver estadísticas de rendimiento.'}
           </p>
-          <Link className="button button-secondary" to="/evaluator/reports">
-            Abrir reportes
+          <Link className="button button-secondary" to="/evaluator/statistics">
+            Ver estadísticas
           </Link>
         </div>
       </aside>

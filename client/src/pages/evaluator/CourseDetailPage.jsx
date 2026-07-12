@@ -246,8 +246,6 @@ function CourseDetailPage() {
 
   return (
     <section className="management-page">
-      <HierarchyBreadcrumb items={[course ? { label: course.name } : { label: 'Curso' }]} />
-
       <div className="module-hero">
         <span className="module-hero-icon">
           <BookOpenCheck size={28} aria-hidden="true" />
@@ -298,6 +296,8 @@ function CourseDetailPage() {
           </div>
         </article>
       </div>
+
+      <HierarchyBreadcrumb items={[course ? { label: course.name } : { label: 'Curso' }]} />
 
       <div className="management-grid">
         <section className="dashboard-panel">

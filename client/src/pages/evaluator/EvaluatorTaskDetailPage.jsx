@@ -336,18 +336,6 @@ function EvaluatorTaskDetailPage() {
 
   return (
     <section className="management-page">
-      <HierarchyBreadcrumb
-        items={[
-          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
-          {
-            label: 'Clases',
-            to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
-          },
-          { label: 'Tareas', to: classTasksPath },
-          task ? { label: task.title } : { label: 'Tarea' },
-        ]}
-      />
-
       <div className="module-hero">
         <span className="module-hero-icon">
           <ClipboardList size={28} aria-hidden="true" />
@@ -406,6 +394,18 @@ function EvaluatorTaskDetailPage() {
           </div>
         </article>
       </div>
+
+      <HierarchyBreadcrumb
+        items={[
+          { label: 'Módulos', to: `/evaluator/courses/${getId(course) || courseId}` },
+          {
+            label: 'Clases',
+            to: `/evaluator/courses/${courseId}/modules/${getId(module) || moduleId}`,
+          },
+          { label: 'Tareas', to: classTasksPath },
+          task ? { label: task.title } : { label: 'Tarea' },
+        ]}
+      />
 
       <div className="management-grid">
         <section className="dashboard-panel">

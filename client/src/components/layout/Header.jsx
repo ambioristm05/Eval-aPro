@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Menu, UserPlus, X } from 'lucide-react';
+import { LogIn, LogOut, Menu, UserRound, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
@@ -71,7 +71,10 @@ function Header() {
         >
           {user ? (
             <>
-              <span className="user-pill">{user.name}</span>
+              <Link className="user-pill" to={`/${user.role}/profile`}>
+                <UserRound size={16} aria-hidden="true" />
+                {user.name}
+              </Link>
               <button
                 className="nav-button"
                 type="button"

@@ -1,6 +1,5 @@
 import { Copy, MailPlus } from 'lucide-react';
 import { useState } from 'react';
-import ModulePage from '../../components/dashboard/ModulePage.jsx';
 import { useTimedState } from '../../hooks/useTimedState.js';
 import { createEvaluatorInvitation } from '../../services/authService.js';
 import { getErrorMessage } from '../../utils/errors.js';
@@ -148,66 +147,3 @@ export function AdminInvitationsPage() {
   );
 }
 
-export function AdminStatisticsPage() {
-  return (
-    <ModulePage
-      eyebrow="Administración"
-      title="Estadísticas generales"
-      description="Resumen global para monitorear usuarios, evaluaciones, instrumentos y actividad del sistema."
-      icon={moduleIcons.BarChart3}
-      status="in-progress"
-      statusDescription="El panel estadístico está definido como alcance institucional y se integrará con métricas reales del sistema."
-      primaryItems={[
-        {
-          title: 'Usuarios por rol',
-          description: 'Distribución entre administradores, evaluadores y estudiantes.',
-        },
-        {
-          title: 'Actividad académica',
-          description: 'Cantidad de tareas, instrumentos y evaluaciones publicadas.',
-        },
-        {
-          title: 'Estados de cuenta',
-          description: 'Cuentas activas, suspendidas, eliminadas y pendientes.',
-        },
-      ]}
-      statusItems={[
-        { label: 'Vista base', value: 'Definida' },
-        { label: 'Alcance', value: 'Institucional' },
-        { label: 'Datos', value: 'En integración' },
-      ]}
-    />
-  );
-}
-
-export function AdminSettingsPage() {
-  return (
-    <ModulePage
-      eyebrow="Administración"
-      title="Configuración"
-      description="Ajustes generales de seguridad, permisos y comportamiento del sistema."
-      icon={moduleIcons.Settings}
-      status="in-progress"
-      statusDescription="Los ajustes centrales están planteados como módulo administrativo y todavía no guardan cambios persistentes desde esta pantalla."
-      primaryItems={[
-        {
-          title: 'Políticas de acceso',
-          description: 'Definir reglas para invitaciones y estados bloqueados.',
-        },
-        {
-          title: 'Preferencias de reportes',
-          description: 'Configurar opciones de impresión y exportación.',
-        },
-        {
-          title: 'Parámetros académicos',
-          description: 'Base para criterios comunes del centro o institución.',
-        },
-      ]}
-      statusItems={[
-        { label: 'Ruta privada', value: 'Disponible' },
-        { label: 'Controles', value: 'Seguridad' },
-        { label: 'Persistencia', value: 'En integración' },
-      ]}
-    />
-  );
-}
