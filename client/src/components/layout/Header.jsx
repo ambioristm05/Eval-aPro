@@ -1,12 +1,14 @@
-import { LogIn, LogOut, Menu, UserRound, UserPlus, X } from 'lucide-react';
+import { LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useSidebarStore } from '../../stores/sidebarStore.js';
 import MessageNotificationCenter from './MessageNotificationCenter.jsx';
 
 function Header() {
   const user = useAuthStore((state) => state.user);
+  const { collapsed, toggle } = useSidebarStore();
   const clearSession = useAuthStore((state) => state.clearSession);
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,10 +44,24 @@ function Header() {
 
   return (
     <header className="site-header">
-      <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro" onClick={handleBrandClick}>
-        <img className="brand-mark" src="/icono-plano.svg" width="40" height="40" alt="" aria-hidden="true" />
-        <span>EvalúaPro</span>
-      </Link>
+      <div className="brand-row">
+        <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro" onClick={handleBrandClick}>
+          <img className="brand-mark" src="/icono-plano.svg" width="40" height="40" alt="" aria-hidden="true" />
+          <span className="brand-name">EvalúaPro</span>
+        </Link>
+        {user ? (
+          <button
+            type="button"
+            className="sidebar-toggle"
+            aria-label={collapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
+            onClick={toggle}
+          >
+            {collapsed
+              ? <PanelLeftOpen size={18} aria-hidden="true" />
+              : <PanelLeftClose size={18} aria-hidden="true" />}
+          </button>
+        ) : null}
+      </div>
 
       {hasNavigation ? (
         <div className="header-actions">
@@ -73,7 +89,7 @@ function Header() {
             <>
               <Link className="user-pill" to={`/${user.role}/profile`}>
                 <UserRound size={16} aria-hidden="true" />
-                {user.name}
+                <span>{user.name}</span>
               </Link>
               <button
                 className="nav-button"
@@ -82,7 +98,7 @@ function Header() {
                 disabled={isLoggingOut}
               >
                 {isLoggingOut ? <span className="button-spinner-ring" aria-hidden="true" /> : <LogOut size={18} aria-hidden="true" />}
-                {isLoggingOut ? 'Saliendo...' : 'Salir'}
+                <span>{isLoggingOut ? 'Saliendo...' : 'Salir'}</span>
               </button>
             </>
           ) : (

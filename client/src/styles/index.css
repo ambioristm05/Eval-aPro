@@ -3058,8 +3058,6 @@ a.action-item:focus-visible {
 
   .app-shell-authenticated .brand {
     width: 100%;
-    padding-bottom: 0.9rem;
-    border-bottom: 1px solid var(--color-border-soft);
   }
 
   .app-shell-authenticated .header-actions {
@@ -3905,4 +3903,163 @@ a.action-item:focus-visible {
   text-align: center;
   color: var(--color-text-muted);
   font-size: 0.88rem;
+}
+
+/* ── Sidebar collapsed state (desktop only) ─────────────── */
+
+.sidebar-toggle {
+  display: none;
+}
+
+@media (min-width: 1025px) {
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+
+  /* Quitar el borde que ya tenía .brand por sí solo en desktop */
+  .app-shell-authenticated .brand {
+    padding-bottom: 0;
+    border-bottom: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--control-radius);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+  }
+
+  .sidebar-toggle:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+  }
+
+  .app-shell-authenticated.sidebar-collapsed {
+    --sidebar-width: 4.5rem;
+  }
+
+  /* Quitar padding lateral del sidebar para centrado uniforme */
+  .app-shell-authenticated.sidebar-collapsed .site-header {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Ocultar textos */
+  .app-shell-authenticated.sidebar-collapsed .brand-name,
+  .app-shell-authenticated.sidebar-collapsed .role-nav a span,
+  .app-shell-authenticated.sidebar-collapsed .role-nav-toggle span,
+  .app-shell-authenticated.sidebar-collapsed .nav-links a span,
+  .app-shell-authenticated.sidebar-collapsed .nav-button span,
+  .app-shell-authenticated.sidebar-collapsed .notification-button span {
+    display: none;
+  }
+
+  /* Botón toggle: absoluto y oculto; aparece al hacer hover sobre el sidebar */
+  .app-shell-authenticated.sidebar-collapsed .sidebar-toggle {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.6rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .site-header:hover .sidebar-toggle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Brand centrado */
+  .app-shell-authenticated.sidebar-collapsed .brand-row {
+    position: relative;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .brand {
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: center;
+  }
+
+  /* Nav links: centrar iconos */
+  .app-shell-authenticated.sidebar-collapsed .role-nav {
+    padding: 0;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-item {
+    width: 100%;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav a {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-parent-row a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-toggle {
+    display: none;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-submenu {
+    display: none !important;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-link-workflow {
+    padding-left: 0;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .role-nav-link-workflow::before,
+  .app-shell-authenticated.sidebar-collapsed .role-nav-link-workflow::after {
+    content: none;
+  }
+
+  /* Nav links del header (user-pill, logout): centrar iconos */
+  .app-shell-authenticated.sidebar-collapsed .nav-links {
+    padding: 0;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .nav-links a,
+  .app-shell-authenticated.sidebar-collapsed .nav-button {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+  }
+
+  /* Notificaciones: centrar icono */
+  .app-shell-authenticated.sidebar-collapsed .notification-center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .notification-button {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+  }
 }
