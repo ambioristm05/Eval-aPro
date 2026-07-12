@@ -24,6 +24,7 @@ import ChecklistBuilderPage from '../pages/evaluator/ChecklistBuilderPage.jsx';
 import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorProfilePage from '../pages/evaluator/EvaluatorProfilePage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
+import LegalPage from '../pages/public/LegalPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
@@ -45,6 +46,7 @@ function AppRoutes() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<PublicHomePage />} />
+        <Route path="legal" element={<LegalPage />} />
         <Route element={<GuestRoute />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register/student" element={<StudentRegisterPage />} />

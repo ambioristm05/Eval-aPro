@@ -70,6 +70,9 @@ function PublicHomePage() {
           );
         })}
       </div>
+      <p className="home-legal-link">
+        <Link to="/legal">Políticas de uso y privacidad</Link>
+      </p>
     </section>
   );
 }
