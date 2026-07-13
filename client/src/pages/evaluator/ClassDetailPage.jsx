@@ -397,7 +397,15 @@ function ClassDetailPage() {
           <ClipboardList size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Clase</p>
+          <div className="module-hero-eyebrow-row">
+            <p className="eyebrow">Clase</p>
+            {course?.name ? (
+              <div className="course-context-banner">
+                <span className="course-context-label">Curso</span>
+                <span className="course-context-name">{course.name}</span>
+              </div>
+            ) : null}
+          </div>
           <h1>{academicClass?.name ?? 'Detalle de clase'}</h1>
           <p className="dashboard-description">
             {academicClass?.description || 'Crea y gestiona las tareas evaluables de esta clase.'}

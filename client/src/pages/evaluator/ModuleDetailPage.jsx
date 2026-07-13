@@ -274,7 +274,15 @@ function ModuleDetailPage() {
           <BookOpenCheck size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Módulo</p>
+          <div className="module-hero-eyebrow-row">
+            <p className="eyebrow">Módulo</p>
+            {course?.name ? (
+              <div className="course-context-banner">
+                <span className="course-context-label">Curso</span>
+                <span className="course-context-name">{course.name}</span>
+              </div>
+            ) : null}
+          </div>
           <h1>{module?.name ?? 'Detalle de módulo'}</h1>
           <p className="dashboard-description">
             {module?.description || 'Gestiona las clases que agrupan las tareas de este módulo.'}

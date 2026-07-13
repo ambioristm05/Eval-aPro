@@ -3934,8 +3934,8 @@ a.action-item:focus-visible {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2rem;
-    height: 2rem;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border: 0;
     border-radius: var(--control-radius);
@@ -3969,17 +3969,28 @@ a.action-item:focus-visible {
     display: none;
   }
 
-  /* Botón toggle: absoluto y oculto; aparece al hacer hover sobre el sidebar */
+  /* Botón toggle: superpuesto al logo, aparece al hacer hover en brand-row */
   .app-shell-authenticated.sidebar-collapsed .sidebar-toggle {
     position: absolute;
-    top: 0.9rem;
-    right: 0.6rem;
+    top: calc(50% - 6px);
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease;
   }
 
-  .app-shell-authenticated.sidebar-collapsed .site-header:hover .sidebar-toggle {
+  .app-shell-authenticated.sidebar-collapsed .brand-mark {
+    transition: opacity 0.15s ease;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .brand-row:hover .brand-mark {
+    opacity: 0;
+  }
+
+  .app-shell-authenticated.sidebar-collapsed .brand-row:hover .sidebar-toggle {
     opacity: 1;
     pointer-events: auto;
   }
@@ -4062,4 +4073,98 @@ a.action-item:focus-visible {
     padding-right: 0;
     width: 100%;
   }
+}
+
+/* ── Sidebar toggle tooltip ─────────────────────────────── */
+
+.sidebar-toggle[data-tooltip] {
+  position: relative;
+}
+
+/* Burbuja del tooltip */
+.sidebar-toggle[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 0.6rem);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-strong);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(23, 32, 42, 0.14), 0 0 0 1px rgba(23, 32, 42, 0.06);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 50;
+}
+
+/* Pestañita apuntando a la izquierda */
+.sidebar-toggle[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: calc(100% + 0.6rem - 7px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 7px solid var(--color-surface);
+  filter: drop-shadow(-2px 0 2px rgba(23, 32, 42, 0.12));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 51;
+}
+
+.sidebar-toggle[data-tooltip]:hover::after,
+.sidebar-toggle[data-tooltip]:hover::before {
+  opacity: 1;
+}
+
+/* ── Course context banner ──────────────────────────────── */
+
+.course-context-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.course-context-label {
+  color: var(--color-primary-strong);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+.course-context-label::after {
+  content: ':';
+}
+
+.course-context-name {
+  color: var(--color-primary-strong);
+}
+
+.module-hero-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.module-hero-eyebrow-row .eyebrow {
+  margin: 0;
+}
+
+.module-hero-eyebrow-row .course-context-banner {
+  padding: 0.15rem 0.6rem;
 }

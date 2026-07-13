@@ -341,7 +341,15 @@ function EvaluatorTaskDetailPage() {
           <ClipboardList size={28} aria-hidden="true" />
         </span>
         <div>
-          <p className="eyebrow">Tarea</p>
+          <div className="module-hero-eyebrow-row">
+            <p className="eyebrow">Tarea</p>
+            {course?.name ? (
+              <div className="course-context-banner">
+                <span className="course-context-label">Curso</span>
+                <span className="course-context-name">{course.name}</span>
+              </div>
+            ) : null}
+          </div>
           <h1>{task?.title ?? 'Detalle de tarea'}</h1>
           <p className="dashboard-description">
             {task?.description || 'Revisa la asignación, instrumento, fechas y ponderación de esta tarea.'}

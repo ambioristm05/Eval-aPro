@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { getDashboardPath } from '../../utils/auth.js';
 import { useSidebarStore } from '../../stores/sidebarStore.js';
 import MessageNotificationCenter from './MessageNotificationCenter.jsx';
 
@@ -35,11 +36,11 @@ function Header() {
     }
   };
 
-  const handleBrandClick = async (event) => {
+  const handleBrandClick = (event) => {
     if (!user) return;
 
     event.preventDefault();
-    await handleLogout({ redirectHome: true });
+    navigate(getDashboardPath(user.role));
   };
 
   return (
@@ -54,6 +55,7 @@ function Header() {
             type="button"
             className="sidebar-toggle"
             aria-label={collapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
+            data-tooltip={collapsed ? 'Expandir Menú' : 'Contraer Menú'}
             onClick={toggle}
           >
             {collapsed
