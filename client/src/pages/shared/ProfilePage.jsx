@@ -1,7 +1,6 @@
 import { ArrowLeft, KeyRound, Pencil, Save, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import DirectMessagesPanel from '../../components/common/DirectMessagesPanel.jsx';
+import { Link } from 'react-router-dom';
 import {
   changeMyPassword,
   deleteMyAccount,
@@ -32,7 +31,6 @@ function ProfilePage({ role, mode = 'view' }) {
   const storeUser = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
-  const [searchParams] = useSearchParams();
   const [user, setLocalUser] = useState(storeUser);
   const [profile, setProfile] = useState({
     name: storeUser?.name ?? '',
@@ -59,7 +57,6 @@ function ProfilePage({ role, mode = 'view' }) {
   const profilePath = `/${role}/profile`;
   const editPath = `/${role}/profile/edit`;
   const deletePath = `/${role}/profile/delete`;
-  const initialContactId = searchParams.get('contact') ?? '';
 
   useEffect(() => {
     let isMounted = true;
@@ -226,9 +223,6 @@ function ProfilePage({ role, mode = 'view' }) {
         </aside>
       </div>
 
-      {(role === 'student' || role === 'admin') ? (
-        <DirectMessagesPanel role={role} initialContactId={initialContactId} />
-      ) : null}
     </>
   );
 

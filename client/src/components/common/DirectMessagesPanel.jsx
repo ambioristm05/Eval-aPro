@@ -1,5 +1,5 @@
-import { MessageSquareText, Send } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { MessageSquareText, Send, Smile } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTimedState } from '../../hooks/useTimedState.js';
 import { createDirectMessage, getMessageThread, listMessageContacts } from '../../services/messageService.js';
 import { getErrorMessage } from '../../utils/errors.js';
@@ -32,11 +32,19 @@ function getPanelDescription(role) {
   return 'Mensajes directos entre perfiles relacionados.';
 }
 
+const EMOJI_LIST = [
+  '😊','😂','❤️','👍','🙏','😍','🎉','😢','😭','😅',
+  '🔥','✅','👏','💪','🤔','😎','🥳','😁','💯','🫂',
+  '📚','✏️','📝','🎓','⭐','🏆','💡','📌','🗓️','👀',
+];
+
 function DirectMessagesPanel({ role, initialContactId = '' }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [thread, setThread] = useState([]);
   const [draft, setDraft] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const textareaRef = useRef(null);
   const [error, setError] = useTimedState();
   const [message, setMessage] = useTimedState();
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
@@ -135,6 +143,21 @@ function DirectMessagesPanel({ role, initialContactId = '' }) {
   }, [refreshContacts, selectedContactId, setError]);
 
   const selectedContact = contacts.find((contact) => contact.user.id === selectedContactId) ?? null;
+
+  const insertEmoji = (emoji) => {
+    const el = textareaRef.current;
+    if (!el) { setDraft((d) => d + emoji); setEmojiOpen(false); return; }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    setEmojiOpen(false);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -247,6 +270,7 @@ function DirectMessagesPanel({ role, initialContactId = '' }) {
               <label>
                 Nuevo mensaje
                 <textarea
+                  ref={textareaRef}
                   value={draft}
                   rows="3"
                   placeholder="Escribe un mensaje breve y directo"
@@ -255,6 +279,32 @@ function DirectMessagesPanel({ role, initialContactId = '' }) {
                 />
               </label>
               <div className="form-actions">
+                <div className="emoji-picker-wrapper">
+                  <button
+                    type="button"
+                    className="button button-ghost emoji-trigger"
+                    aria-label="Insertar emoji"
+                    disabled={!selectedContactId || isSending}
+                    onClick={() => setEmojiOpen((o) => !o)}
+                  >
+                    <Smile size={18} aria-hidden="true" />
+                  </button>
+                  {emojiOpen ? (
+                    <div className="emoji-picker" role="listbox" aria-label="Emojis">
+                      {EMOJI_LIST.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="emoji-option"
+                          onClick={() => insertEmoji(emoji)}
+                          aria-label={emoji}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <button className="button button-primary" type="submit" disabled={!selectedContactId || isSending}>
                   {isSending ? <span className="button-spinner-ring" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
                   {isSending ? 'Enviando...' : 'Enviar mensaje'}

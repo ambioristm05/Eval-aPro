@@ -4168,3 +4168,47 @@ a.action-item:focus-visible {
 .module-hero-eyebrow-row .course-context-banner {
   padding: 0.15rem 0.6rem;
 }
+
+/* ── Emoji picker ───────────────────────────────────────── */
+
+.emoji-picker-wrapper {
+  position: relative;
+}
+
+.emoji-trigger {
+  padding: 0.4rem 0.6rem;
+}
+
+.emoji-picker {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.15rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 30px rgba(23, 32, 42, 0.16), 0 0 0 1px rgba(23, 32, 42, 0.06);
+  z-index: 40;
+  width: 22rem;
+}
+
+.emoji-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  line-height: 1;
+}
+
+.emoji-option:hover {
+  background: var(--color-primary-soft);
+}
