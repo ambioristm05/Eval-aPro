@@ -1,5 +1,10 @@
 import api from './api.js';
 
+export async function getMyGroup() {
+  const { data } = await api.get('/groups/my');
+  return data.group;
+}
+
 export async function getStudentTasks(params = {}) {
   const { data } = await api.get('/tasks', { params: { limit: 100, ...params } });
   return data;

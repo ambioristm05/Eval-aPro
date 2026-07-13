@@ -155,6 +155,11 @@ export const createEvaluation = asyncHandler(async (req, res) => {
   res.status(201).json({ evaluation: populatedEvaluation });
 });
 
+export const getEvaluationCount = asyncHandler(async (req, res) => {
+  const count = await Evaluation.countDocuments(evaluationScope(req));
+  res.json({ count });
+});
+
 export const getEvaluations = asyncHandler(async (req, res) => {
   const { studentId, taskId, status, page, limit } = req.validated.query;
   const filter = {

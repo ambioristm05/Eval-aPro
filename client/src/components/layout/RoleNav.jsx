@@ -1,6 +1,7 @@
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useEvaluationNotificationStore } from '../../stores/evaluationNotificationStore.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useCourseNavStore } from '../../stores/courseNavStore.js';
 import { roleNavigation } from '../../utils/navigation.jsx';
@@ -70,6 +71,14 @@ function RoleNav() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState({});
   const role = user?.role;
+  const evalNewCount = useEvaluationNotificationStore((s) => s.newCount);
+  const markEvalSeen = useEvaluationNotificationStore((s) => s.markAsSeen);
+
+  useEffect(() => {
+    if (role === 'student' && location.pathname === '/student/evaluations') {
+      markEvalSeen(user?._id ?? user?.id, evalNewCount);
+    }
+  }, [location.pathname, role, markEvalSeen, user, evalNewCount]);
   const links = role ? (roleNavigation[role] ?? []) : [];
   const primaryLinks = links.slice(0, 4);
   const overflowLinks = links.slice(4);
@@ -156,11 +165,17 @@ function RoleNav() {
   const renderNavLink = (link, options = {}) => {
     const Icon = link.icon;
     const { className = navLinkClassName(link), role: linkRole } = options;
+    const showEvalBadge = role === 'student' && link.to === '/student/evaluations' && evalNewCount > 0;
 
     return (
       <NavLink className={className} end={link.to === `/${user.role}`} to={link.to} key={link.to} role={linkRole}>
         <Icon size={17} aria-hidden="true" />
         <span>{link.label}</span>
+        {showEvalBadge ? (
+          <span className="nav-badge" aria-label={`${evalNewCount} evaluación${evalNewCount !== 1 ? 'es' : ''} nueva${evalNewCount !== 1 ? 's' : ''}`}>
+            {evalNewCount > 9 ? '9+' : evalNewCount}
+          </span>
+        ) : null}
       </NavLink>
     );
   };
@@ -226,6 +241,7 @@ function RoleNav() {
 
   return (
     <nav className={`role-nav${hasOpenSubmenu ? ' role-nav-submenu-active' : ''}`} aria-label="Navegación del rol">
+      <div className="role-nav-scroll">
       {primaryLinks.map((link) => renderNavItem(link))}
 
       {overflowLinks.map((link) => renderNavItem(link, true))}
@@ -258,6 +274,7 @@ function RoleNav() {
           ) : null}
         </div>
       ) : null}
+      </div>
     </nav>
   );
 }

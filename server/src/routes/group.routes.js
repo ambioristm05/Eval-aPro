@@ -6,6 +6,7 @@ import {
   deleteGroup,
   getGroupById,
   getGroups,
+  getMyGroup,
   removeStudentFromGroup,
   updateGroup
 } from '../controllers/group.controller.js';
@@ -25,6 +26,8 @@ import {
 const router = Router();
 
 router.use(protect, checkUserStatus);
+
+router.get('/my', authorize(USER_ROLES.STUDENT), getMyGroup);
 
 router
   .route('/')

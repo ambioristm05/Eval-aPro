@@ -62,6 +62,25 @@ export const createEvaluatorInvitation = asyncHandler(async (req, res) => {
   });
 });
 
+export const listInvitations = asyncHandler(async (req, res) => {
+  const invitations = await Invitation.find({ createdBy: req.user._id })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const now = new Date();
+  const data = invitations.map((inv) => ({
+    id: inv._id,
+    email: inv.email,
+    role: inv.role,
+    status: inv.used ? 'used' : inv.expiresAt <= now ? 'expired' : 'pending',
+    usedAt: inv.usedAt ?? null,
+    expiresAt: inv.expiresAt,
+    createdAt: inv.createdAt,
+  }));
+
+  res.json({ invitations: data });
+});
+
 export const validateInvitation = asyncHandler(async (req, res) => {
   const invitation = await findValidInvitation(req.validated.params.token);
 

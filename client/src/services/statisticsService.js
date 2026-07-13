@@ -5,6 +5,11 @@ export async function getOverviewStatistics() {
   return data.statistics;
 }
 
+export async function getStatsByEvaluator() {
+  const { data } = await api.get('/statistics/by-evaluator');
+  return data.statistics;
+}
+
 export async function getGroupStatistics(groupId) {
   const { data } = await api.get(`/statistics/groups/${groupId}`);
   return data.statistics;

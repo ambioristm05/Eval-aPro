@@ -23,6 +23,18 @@ async function findGroupForUser(req, id) {
   return group;
 }
 
+export const getMyGroup = asyncHandler(async (req, res) => {
+  const group = await Group.findOne({ students: req.user._id })
+    .populate('evaluator', 'name email')
+    .populate('students', 'name email');
+
+  if (!group) {
+    throw new AppError('No perteneces a ningún grupo todavía', 404);
+  }
+
+  res.json({ group });
+});
+
 export const createGroup = asyncHandler(async (req, res) => {
   const { name, description } = req.validated.body;
 

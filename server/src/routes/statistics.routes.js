@@ -4,6 +4,7 @@ import {
   getGroupStatistics,
   getInstrumentStatistics,
   getOverviewStatistics,
+  getStatsByEvaluator,
   getTaskStatistics
 } from '../controllers/statistics.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
@@ -22,6 +23,7 @@ const router = Router();
 router.use(protect, checkUserStatus, authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR));
 
 router.get('/overview', validateRequest(overviewStatisticsSchema), getOverviewStatistics);
+router.get('/by-evaluator', authorize(USER_ROLES.ADMIN), getStatsByEvaluator);
 router.get('/groups/:groupId', validateRequest(groupStatisticsSchema), getGroupStatistics);
 router.get('/tasks/:taskId', validateRequest(taskStatisticsSchema), getTaskStatistics);
 router.get('/instruments/:instrumentId', validateRequest(instrumentStatisticsSchema), getInstrumentStatistics);

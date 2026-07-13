@@ -164,6 +164,39 @@ export const getOverviewStatistics = asyncHandler(async (req, res) => {
   });
 });
 
+export const getStatsByEvaluator = asyncHandler(async (req, res) => {
+  const evaluators = await User.find({ role: USER_ROLES.EVALUATOR }).select('name email status').lean();
+
+  const rows = await Promise.all(
+    evaluators.map(async (ev) => {
+      const groups = await Group.find({ evaluator: ev._id }).select('name students').lean();
+      const studentIds = [...new Set(groups.flatMap((g) => g.students.map((s) => s.toString())))];
+
+      const [evalSummary] = await Evaluation.aggregate([
+        { $match: { evaluator: ev._id, status: EVALUATION_STATUSES.PUBLISHED } },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+            average: { $avg: '$percentage' }
+          }
+        }
+      ]);
+
+      return {
+        evaluator: { id: ev._id, name: ev.name, email: ev.email, status: ev.status },
+        groups: groups.map((g) => ({ id: g._id, name: g.name, studentCount: g.students.length })),
+        groupCount: groups.length,
+        studentCount: studentIds.length,
+        evaluationCount: evalSummary?.count ?? 0,
+        avgScore: Math.round((evalSummary?.average ?? 0) * 100) / 100
+      };
+    })
+  );
+
+  res.json({ statistics: rows });
+});
+
 export const getGroupStatistics = asyncHandler(async (req, res) => {
   const group = await ensureGroupForStats(req, req.validated.params.groupId);
   const studentIds = group.students.map((student) => student._id);

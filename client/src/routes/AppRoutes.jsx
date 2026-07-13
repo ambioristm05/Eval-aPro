@@ -25,6 +25,8 @@ import RubricBuilderPage from '../pages/evaluator/RubricBuilderPage.jsx';
 import EvaluatorProfilePage from '../pages/evaluator/EvaluatorProfilePage.jsx';
 import EvaluatorStudentsPage from '../pages/evaluator/EvaluatorStudentsPage.jsx';
 import LegalPage from '../pages/public/LegalPage.jsx';
+import NotFoundPage from '../pages/public/NotFoundPage.jsx';
+import ResetPasswordPage from '../pages/public/ResetPasswordPage.jsx';
 import LoginPage from '../pages/public/LoginPage.jsx';
 import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
@@ -32,6 +34,7 @@ import StudentRegisterPage from '../pages/public/StudentRegisterPage.jsx';
 import StudentDashboard from '../pages/student/StudentDashboard.jsx';
 import MessagesPage from '../pages/shared/MessagesPage.jsx';
 import ProfilePage from '../pages/shared/ProfilePage.jsx';
+import StudentGroupPage from '../pages/student/StudentGroupPage.jsx';
 import { StudentTasksPage } from '../pages/student/StudentModulePages.jsx';
 import {
   StudentEvaluationsRealPage,
@@ -48,6 +51,7 @@ function AppRoutes() {
       <Route element={<AppLayout />}>
         <Route index element={<PublicHomePage />} />
         <Route path="legal" element={<LegalPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route element={<GuestRoute />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register/student" element={<StudentRegisterPage />} />
@@ -104,6 +108,7 @@ function AppRoutes() {
           </Route>
           <Route element={<RoleRoute allowedRoles={['student']} />}>
             <Route path="student" element={<StudentDashboard />} />
+            <Route path="student/group" element={<StudentGroupPage />} />
             <Route path="student/tasks" element={<StudentTasksPage />} />
             <Route path="student/evaluations" element={<StudentEvaluationsRealPage />} />
             <Route path="student/results" element={<StudentResultsRealPage />} />
@@ -116,7 +121,7 @@ function AppRoutes() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

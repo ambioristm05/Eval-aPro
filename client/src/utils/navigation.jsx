@@ -19,6 +19,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  UsersRound,
 } from 'lucide-react';
 
 export const roleNavigation = {
@@ -55,6 +56,7 @@ export const roleNavigation = {
   ],
   student: [
     { label: 'Panel', to: '/student', icon: LayoutDashboard },
+    { label: 'Mi grupo', to: '/student/group', icon: UsersRound },
     { label: 'Tareas', to: '/student/tasks', icon: BookOpenCheck },
     { label: 'Evaluaciones', to: '/student/evaluations', icon: Target },
     { label: 'Resultados', to: '/student/results', icon: Award },

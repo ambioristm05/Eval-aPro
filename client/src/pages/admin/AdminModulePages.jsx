@@ -1,9 +1,16 @@
-import { Copy, MailPlus } from 'lucide-react';
-import { useState } from 'react';
+import { Clock, Copy, MailPlus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTimedState } from '../../hooks/useTimedState.js';
-import { createEvaluatorInvitation } from '../../services/authService.js';
+import { createEvaluatorInvitation, getInvitations } from '../../services/authService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { moduleIcons } from '../../utils/navigation.jsx';
+
+const STATUS_LABEL = { pending: 'Pendiente', used: 'Usada', expired: 'Expirada' };
+
+function formatDate(value) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+}
 
 export function AdminInvitationsPage() {
   const [formData, setFormData] = useState({ email: '', expiresInDays: 7 });
@@ -11,6 +18,21 @@ export function AdminInvitationsPage() {
   const [message, setMessage] = useTimedState();
   const [error, setError] = useTimedState();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const data = await getInvitations();
+      setHistory(data);
+    } catch {
+      // historial no crítico, falla silenciosa
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -31,6 +53,8 @@ export function AdminInvitationsPage() {
       });
       setInvitation(result);
       setMessage('Invitación creada correctamente.');
+      setFormData({ email: '', expiresInDays: 7 });
+      loadHistory();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -40,7 +64,6 @@ export function AdminInvitationsPage() {
 
   const handleCopy = async () => {
     if (!invitation?.registrationUrl) return;
-
     try {
       await navigator.clipboard.writeText(invitation.registrationUrl);
       setMessage('Enlace copiado al portapapeles.');
@@ -143,7 +166,52 @@ export function AdminInvitationsPage() {
           </div>
         </aside>
       </div>
+
+      {/* Historial */}
+      <section className="dashboard-panel" style={{ marginTop: '1.5rem' }}>
+        <div className="panel-heading">
+          <h2>
+            <Clock size={18} aria-hidden="true" style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
+            Historial de invitaciones
+          </h2>
+          <p>Todas las invitaciones generadas con su estado actual.</p>
+        </div>
+
+        {isLoadingHistory ? (
+          <p className="empty-state-text">Cargando historial…</p>
+        ) : history.length === 0 ? (
+          <p className="empty-state-text">No hay invitaciones generadas todavía.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Correo</th>
+                  <th>Estado</th>
+                  <th>Creada</th>
+                  <th>Expira</th>
+                  <th>Usada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((inv) => (
+                  <tr key={inv.id}>
+                    <td>{inv.email}</td>
+                    <td>
+                      <span className={`invitation-status invitation-status-${inv.status}`}>
+                        {STATUS_LABEL[inv.status]}
+                      </span>
+                    </td>
+                    <td>{formatDate(inv.createdAt)}</td>
+                    <td>{formatDate(inv.expiresAt)}</td>
+                    <td>{formatDate(inv.usedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </section>
   );
 }
-

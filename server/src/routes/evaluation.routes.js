@@ -4,6 +4,7 @@ import {
   createEvaluation,
   deleteEvaluation,
   getEvaluationById,
+  getEvaluationCount,
   getEvaluations,
   getEvaluationsByStudent,
   publishEvaluation,
@@ -24,6 +25,12 @@ import {
 const router = Router();
 
 router.use(protect, checkUserStatus);
+
+router.get(
+  '/count',
+  authorize(USER_ROLES.STUDENT),
+  getEvaluationCount
+);
 
 router
   .route('/')

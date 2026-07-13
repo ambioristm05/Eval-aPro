@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { useEvaluationNotifications } from '../../hooks/useEvaluationNotifications.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useSidebarStore } from '../../stores/sidebarStore.js';
 import Header from './Header.jsx';
@@ -7,6 +8,11 @@ import RoleNav from './RoleNav.jsx';
 function AppLayout() {
   const user = useAuthStore((state) => state.user);
   const collapsed = useSidebarStore((state) => state.collapsed);
+
+  useEvaluationNotifications({
+    userId: user?.role === 'student' ? user._id ?? user.id : null,
+    enabled: user?.role === 'student',
+  });
 
   const shellClass = [
     'app-shell',

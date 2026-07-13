@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { USER_ROLES } from '../constants/user.constants.js';
-import { createEvaluatorInvitation, validateInvitation } from '../controllers/invitation.controller.js';
+import { createEvaluatorInvitation, listInvitations, validateInvitation } from '../controllers/invitation.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { authorize } from '../middlewares/role.middleware.js';
 import { checkUserStatus } from '../middlewares/status.middleware.js';
@@ -19,6 +19,14 @@ router.post(
   authorize(USER_ROLES.ADMIN),
   validateRequest(createEvaluatorInvitationSchema),
   createEvaluatorInvitation
+);
+
+router.get(
+  '/',
+  protect,
+  checkUserStatus,
+  authorize(USER_ROLES.ADMIN),
+  listInvitations
 );
 
 router.get('/validate/:token', validateRequest(validateInvitationSchema), validateInvitation);
