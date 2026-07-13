@@ -9,6 +9,7 @@ import {
   KeyRound,
   Layers3,
   LayoutDashboard,
+  Mail,
   MessageSquareText,
   NotebookTabs,
   Printer,
@@ -28,6 +29,7 @@ export const roleNavigation = {
     { label: 'Cursos', to: '/admin/courses', icon: BookOpenCheck },
     { label: 'Invitaciones', to: '/admin/invitations', icon: KeyRound },
     { label: 'Estadísticas', to: '/admin/statistics', icon: BarChart3 },
+    { label: 'Mensajes', to: '/admin/messages', icon: Mail },
     { label: 'Configuración', to: '/admin/settings', icon: Settings },
     { label: 'Perfil', to: '/admin/profile', icon: UserRound },
   ],
@@ -48,6 +50,7 @@ export const roleNavigation = {
     { label: 'Instrumentos', to: '/evaluator/instruments', icon: ClipboardCheck },
     { label: 'Evaluaciones', to: '/evaluator/evaluations', icon: FileText },
     { label: 'Reportes', to: '/evaluator/reports', icon: Printer },
+    { label: 'Mensajes', to: '/evaluator/messages', icon: Mail },
     { label: 'Perfil', to: '/evaluator/profile', icon: UserRound },
   ],
   student: [
@@ -56,12 +59,14 @@ export const roleNavigation = {
     { label: 'Evaluaciones', to: '/student/evaluations', icon: Target },
     { label: 'Resultados', to: '/student/results', icon: Award },
     { label: 'Sugerencias', to: '/student/suggestions', icon: MessageSquareText },
+    { label: 'Mensajes', to: '/student/messages', icon: Mail },
     { label: 'Perfil', to: '/student/profile', icon: UserRound },
   ],
 };
 
 export const moduleIcons = {
   Award,
+  Mail,
   BarChart3,
   BookOpenCheck,
   ClipboardList,

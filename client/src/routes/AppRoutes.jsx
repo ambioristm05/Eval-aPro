@@ -30,6 +30,7 @@ import EvaluatorRegisterPage from '../pages/public/EvaluatorRegisterPage.jsx';
 import PublicHomePage from '../pages/public/PublicHomePage.jsx';
 import StudentRegisterPage from '../pages/public/StudentRegisterPage.jsx';
 import StudentDashboard from '../pages/student/StudentDashboard.jsx';
+import MessagesPage from '../pages/shared/MessagesPage.jsx';
 import ProfilePage from '../pages/shared/ProfilePage.jsx';
 import { StudentTasksPage } from '../pages/student/StudentModulePages.jsx';
 import {
@@ -62,6 +63,7 @@ function AppRoutes() {
             <Route path="admin/invitations" element={<AdminInvitationsPage />} />
             <Route path="admin/statistics" element={<AdminStatisticsPage />} />
             <Route path="admin/settings" element={<AdminSettingsPage />} />
+            <Route path="admin/messages" element={<MessagesPage />} />
             <Route path="admin/profile" element={<ProfilePage role="admin" />} />
             <Route path="admin/profile/edit" element={<ProfilePage role="admin" mode="edit" />} />
           </Route>
@@ -95,6 +97,7 @@ function AppRoutes() {
             <Route path="evaluator/evaluations" element={<EvaluatorEvaluationsPage />} />
             <Route path="evaluator/reports" element={<EvaluatorReportsPage />} />
             <Route path="evaluator/statistics" element={<EvaluatorStatisticsPage />} />
+            <Route path="evaluator/messages" element={<MessagesPage />} />
             <Route path="evaluator/profile" element={<EvaluatorProfilePage />} />
             <Route path="evaluator/profile/edit" element={<EvaluatorProfilePage mode="edit" />} />
             <Route path="evaluator/profile/delete" element={<EvaluatorProfilePage mode="delete" />} />
@@ -105,6 +108,7 @@ function AppRoutes() {
             <Route path="student/evaluations" element={<StudentEvaluationsRealPage />} />
             <Route path="student/results" element={<StudentResultsRealPage />} />
             <Route path="student/suggestions" element={<StudentSuggestionsRealPage />} />
+            <Route path="student/messages" element={<MessagesPage />} />
             <Route path="student/profile" element={<ProfilePage role="student" />} />
             <Route path="student/profile/edit" element={<ProfilePage role="student" mode="edit" />} />
             <Route path="student/profile/delete" element={<ProfilePage role="student" mode="delete" />} />
