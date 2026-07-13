@@ -141,10 +141,6 @@ textarea {
   gap: 0.5rem;
 }
 
-.notification-center {
-  position: relative;
-}
-
 .header-menu-button {
   display: none;
 }
@@ -183,114 +179,6 @@ textarea {
 .user-pill:hover {
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
-}
-
-.notification-button {
-  position: relative;
-  justify-content: flex-start;
-}
-
-.notification-button.has-unread {
-  color: var(--color-primary-strong);
-  background: var(--color-primary-soft);
-}
-
-.notification-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  margin-left: auto;
-  padding: 0 0.35rem;
-  border-radius: 999px;
-  color: var(--color-surface);
-  background: var(--color-danger);
-  font-size: 0.78rem;
-  font-weight: 900;
-}
-
-.notification-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.6rem);
-  z-index: 40;
-  width: min(24rem, calc(100vw - 2rem));
-  display: grid;
-  gap: 0.75rem;
-  padding: 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface-raised);
-  box-shadow: 0 16px 32px rgba(17, 24, 39, 0.12);
-}
-
-.notification-panel-floating {
-  z-index: 60;
-}
-
-.notification-panel-head {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.notification-panel-head div {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.notification-panel-head small,
-.notification-panel-note {
-  color: var(--color-muted-soft);
-}
-
-.notification-list {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.notification-card {
-  display: grid;
-  gap: 0.35rem;
-  width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--color-border-soft);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  text-align: left;
-}
-
-.notification-card:hover,
-.notification-card:focus-visible {
-  border-color: var(--color-primary-border-strong);
-  background: var(--color-surface-tint);
-  outline: none;
-}
-
-.notification-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.notification-card small,
-.notification-card span {
-  color: var(--color-muted-soft);
-}
-
-.notification-empty {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  color: var(--color-muted-soft);
-}
-
-.notification-empty p {
-  margin: 0;
 }
 
 .role-nav {
@@ -3061,19 +2949,20 @@ a.action-item:focus-visible {
   }
 
   .app-shell-authenticated .header-actions {
-    display: grid;
-    width: 100%;
-    margin-top: auto;
+    display: none;
   }
 
   .app-shell-authenticated .nav-links {
     display: grid;
     justify-content: stretch;
     width: 100%;
+    margin-top: auto;
   }
 
-  .app-shell-authenticated .notification-center {
-    width: 100%;
+  .app-shell-authenticated .user-pill span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .app-shell-authenticated .nav-links a,
@@ -3081,24 +2970,6 @@ a.action-item:focus-visible {
   .app-shell-authenticated .user-pill {
     justify-content: flex-start;
     width: 100%;
-  }
-
-  .app-shell-authenticated .notification-panel {
-    left: 0;
-    right: auto;
-    top: auto;
-    bottom: calc(100% + 0.6rem);
-    z-index: 50;
-    width: min(24rem, calc(100vw - 2rem));
-  }
-
-  .app-shell-authenticated:has(.role-nav-submenu-active) .user-pill,
-  .app-shell-authenticated:has(.role-nav-submenu-active) .notification-center {
-    display: none;
-  }
-
-  .app-shell-authenticated:has(.role-nav-submenu-active) .role-nav {
-    bottom: 3.5rem;
   }
 
   .app-shell-authenticated .role-nav {
@@ -3343,23 +3214,6 @@ a.action-item:focus-visible {
 
   .header-actions {
     margin-left: auto;
-  }
-
-  .notification-button {
-    min-width: 2.35rem;
-    justify-content: center;
-    padding: 0.55rem 0.7rem;
-  }
-
-  .notification-button span:not(.notification-badge) {
-    display: none;
-  }
-
-  .notification-badge {
-    position: absolute;
-    top: -0.2rem;
-    right: -0.2rem;
-    margin-left: 0;
   }
 
   .nav-links {
@@ -3974,8 +3828,7 @@ a.action-item:focus-visible {
   .app-shell-authenticated.sidebar-collapsed .role-nav a span,
   .app-shell-authenticated.sidebar-collapsed .role-nav-toggle span,
   .app-shell-authenticated.sidebar-collapsed .nav-links a span,
-  .app-shell-authenticated.sidebar-collapsed .nav-button span,
-  .app-shell-authenticated.sidebar-collapsed .notification-button span {
+  .app-shell-authenticated.sidebar-collapsed .nav-button span {
     display: none;
   }
 
@@ -4064,20 +3917,6 @@ a.action-item:focus-visible {
 
   .app-shell-authenticated.sidebar-collapsed .nav-links a,
   .app-shell-authenticated.sidebar-collapsed .nav-button {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
-    width: 100%;
-  }
-
-  /* Notificaciones: centrar icono */
-  .app-shell-authenticated.sidebar-collapsed .notification-center {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .app-shell-authenticated.sidebar-collapsed .notification-button {
     justify-content: center;
     padding-left: 0;
     padding-right: 0;

@@ -2,6 +2,7 @@ import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useEvaluationNotificationStore } from '../../stores/evaluationNotificationStore.js';
+import { useMessageNotifications } from '../../hooks/useMessageNotifications.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useCourseNavStore } from '../../stores/courseNavStore.js';
 import { roleNavigation } from '../../utils/navigation.jsx';
@@ -73,6 +74,7 @@ function RoleNav() {
   const role = user?.role;
   const evalNewCount = useEvaluationNotificationStore((s) => s.newCount);
   const markEvalSeen = useEvaluationNotificationStore((s) => s.markAsSeen);
+  const { unreadCount: messageUnreadCount } = useMessageNotifications({ enabled: Boolean(user) });
 
   useEffect(() => {
     if (role === 'student' && location.pathname === '/student/evaluations') {
@@ -166,6 +168,7 @@ function RoleNav() {
     const Icon = link.icon;
     const { className = navLinkClassName(link), role: linkRole } = options;
     const showEvalBadge = role === 'student' && link.to === '/student/evaluations' && evalNewCount > 0;
+    const showMessageBadge = link.to === `/${role}/messages` && messageUnreadCount > 0;
 
     return (
       <NavLink className={className} end={link.to === `/${user.role}`} to={link.to} key={link.to} role={linkRole}>
@@ -174,6 +177,11 @@ function RoleNav() {
         {showEvalBadge ? (
           <span className="nav-badge" aria-label={`${evalNewCount} evaluación${evalNewCount !== 1 ? 'es' : ''} nueva${evalNewCount !== 1 ? 's' : ''}`}>
             {evalNewCount > 9 ? '9+' : evalNewCount}
+          </span>
+        ) : null}
+        {showMessageBadge ? (
+          <span className="nav-badge" aria-label={`${messageUnreadCount} mensaje${messageUnreadCount !== 1 ? 's' : ''} nuevo${messageUnreadCount !== 1 ? 's' : ''}`}>
+            {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
           </span>
         ) : null}
       </NavLink>

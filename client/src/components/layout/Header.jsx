@@ -5,7 +5,6 @@ import { logout } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getDashboardPath } from '../../utils/auth.js';
 import { useSidebarStore } from '../../stores/sidebarStore.js';
-import MessageNotificationCenter from './MessageNotificationCenter.jsx';
 
 function Header() {
   const user = useAuthStore((state) => state.user);
@@ -67,7 +66,6 @@ function Header() {
 
       {hasNavigation ? (
         <div className="header-actions">
-          {user ? <MessageNotificationCenter /> : null}
           <button
             className="header-menu-button"
             type="button"
@@ -94,7 +92,7 @@ function Header() {
                 <span>{user.name}</span>
               </Link>
               <button
-                className="nav-button"
+                className="nav-button sidebar-logout"
                 type="button"
                 onClick={() => handleLogout()}
                 disabled={isLoggingOut}
