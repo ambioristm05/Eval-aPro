@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import auditRoutes from './audit.routes.js';
 import authRoutes from './auth.routes.js';
 import classRoutes from './class.routes.js';
 import courseRoutes from './course.routes.js';
@@ -25,6 +26,7 @@ router.get('/health', (req, res) => {
   });
 });
 
+router.use('/audit', auditRoutes);
 router.use('/auth', authRoutes);
 router.use('/classes', classRoutes);
 router.use('/courses', courseRoutes);

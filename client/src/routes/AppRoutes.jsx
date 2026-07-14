@@ -5,6 +5,7 @@ import AdminEvaluatorsPage from '../pages/admin/AdminEvaluatorsPage.jsx';
 import AdminStudentsPage from '../pages/admin/AdminStudentsPage.jsx';
 import AdminCoursesPage from '../pages/admin/AdminCoursesPage.jsx';
 import { AdminInvitationsPage } from '../pages/admin/AdminModulePages.jsx';
+import AdminAuditPage from '../pages/admin/AdminAuditPage.jsx';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage.jsx';
 import AdminStatisticsPage from '../pages/admin/AdminStatisticsPage.jsx';
 import EvaluatorStatisticsPage from '../pages/evaluator/EvaluatorStatisticsPage.jsx';
@@ -66,6 +67,7 @@ function AppRoutes() {
             <Route path="admin/courses" element={<AdminCoursesPage />} />
             <Route path="admin/invitations" element={<AdminInvitationsPage />} />
             <Route path="admin/statistics" element={<AdminStatisticsPage />} />
+            <Route path="admin/audit" element={<AdminAuditPage />} />
             <Route path="admin/settings" element={<AdminSettingsPage />} />
             <Route path="admin/messages" element={<MessagesPage />} />
             <Route path="admin/profile" element={<ProfilePage role="admin" />} />
