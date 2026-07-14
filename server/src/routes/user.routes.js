@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { USER_ROLES } from '../constants/user.constants.js';
 import {
   changeMyPassword,
+  createEvaluator,
   createStudent,
   deleteMyAccount,
   deleteStudent,
@@ -20,6 +21,7 @@ import { checkUserStatus } from '../middlewares/status.middleware.js';
 import { validateRequest } from '../middlewares/validate.middleware.js';
 import {
   changeMyPasswordSchema,
+  createEvaluatorSchema,
   createStudentSchema,
   deleteMyAccountSchema,
   deleteStudentSchema,
@@ -42,6 +44,7 @@ router.patch('/me/password', validateRequest(changeMyPasswordSchema), changeMyPa
 router.delete('/me', validateRequest(deleteMyAccountSchema), deleteMyAccount);
 
 router.get('/evaluators', authorize(USER_ROLES.ADMIN), validateRequest(listEvaluatorsSchema), getEvaluators);
+router.post('/evaluators', authorize(USER_ROLES.ADMIN), validateRequest(createEvaluatorSchema), createEvaluator);
 
 router.delete(
   '/:id/permanent',

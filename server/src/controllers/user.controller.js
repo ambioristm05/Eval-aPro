@@ -133,6 +133,26 @@ function userStatusAuditSnapshot(user) {
   };
 }
 
+export const createEvaluator = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.validated.body;
+
+  const existingUser = await User.exists({ email });
+  if (existingUser) {
+    throw new AppError('Ya existe una cuenta con este email', 409);
+  }
+
+  const evaluator = await User.create({
+    name,
+    email,
+    password,
+    role: USER_ROLES.EVALUATOR,
+    status: USER_STATUSES.ACTIVE,
+    createdBy: req.user._id,
+  });
+
+  res.status(201).json({ evaluator });
+});
+
 export const createStudent = asyncHandler(async (req, res) => {
   const { name, email, password, group: groupId } = req.validated.body;
 

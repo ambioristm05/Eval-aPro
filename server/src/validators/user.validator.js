@@ -15,6 +15,20 @@ const booleanQuerySchema = z
   }, z.boolean())
   .optional();
 
+export const createEvaluatorSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'El nombre debe tener al menos 2 caracteres')
+      .max(100, 'El nombre no puede exceder 100 caracteres'),
+    email: z.string().trim().email('Email inválido').toLowerCase(),
+    password: passwordSchema,
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
 export const createStudentSchema = z.object({
   body: z.object({
     name: z

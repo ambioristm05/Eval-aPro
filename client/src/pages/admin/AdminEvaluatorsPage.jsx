@@ -1,8 +1,8 @@
-import { Search, Trash2, UserCog } from 'lucide-react';
+import { Eye, EyeOff, Plus, Search, Trash2, UserCog } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import PermanentDeleteDialog from '../../components/common/PermanentDeleteDialog.jsx';
-import { deleteUserPermanent, getEvaluators } from '../../services/adminService.js';
+import { createEvaluator, deleteUserPermanent, getEvaluators } from '../../services/adminService.js';
 import { useTimedState } from '../../hooks/useTimedState.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getId } from '../../utils/getId.js';
@@ -24,6 +24,10 @@ function AdminEvaluatorsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cascadeWarning, setCascadeWarning] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const filteredEvaluators = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -69,6 +73,24 @@ function AdminEvaluatorsPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setIsCreating(true);
+    setError('');
+    setMessage('');
+    try {
+      await createEvaluator(formData);
+      setMessage('Evaluador creado exitosamente.');
+      setFormData({ name: '', email: '', password: '' });
+      setShowForm(false);
+      await loadEvaluators();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const runPermanentDelete = async (evaluator, password, cascade = false) => {
     setIsDeleting(true);
@@ -125,6 +147,79 @@ function AdminEvaluatorsPage() {
 
       {error ? <p className="form-message form-message-error">{error}</p> : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
+
+      {showForm ? (
+        <section className="dashboard-panel">
+          <div className="panel-heading">
+            <h2>Nuevo evaluador</h2>
+            <p>Crea una cuenta de evaluador directamente sin necesidad de invitación.</p>
+          </div>
+          <form className="resource-form" onSubmit={handleCreate}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="ev-name">Nombre completo</label>
+              <input
+                id="ev-name"
+                className="form-input"
+                type="text"
+                required
+                minLength={2}
+                maxLength={100}
+                value={formData.name}
+                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="ev-email">Correo electrónico</label>
+              <input
+                id="ev-email"
+                className="form-input"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="ev-password">Contraseña</label>
+              <div className="input-password-wrapper">
+                <input
+                  id="ev-password"
+                  className="form-input"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  value={formData.password}
+                  onChange={(e) => setFormData((f) => ({ ...f, password: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  className="input-password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button type="button" className="button button-ghost" onClick={() => setShowForm(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="button button-primary" disabled={isCreating}>
+                {isCreating ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
+                {isCreating ? 'Creando...' : 'Crear evaluador'}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <button className="button button-primary" type="button" onClick={() => setShowForm(true)}>
+            <Plus size={16} aria-hidden="true" />
+            Nuevo evaluador
+          </button>
+        </div>
+      )}
 
       <section className="dashboard-panel">
         <div className="panel-heading panel-heading-row">

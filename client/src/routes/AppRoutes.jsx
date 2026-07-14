@@ -72,6 +72,7 @@ function AppRoutes() {
             <Route path="admin/messages" element={<MessagesPage />} />
             <Route path="admin/profile" element={<ProfilePage role="admin" />} />
             <Route path="admin/profile/edit" element={<ProfilePage role="admin" mode="edit" />} />
+            <Route path="admin/profile/delete" element={<ProfilePage role="admin" mode="delete" />} />
           </Route>
           <Route element={<RoleRoute allowedRoles={['evaluator']} />}>
             <Route path="evaluator" element={<EvaluatorDashboard />} />
