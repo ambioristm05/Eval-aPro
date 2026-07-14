@@ -6,21 +6,29 @@ import { getInvitations } from '../../services/authService.js';
 import { getOverviewStatistics } from '../../services/statisticsService.js';
 
 function AdminDashboard() {
-  const [stats, setStats] = useState({ evaluators: '—', invitations: '—', active: '—' });
+  const [stats, setStats] = useState({
+    evaluators: '—', invitations: '—', active: '—',
+    suspended: '—', groups: '—', evaluations: '—',
+  });
 
   useEffect(() => {
     let isMounted = true;
     Promise.all([getEvaluators(), getInvitations(), getOverviewStatistics()])
       .then(([evData, invData, overview]) => {
         if (!isMounted) return;
-        const activeStudents = overview?.distributions?.studentsByStatus?.active ?? 0;
+        const dist = overview?.distributions ?? {};
+        const activeStudents = dist.studentsByStatus?.active ?? 0;
+        const suspendedStudents = dist.studentsByStatus?.suspended ?? 0;
         const pendingInv = Array.isArray(invData)
           ? invData.filter((i) => i.status === 'pending').length
           : 0;
         setStats({
-          evaluators: evData?.evaluators?.length ?? evData?.total ?? 0,
+          evaluators: evData?.evaluators?.length ?? 0,
           invitations: pendingInv,
           active: activeStudents,
+          suspended: suspendedStudents,
+          groups: overview?.totals?.groups ?? 0,
+          evaluations: overview?.totals?.evaluations ?? 0,
         });
       })
       .catch(() => {});
@@ -61,25 +69,37 @@ function AdminDashboard() {
       <aside className="dashboard-panel">
         <div className="panel-heading">
           <h2>Vista general</h2>
-          <p>Resumen de accesos, registro protegido y actividad administrativa.</p>
+          <p>Actividad actual del sistema.</p>
         </div>
         <div className="progress-list">
           <div>
-            <span>Autenticación base</span>
-            <strong>Lista</strong>
+            <span>Evaluadores registrados</span>
+            <strong>{stats.evaluators}</strong>
           </div>
           <div>
-            <span>Registro público de evaluador</span>
-            <strong>Oculto</strong>
+            <span>Estudiantes activos</span>
+            <strong>{stats.active}</strong>
           </div>
           <div>
-            <span>Estadísticas generales</span>
-            <strong>En seguimiento</strong>
+            <span>Estudiantes suspendidos</span>
+            <strong>{stats.suspended}</strong>
+          </div>
+          <div>
+            <span>Grupos</span>
+            <strong>{stats.groups}</strong>
+          </div>
+          <div>
+            <span>Evaluaciones totales</span>
+            <strong>{stats.evaluations}</strong>
+          </div>
+          <div>
+            <span>Invitaciones pendientes</span>
+            <strong>{stats.invitations}</strong>
           </div>
         </div>
         <div className="report-preview">
           <BarChart3 size={28} aria-hidden="true" />
-          <p>Consulta el estado operativo de usuarios, invitaciones y seguridad.</p>
+          <p>Revisa las estadísticas completas para más detalle.</p>
         </div>
       </aside>
     </DashboardShell>
