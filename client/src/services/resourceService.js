@@ -136,3 +136,16 @@ export async function getPrintableReport(type, id, params) {
   const { data } = await api.get(pathMap[type], { params, responseType: 'text' });
   return data;
 }
+
+export async function getPdfReport(type, id, params) {
+  const pathMap = {
+    student: `/reports/student/${id}/pdf`,
+    group: `/reports/group/${id}/pdf`,
+    task: `/reports/task/${id}/pdf`,
+    final: `/reports/final-grades/${id}/pdf`,
+    instrument: `/reports/instruments/${id}/pdf`,
+  };
+
+  const response = await api.get(pathMap[type], { params, responseType: 'blob' });
+  return response.data;
+}

@@ -1,16 +1,41 @@
 import { BarChart3, KeyRound, ShieldCheck, UserCog, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import DashboardShell from '../../components/dashboard/DashboardShell.jsx';
+import { getEvaluators } from '../../services/adminService.js';
+import { getInvitations } from '../../services/authService.js';
+import { getOverviewStatistics } from '../../services/statisticsService.js';
 
 function AdminDashboard() {
+  const [stats, setStats] = useState({ evaluators: '—', invitations: '—', active: '—' });
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([getEvaluators(), getInvitations(), getOverviewStatistics()])
+      .then(([evData, invData, overview]) => {
+        if (!isMounted) return;
+        const activeStudents = overview?.distributions?.studentsByStatus?.active ?? 0;
+        const pendingInv = Array.isArray(invData?.invitations)
+          ? invData.invitations.filter((i) => i.status === 'pending').length
+          : 0;
+        setStats({
+          evaluators: evData?.evaluators?.length ?? evData?.total ?? 0,
+          invitations: pendingInv,
+          active: activeStudents,
+        });
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
   return (
     <DashboardShell
       eyebrow="Panel administrativo"
       title="Control del sistema"
       description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y configura la operación general de EvalúaPro."
       stats={[
-        { label: 'Evaluadores', value: '0', icon: UserCog },
-        { label: 'Invitaciones', value: '0', icon: KeyRound },
-        { label: 'Usuarios activos', value: '0', icon: Users },
+        { label: 'Evaluadores', value: String(stats.evaluators), icon: UserCog },
+        { label: 'Invitaciones pendientes', value: String(stats.invitations), icon: KeyRound },
+        { label: 'Estudiantes activos', value: String(stats.active), icon: Users },
       ]}
       actions={[
         {

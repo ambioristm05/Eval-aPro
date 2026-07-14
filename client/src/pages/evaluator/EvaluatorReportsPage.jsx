@@ -2,6 +2,7 @@ import { Download, Printer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTimedState } from '../../hooks/useTimedState.js';
 import {
+  getPdfReport,
   getPrintableReport,
   getReport,
   listCourseModules,
@@ -77,6 +78,7 @@ function EvaluatorReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const isHierarchyFilterActive = Boolean(
     hierarchyFilter.courseId || hierarchyFilter.moduleId || hierarchyFilter.classId
@@ -353,6 +355,27 @@ function EvaluatorReportsPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!report || !selectedId) return;
+
+    setError('');
+    setIsDownloading(true);
+
+    try {
+      const blob = await getPdfReport(reportType, selectedId, hierarchyParams);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte-${reportType}-${selectedId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleOpenPrintableReport = async () => {
     if (!report || !selectedId) return;
 
@@ -545,11 +568,11 @@ function EvaluatorReportsPage() {
       <button
         className="floating-print no-print"
         type="button"
-        onClick={handleOpenPrintableReport}
-        title="Imprimir"
-        disabled={!report || isPrinting}
+        onClick={handleDownloadPdf}
+        title="Descargar PDF"
+        disabled={!report || isDownloading}
       >
-        {isPrinting ? <span className="button-spinner-ring" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
+        {isDownloading ? <span className="button-spinner-ring" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
       </button>
     </section>
   );
