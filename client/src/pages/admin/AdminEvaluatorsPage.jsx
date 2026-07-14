@@ -31,14 +31,12 @@ function AdminEvaluatorsPage() {
 
   const filteredEvaluators = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-
     return evaluators.filter((evaluator) => {
       const matchesStatus = statusFilter === 'all' || evaluator.status === statusFilter;
       const matchesSearch =
         !normalizedSearch ||
         evaluator.name.toLowerCase().includes(normalizedSearch) ||
         evaluator.email.toLowerCase().includes(normalizedSearch);
-
       return matchesStatus && matchesSearch;
     });
   }, [evaluators, searchTerm, statusFilter]);
@@ -50,11 +48,9 @@ function AdminEvaluatorsPage() {
 
   useEffect(() => {
     let isMounted = true;
-
     async function fetchEvaluators() {
       setIsLoading(true);
       setError('');
-
       try {
         const data = await getEvaluators({ limit: 100 });
         if (!isMounted) return;
@@ -66,12 +62,8 @@ function AdminEvaluatorsPage() {
         if (isMounted) setIsLoading(false);
       }
     }
-
     fetchEvaluators();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   const handleCreate = async (e) => {
@@ -96,7 +88,6 @@ function AdminEvaluatorsPage() {
     setIsDeleting(true);
     setError('');
     setMessage('');
-
     try {
       const data = await deleteUserPermanent(getId(evaluator), {
         password,
@@ -108,7 +99,6 @@ function AdminEvaluatorsPage() {
         .filter(([, count]) => count > 0)
         .map(([key, count]) => `${count} ${key}`)
         .join(', ');
-
       setMessage(
         cascadeSummary
           ? `Evaluador eliminado de forma definitiva junto con ${cascadeSummary}.`
@@ -148,158 +138,156 @@ function AdminEvaluatorsPage() {
       {error ? <p className="form-message form-message-error">{error}</p> : null}
       {message ? <p className="form-message form-message-success">{message}</p> : null}
 
-      {showForm ? (
-        <section className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Nuevo evaluador</h2>
-            <p>Crea una cuenta de evaluador directamente sin necesidad de invitación.</p>
-          </div>
-          <form className="resource-form" onSubmit={handleCreate}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="ev-name">Nombre completo</label>
-              <input
-                id="ev-name"
-                className="form-input"
-                type="text"
-                required
-                minLength={2}
-                maxLength={100}
-                value={formData.name}
-                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-              />
+      <div style={{ display: 'grid', gridTemplateColumns: showForm ? '340px 1fr' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+        {showForm ? (
+          <section className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Nuevo evaluador</h2>
+              <p>Crea una cuenta sin necesidad de invitación.</p>
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="ev-email">Correo electrónico</label>
-              <input
-                id="ev-email"
-                className="form-input"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="ev-password">Contraseña</label>
-              <div className="input-password-wrapper">
+            <form className="stacked-form" onSubmit={handleCreate}>
+              <label htmlFor="ev-name">
+                Nombre completo
                 <input
-                  id="ev-password"
-                  className="form-input"
-                  type={showPassword ? 'text' : 'password'}
+                  id="ev-name"
+                  type="text"
                   required
-                  minLength={8}
-                  value={formData.password}
-                  onChange={(e) => setFormData((f) => ({ ...f, password: e.target.value }))}
+                  minLength={2}
+                  maxLength={100}
+                  value={formData.name}
+                  onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
                 />
-                <button
-                  type="button"
-                  className="input-password-toggle"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </label>
+              <label htmlFor="ev-email">
+                Correo electrónico
+                <input
+                  id="ev-email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                />
+              </label>
+              <label htmlFor="ev-password">
+                Contraseña
+                <span className="password-field">
+                  <input
+                    id="ev-password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    value={formData.password}
+                    onChange={(e) => setFormData((f) => ({ ...f, password: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
+              <div className="form-actions">
+                <button type="button" className="button button-ghost" onClick={() => setShowForm(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="button button-primary" disabled={isCreating}>
+                  {isCreating ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
+                  {isCreating ? 'Creando...' : 'Crear'}
                 </button>
               </div>
-            </div>
-            <div className="form-actions">
-              <button type="button" className="button button-ghost" onClick={() => setShowForm(false)}>
-                Cancelar
-              </button>
-              <button type="submit" className="button button-primary" disabled={isCreating}>
-                {isCreating ? <span className="button-spinner-ring" aria-hidden="true" /> : null}
-                {isCreating ? 'Creando...' : 'Crear evaluador'}
-              </button>
-            </div>
-          </form>
-        </section>
-      ) : (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-          <button className="button button-primary" type="button" onClick={() => setShowForm(true)}>
-            <Plus size={16} aria-hidden="true" />
-            Nuevo evaluador
-          </button>
-        </div>
-      )}
+            </form>
+          </section>
+        ) : null}
 
-      <section className="dashboard-panel">
-        <div className="panel-heading panel-heading-row">
-          <div>
-            <h2>Listado</h2>
-            <p>Busca por nombre o correo y filtra por estado de la cuenta.</p>
+        <section className="dashboard-panel">
+          <div className="panel-heading panel-heading-row">
+            <div>
+              <h2>Listado</h2>
+              <p>Busca por nombre o correo y filtra por estado de la cuenta.</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span className="count-pill">{filteredEvaluators.length}</span>
+              {!showForm ? (
+                <button className="button button-primary" type="button" onClick={() => setShowForm(true)}>
+                  <Plus size={16} aria-hidden="true" />
+                  Nuevo
+                </button>
+              ) : null}
+            </div>
           </div>
-          <span className="count-pill">{filteredEvaluators.length}</span>
-        </div>
 
-        <div className="toolbar">
-          <label className="search-field">
-            <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              value={searchTerm}
-              placeholder="Buscar evaluador"
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-          </label>
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            aria-label="Filtrar por estado"
-          >
-            <option value="all">Todos</option>
-            <option value="active">Activos</option>
-            <option value="suspended">Suspendidos</option>
-            <option value="deleted">Eliminados</option>
-            <option value="pending">Pendientes</option>
-          </select>
-        </div>
+          <div className="toolbar">
+            <label className="search-field">
+              <Search size={18} aria-hidden="true" />
+              <input
+                type="search"
+                value={searchTerm}
+                placeholder="Buscar evaluador"
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </label>
+            <select
+              className="filter-select"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filtrar por estado"
+            >
+              <option value="all">Todos</option>
+              <option value="active">Activos</option>
+              <option value="suspended">Suspendidos</option>
+              <option value="deleted">Eliminados</option>
+              <option value="pending">Pendientes</option>
+            </select>
+          </div>
 
-        <div className="resource-list resource-list-inline">
-          {isLoading ? (
-            <div className="skeleton-list" aria-label="Cargando evaluadores">
-              {[0, 1, 2].map((item) => (
-                <div className="skeleton-card" key={item}>
-                  <span className="skeleton-line skeleton-line-title" />
-                  <span className="skeleton-line" />
-                  <div className="skeleton-chip-row">
-                    <span className="skeleton-chip" />
+          <div className="resource-list resource-list-inline">
+            {isLoading ? (
+              <div className="skeleton-list" aria-label="Cargando evaluadores">
+                {[0, 1, 2].map((item) => (
+                  <div className="skeleton-card" key={item}>
+                    <span className="skeleton-line skeleton-line-title" />
+                    <span className="skeleton-line" />
+                    <div className="skeleton-chip-row">
+                      <span className="skeleton-chip" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            filteredEvaluators.map((evaluator) => (
-              <article className="resource-item" key={getId(evaluator)}>
-                <div className="resource-main">
-                  <div className="resource-title-row">
-                    <h3>{evaluator.name}</h3>
-                    <span className={`status-badge status-${evaluator.status}`}>
-                      {statusLabels[evaluator.status] ?? evaluator.status}
-                    </span>
+                ))}
+              </div>
+            ) : (
+              filteredEvaluators.map((evaluator) => (
+                <article className="resource-item" key={getId(evaluator)}>
+                  <div className="resource-main">
+                    <div className="resource-title-row">
+                      <h3>{evaluator.name}</h3>
+                      <span className={`status-badge status-${evaluator.status}`}>
+                        {statusLabels[evaluator.status] ?? evaluator.status}
+                      </span>
+                    </div>
+                    <p>{evaluator.email}</p>
                   </div>
-                  <p>{evaluator.email}</p>
-                </div>
-
-                <div className="resource-actions" aria-label={`Acciones para ${evaluator.name}`}>
-                  <button
-                    className="icon-button danger"
-                    type="button"
-                    onClick={() => setDeleteTarget(evaluator)}
-                    title="Eliminar definitivamente"
-                    aria-label={`Eliminar definitivamente a ${evaluator.name}`}
-                  >
-                    <Trash2 size={17} aria-hidden="true" />
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-
-          {!isLoading && filteredEvaluators.length === 0 ? (
-            <EmptyState title="No hay evaluadores" description="Genera una invitación para dar de alta al primer evaluador." />
-          ) : null}
-        </div>
-      </section>
+                  <div className="resource-actions" aria-label={`Acciones para ${evaluator.name}`}>
+                    <button
+                      className="icon-button danger"
+                      type="button"
+                      onClick={() => setDeleteTarget(evaluator)}
+                      title="Eliminar definitivamente"
+                      aria-label={`Eliminar definitivamente a ${evaluator.name}`}
+                    >
+                      <Trash2 size={17} aria-hidden="true" />
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+            {!isLoading && filteredEvaluators.length === 0 ? (
+              <EmptyState title="No hay evaluadores" description="Genera una invitación para dar de alta al primer evaluador." />
+            ) : null}
+          </div>
+        </section>
+      </div>
 
       <PermanentDeleteDialog
         open={Boolean(deleteTarget)}
