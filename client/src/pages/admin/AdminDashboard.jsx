@@ -14,8 +14,8 @@ function AdminDashboard() {
       .then(([evData, invData, overview]) => {
         if (!isMounted) return;
         const activeStudents = overview?.distributions?.studentsByStatus?.active ?? 0;
-        const pendingInv = Array.isArray(invData?.invitations)
-          ? invData.invitations.filter((i) => i.status === 'pending').length
+        const pendingInv = Array.isArray(invData)
+          ? invData.filter((i) => i.status === 'pending').length
           : 0;
         setStats({
           evaluators: evData?.evaluators?.length ?? evData?.total ?? 0,
