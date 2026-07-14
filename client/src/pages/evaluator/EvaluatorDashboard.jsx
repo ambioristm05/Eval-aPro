@@ -127,16 +127,16 @@ function EvaluatorDashboard() {
             <strong>{isLoading ? '...' : totals.publishedEvaluations}</strong>
           </div>
           <div>
-            <span>Reporte individual</span>
-            <strong>Disponible</strong>
+            <span>Grupos activos</span>
+            <strong>{isLoading ? '...' : totals.groups}</strong>
           </div>
           <div>
-            <span>Reporte por grupo</span>
-            <strong>Disponible</strong>
+            <span>Estudiantes</span>
+            <strong>{isLoading ? '...' : totals.students}</strong>
           </div>
           <div>
-            <span>Reporte final de notas</span>
-            <strong>Disponible</strong>
+            <span>Instrumentos</span>
+            <strong>{isLoading ? '...' : totals.instruments}</strong>
           </div>
         </div>
         <div className="report-preview">

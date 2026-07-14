@@ -37,24 +37,12 @@ export function StudentTasksPage() {
   const [error, setError] = useTimedState();
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTasks = async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const data = await getStudentTasks();
-      setTasks(data.tasks ?? []);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchInitialTasks() {
+    async function fetchTasks() {
       setIsLoading(true);
       setError('');
 
@@ -70,12 +58,12 @@ export function StudentTasksPage() {
       }
     }
 
-    fetchInitialTasks();
+    fetchTasks();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [retryCount]);
 
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -115,7 +103,7 @@ export function StudentTasksPage() {
       {error ? (
         <div className="form-message form-message-error">
           <span>{error}</span>
-          <button className="button button-secondary" type="button" onClick={fetchTasks} disabled={isLoading}>
+          <button className="button button-secondary" type="button" onClick={() => setRetryCount((c) => c + 1)} disabled={isLoading}>
             Reintentar
           </button>
         </div>

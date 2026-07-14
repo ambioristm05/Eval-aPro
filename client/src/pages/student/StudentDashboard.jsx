@@ -1,6 +1,7 @@
 import { Award, BookOpenCheck, FileDown, MessageSquareText, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DashboardShell from '../../components/dashboard/DashboardShell.jsx';
+import { useAuthStore } from '../../stores/authStore.js';
 import {
   getStudentFinalGrade,
   getStudentResults,
@@ -14,7 +15,10 @@ function formatGrade(grade) {
   return `${grade.grade}%`;
 }
 
+const statusLabels = { active: 'Activa', suspended: 'Suspendida', pending: 'Pendiente' };
+
 function StudentDashboard() {
+  const user = useAuthStore((s) => s.user);
   const [tasks, setTasks] = useState([]);
   const [results, setResults] = useState([]);
   const [finalGrade, setFinalGrade] = useState(null);
@@ -108,7 +112,7 @@ function StudentDashboard() {
         <div className="progress-list">
           <div>
             <span>Cuenta</span>
-            <strong>Activa</strong>
+            <strong>{statusLabels[user?.status] ?? 'Activa'}</strong>
           </div>
           <div>
             <span>Resultados publicados</span>
