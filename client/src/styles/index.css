@@ -1197,152 +1197,318 @@ a.action-item:focus-visible {
   text-decoration: none;
 }
 
-.direct-messages-panel {
-  margin-top: 1rem;
+/* ── Messages page full-viewport ─────────────────────────── */
+
+.messages-page {
+  display: contents;
 }
 
-.direct-messages-layout {
+/* ── DM layout ────────────────────────────────────────────── */
+
+/* Remove page padding and bottom nav when the chat occupies full viewport */
+.main-content:has(.dm-layout) {
+  padding: 0;
+  width: 100%;
+  max-width: none;
+}
+
+
+.dm-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
 }
 
-.direct-messages-contacts,
-.direct-messages-thread,
-.direct-messages-empty {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+/* ── Contacts sidebar ─────────────────────────────────────── */
+
+.dm-contacts {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  overflow-y: hidden;
+  padding: 0.75rem;
+  border-right: 1px solid var(--color-border);
   background: var(--color-surface-raised);
 }
 
-.direct-messages-contacts {
+.dm-contacts-header {
   display: grid;
-  gap: 0.65rem;
-  padding: 0.75rem;
-  align-content: start;
+  gap: 0.2rem;
+  padding: 0.4rem 0.25rem 0.6rem;
+  border-bottom: 1px solid var(--color-border-soft);
 }
 
-.direct-contact-card {
+.dm-contacts-header strong {
+  font-size: 1.05rem;
+}
+
+.dm-contacts-header span {
+  color: var(--color-muted-soft);
+  font-size: 0.8rem;
+}
+
+.dm-contacts-empty {
+  color: var(--color-muted-soft);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.dm-contact-card {
   display: grid;
-  gap: 0.35rem;
-  padding: 0.85rem;
+  gap: 0.25rem;
+  padding: 0.7rem 0.75rem;
   border: 1px solid var(--color-border-soft);
   border-radius: 8px;
   background: var(--color-surface);
   color: var(--color-text);
   text-align: left;
+  width: 100%;
+  cursor: pointer;
 }
 
-.direct-contact-card:hover,
-.direct-contact-card:focus-visible,
-.direct-contact-card.active {
+.dm-contact-card:hover,
+.dm-contact-card:focus-visible,
+.dm-contact-card.active {
   border-color: var(--color-primary-border-strong);
   background: var(--color-surface-tint);
   outline: none;
 }
 
-.direct-contact-card-head {
+.dm-contact-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.direct-contact-card span,
-.direct-thread-header span {
+.dm-contact-card span {
   color: var(--color-muted-soft);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
-.direct-contact-card small {
+.dm-contact-card small {
   color: var(--color-muted);
+  font-size: 0.8rem;
   display: -webkit-box;
   overflow: hidden;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
-.direct-messages-thread {
+/* ── Thread column ────────────────────────────────────────── */
+
+.dm-thread {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  min-height: 28rem;
-}
-
-.direct-thread-header {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid var(--color-border-soft);
-}
-
-.direct-thread-header div {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.direct-thread-body {
-  display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
-  align-content: start;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   background: var(--color-surface);
 }
 
-.direct-thread-empty {
-  margin: 0;
-  color: var(--color-muted-soft);
-}
-
-.direct-message-bubble {
+.dm-thread-header {
   display: grid;
-  gap: 0.35rem;
-  max-width: min(100%, 38rem);
-  padding: 0.8rem 0.9rem;
-  border-radius: 8px;
-}
-
-.direct-message-bubble p,
-.direct-message-bubble strong,
-.direct-message-bubble small {
-  margin: 0;
-}
-
-.direct-message-bubble small {
-  color: var(--color-muted-soft);
-  font-size: 0.85rem;
-}
-
-.direct-message-bubble-incoming {
-  justify-self: start;
-  border: 1px solid var(--color-border-soft);
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border-soft);
   background: var(--color-surface-raised);
 }
 
-.direct-message-bubble-outgoing {
-  justify-self: end;
-  border: 1px solid var(--color-primary-border);
-  background: var(--color-primary-soft);
+.dm-thread-header strong {
+  font-size: 1rem;
 }
 
-.direct-message-form {
-  padding: 1rem;
+.dm-thread-header span {
+  color: var(--color-muted-soft);
+  font-size: 0.82rem;
+}
+
+/* ── Chat body ────────────────────────────────────────────── */
+
+.dm-thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  overflow-y: auto;
+  background: var(--color-surface);
+}
+
+.dm-thread-empty {
+  margin: auto;
+  color: var(--color-muted-soft);
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 2rem;
+  background: rgba(255,255,255,0.6);
+  border-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dm-thread-empty {
+    background: rgba(0,0,0,0.3);
+  }
+}
+
+/* ── Message bubbles ──────────────────────────────────────── */
+
+.dm-bubble {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: min(72%, 32rem);
+  padding: 0.45rem 0.7rem 0.35rem;
+  border-radius: 8px;
+  word-break: break-word;
+}
+
+.dm-bubble-incoming {
+  align-self: flex-start;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-soft);
+  border-top-left-radius: 2px;
+}
+
+.dm-bubble-outgoing {
+  align-self: flex-end;
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-primary-border-strong);
+  border-bottom-right-radius: 2px;
+}
+
+.dm-bubble-sender {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary-strong);
+}
+
+.dm-bubble-body {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.dm-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  margin-top: 0.1rem;
+}
+
+.dm-bubble-time {
+  font-size: 0.7rem;
+  color: var(--color-muted-soft);
+  white-space: nowrap;
+}
+
+.dm-ticks {
+  color: var(--color-primary);
+}
+
+.dm-ticks {
+  display: inline-flex;
+  color: rgba(255,255,255,0.8);
+  margin-left: -0.2rem;
+}
+
+.dm-ticks svg:last-child {
+  margin-left: -6px;
+}
+
+/* ── Input bar ────────────────────────────────────────────── */
+
+.dm-form {
+  padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
+  background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border-soft);
 }
 
-.direct-messages-empty {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.85rem;
-  align-items: start;
-  padding: 1rem;
+.dm-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.25rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
 }
 
-.direct-messages-empty p,
-.direct-messages-empty strong {
-  margin: 0;
+.dm-icon-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
 }
 
-.direct-messages-empty p {
-  margin-top: 0.25rem;
+.dm-icon-btn:hover:not(:disabled) {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.dm-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dm-textarea {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  height: 1.5rem;
+  min-height: 1.5rem;
+  max-height: 7rem;
+  font-size: 0.92rem;
+  line-height: 1.5rem;
+  color: var(--color-text);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.dm-textarea::-webkit-scrollbar {
+  display: none;
+}
+
+.dm-textarea::placeholder {
   color: var(--color-muted-soft);
+}
+
+.dm-send-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.dm-send-btn:hover:not(:disabled) {
+  background: var(--color-primary-strong);
+}
+
+.dm-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .timeline-list {
@@ -3104,8 +3270,12 @@ a.action-item:focus-visible {
   .module-page-grid,
   .management-grid,
   .builder-layout,
-  .direct-messages-layout {
-    grid-template-columns: 1fr;
+  .dm-layout {
+    grid-template-columns: minmax(160px, 200px) minmax(0, 1fr);
+  }
+
+  .dm-layout {
+    height: calc(100dvh - 9.5rem);
   }
 
   .metric-grid {
@@ -3136,9 +3306,7 @@ a.action-item:focus-visible {
     bottom: 0;
     left: 0;
     z-index: 30;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.25rem;
+    display: flex;
     overflow: visible;
     padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border-control);
@@ -3146,6 +3314,23 @@ a.action-item:focus-visible {
     background: rgba(251, 252, 254, 0.97);
     box-shadow: 0 -16px 34px rgba(23, 32, 42, 0.14);
     backdrop-filter: blur(16px);
+  }
+
+  .role-nav-scroll {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.25rem;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .role-nav-toggle svg {
+    display: none;
+  }
+
+  .role-nav-item-with-submenu,
+  .role-nav-parent-row {
+    width: 100%;
   }
 
   .role-nav-link-overflow {
@@ -3157,15 +3342,61 @@ a.action-item:focus-visible {
   }
 
   .role-nav-item-with-submenu {
+    position: relative;
     display: flex;
   }
 
   .role-nav-toggle {
-    display: none;
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .role-nav-toggle:hover,
+  .role-nav-toggle:focus-visible {
+    background: transparent;
+  }
+
+  .role-nav-item-with-submenu:hover .role-nav-parent-row a {
+    color: var(--color-primary-strong);
+    background: var(--color-primary-soft);
   }
 
   .role-nav-submenu {
     display: none;
+  }
+
+  .role-nav-item-open .role-nav-submenu {
+    display: grid;
+    position: absolute;
+    bottom: calc(100% + 0.55rem);
+    left: 0;
+    z-index: 100;
+    width: min(16rem, calc(100vw - 1rem));
+    padding: 0.35rem;
+    border: 1px solid var(--color-border-control);
+    border-radius: 8px;
+    background: var(--color-surface);
+    box-shadow: 0 -12px 32px rgba(23, 32, 42, 0.18);
+  }
+
+  .role-nav-item-open .role-nav-submenu-link {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    color: var(--color-text-strong);
+    font-size: 0.875rem;
+    text-align: left;
   }
 
   .role-nav a,
@@ -3251,6 +3482,34 @@ a.action-item:focus-visible {
 }
 
 @media (max-width: 760px) {
+  .dm-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto calc(100dvh - 9.5rem);
+    height: auto;
+    overflow: visible;
+    gap: 0.5rem;
+    /* padding-bottom mínimo para que la página tenga suficiente scroll y sticky se active */
+    padding: 0 0.5rem 8rem;
+  }
+
+  .dm-contacts {
+    overflow-y: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .dm-thread {
+    position: sticky;
+    top: 5rem;
+    height: calc(100dvh - 9.5rem);
+  }
+
+  .dm-thread-body {
+    overflow-y: auto;
+  }
+
   .site-header {
     align-items: center;
     flex-direction: row;
@@ -3363,9 +3622,7 @@ a.action-item:focus-visible {
     bottom: 0;
     left: 0;
     z-index: 30;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.25rem;
+    display: flex;
     overflow: visible;
     padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border-control);
@@ -3373,6 +3630,23 @@ a.action-item:focus-visible {
     background: rgba(251, 252, 254, 0.97);
     box-shadow: 0 -16px 34px rgba(23, 32, 42, 0.14);
     backdrop-filter: blur(16px);
+  }
+
+  .role-nav-scroll {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.25rem;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .role-nav-toggle svg {
+    display: none;
+  }
+
+  .role-nav-item-with-submenu,
+  .role-nav-parent-row {
+    width: 100%;
   }
 
   .role-nav-link-overflow {
@@ -3384,15 +3658,61 @@ a.action-item:focus-visible {
   }
 
   .role-nav-item-with-submenu {
+    position: relative;
     display: flex;
   }
 
   .role-nav-toggle {
-    display: none;
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .role-nav-toggle:hover,
+  .role-nav-toggle:focus-visible {
+    background: transparent;
+  }
+
+  .role-nav-item-with-submenu:hover .role-nav-parent-row a {
+    color: var(--color-primary-strong);
+    background: var(--color-primary-soft);
   }
 
   .role-nav-submenu {
     display: none;
+  }
+
+  .role-nav-item-open .role-nav-submenu {
+    display: grid;
+    position: absolute;
+    bottom: calc(100% + 0.55rem);
+    left: 0;
+    z-index: 100;
+    width: min(16rem, calc(100vw - 1rem));
+    padding: 0.35rem;
+    border: 1px solid var(--color-border-control);
+    border-radius: 8px;
+    background: var(--color-surface);
+    box-shadow: 0 -12px 32px rgba(23, 32, 42, 0.18);
+  }
+
+  .role-nav-item-open .role-nav-submenu-link {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    color: var(--color-text-strong);
+    font-size: 0.875rem;
+    text-align: left;
   }
 
   .role-nav a,
@@ -4091,6 +4411,9 @@ a.action-item:focus-visible {
 
 .emoji-picker-wrapper {
   position: relative;
+  flex: 0 0 2.8rem;
+  width: 2.8rem;
+  height: 2.8rem;
 }
 
 .emoji-trigger {

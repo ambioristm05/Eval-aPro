@@ -10,17 +10,7 @@ function MessagesPage() {
   if (!user) return null;
 
   return (
-    <section className="management-page">
-      <div className="module-hero">
-        <div>
-          <p className="eyebrow">Mensajes</p>
-          <h1>Bandeja de mensajes</h1>
-          <p className="dashboard-description">
-            Conversaciones directas con los perfiles vinculados a tu cuenta.
-          </p>
-        </div>
-      </div>
-
+    <section className="messages-page">
       <DirectMessagesPanel role={user.role} initialContactId={initialContactId} />
     </section>
   );

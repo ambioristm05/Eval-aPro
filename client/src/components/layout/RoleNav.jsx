@@ -1,5 +1,5 @@
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useEvaluationNotificationStore } from '../../stores/evaluationNotificationStore.js';
 import { useMessageNotifications } from '../../hooks/useMessageNotifications.js';
@@ -71,6 +71,8 @@ function RoleNav() {
   const location = useLocation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState({});
+  const navRef = useRef(null);
+  const linksRef = useRef([]);
   const role = user?.role;
   const evalNewCount = useEvaluationNotificationStore((s) => s.newCount);
   const markEvalSeen = useEvaluationNotificationStore((s) => s.markAsSeen);
@@ -82,6 +84,7 @@ function RoleNav() {
     }
   }, [location.pathname, role, markEvalSeen, user, evalNewCount]);
   const links = role ? (roleNavigation[role] ?? []) : [];
+  linksRef.current = links;
   const primaryLinks = links.slice(0, 4);
   const overflowLinks = links.slice(4);
   const evaluatorWorkflowRoutes = [
@@ -95,7 +98,28 @@ function RoleNav() {
 
   useEffect(() => {
     setIsMoreOpen(false);
+    setOpenSubmenus({});
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        const closed = {};
+        linksRef.current.forEach((link) => {
+          if (link.children?.length) closed[link.to] = false;
+        });
+        setOpenSubmenus(closed);
+        setIsMoreOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
+  }, []);
 
   if (!user) {
     return null;
@@ -131,7 +155,9 @@ function RoleNav() {
     link.to in openSubmenus ? openSubmenus[link.to] : linkMatchesLocation(link);
 
   const toggleSubmenu = (link) => {
-    setOpenSubmenus((current) => ({ ...current, [link.to]: !isSubmenuOpen(link) }));
+    const opening = !isSubmenuOpen(link);
+    if (opening) setIsMoreOpen(false);
+    setOpenSubmenus((current) => ({ ...current, [link.to]: opening }));
   };
 
   const getWorkflowClassName = (link) => {
@@ -248,7 +274,7 @@ function RoleNav() {
   const hasOpenSubmenu = Object.values(openSubmenus).some(Boolean);
 
   return (
-    <nav className={`role-nav${hasOpenSubmenu ? ' role-nav-submenu-active' : ''}`} aria-label="Navegación del rol">
+    <nav ref={navRef} className={`role-nav${hasOpenSubmenu ? ' role-nav-submenu-active' : ''}`} aria-label="Navegación del rol">
       <div className="role-nav-scroll">
       {primaryLinks.map((link) => renderNavItem(link))}
 
@@ -261,7 +287,16 @@ function RoleNav() {
             type="button"
             aria-expanded={isMoreOpen}
             aria-haspopup="menu"
-            onClick={() => setIsMoreOpen((current) => !current)}
+            onClick={() => {
+              setIsMoreOpen((current) => {
+                if (!current) {
+                  const closed = {};
+                  linksRef.current.forEach((l) => { if (l.children?.length) closed[l.to] = false; });
+                  setOpenSubmenus(closed);
+                }
+                return !current;
+              });
+            }}
           >
             <MoreHorizontal size={18} aria-hidden="true" />
             <span>Más</span>
