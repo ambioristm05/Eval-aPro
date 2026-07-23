@@ -52,7 +52,11 @@ export function AdminInvitationsPage() {
         expiresInDays: Number(formData.expiresInDays),
       });
       setInvitation(result);
-      setMessage('Invitación creada correctamente.');
+      setMessage(
+        result.emailSent
+          ? `Invitación creada y enviada por correo a ${formData.email}.`
+          : 'Invitación creada, pero no se pudo enviar el correo. Comparte el enlace manualmente.'
+      );
       setFormData({ email: '', expiresInDays: 7 });
       loadHistory();
     } catch (requestError) {

@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { generateInvitationToken, hashInvitationToken } from '../utils/invitationToken.js';
+import { sendEvaluatorInvitationEmail } from '../utils/mailer.js';
 
 function serializeInvitation(invitation) {
   return {
@@ -55,10 +56,21 @@ export const createEvaluatorInvitation = asyncHandler(async (req, res) => {
     createdBy: req.user._id
   });
 
+  const registrationUrl = `${env.clientUrl}/register/evaluator?token=${rawToken}`;
+
+  let emailSent = false;
+  try {
+    const result = await sendEvaluatorInvitationEmail({ to: email, registrationUrl, expiresAt });
+    emailSent = result.sent;
+  } catch (error) {
+    emailSent = false;
+  }
+
   res.status(201).json({
     invitation: serializeInvitation(invitation),
     token: rawToken,
-    registrationUrl: `${env.clientUrl}/register/evaluator?token=${rawToken}`
+    registrationUrl,
+    emailSent
   });
 });
 
