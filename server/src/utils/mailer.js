@@ -75,8 +75,8 @@ function buildInvitationEmailHtml({ inviterName, registrationUrl, formattedExpir
 
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
               <tr>
-                <td bgcolor="#2F6F4E" style="background:#2F6F4E; border-radius:8px;">
-                  <a href="${registrationUrl}" style="display:inline-block; padding:14px 32px; color:#FFFFFF; font-size:15px; font-weight:bold; text-decoration:none;">
+                <td bgcolor="#2F6F4E" data-ogsb="#2F6F4E" style="background:#2F6F4E; border-radius:8px;">
+                  <a href="${registrationUrl}" data-ogsc="#FFFFFF" style="display:inline-block; padding:14px 32px; color:#FFFFFF; font-size:15px; font-weight:bold; text-decoration:none;">
                     Confirmar cuenta
                   </a>
                 </td>
@@ -89,7 +89,16 @@ function buildInvitationEmailHtml({ inviterName, registrationUrl, formattedExpir
             </p>
 
             <div style="margin-top:32px; padding-top:24px; border-top:1px solid #E4E7E5;">
-              <span style="color:#2F6F4E; font-size:14px; font-weight:bold;">EvaluaPro</span>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                <tr>
+                  <td style="vertical-align:middle; padding-right:8px;">
+                    <img src="${assetsBase}/icon-192.png" width="20" height="20" alt="" style="display:block; border-radius:5px;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span data-ogsc="#2F6F4E" style="color:#2F6F4E; font-size:14px; font-weight:bold;">EvaluaPro</span>
+                  </td>
+                </tr>
+              </table>
             </div>
           </div>
         </div>
