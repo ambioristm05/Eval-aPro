@@ -73,9 +73,15 @@ function buildInvitationEmailHtml({ inviterName, registrationUrl, formattedExpir
               ${introLine} Para crear tu cuenta, haz clic en el botón de abajo.
             </p>
 
-            <a href="${registrationUrl}" style="display:inline-block; padding:14px 32px; background:#2F6F4E; color:#FFFFFF; font-size:15px; font-weight:bold; text-decoration:none; border-radius:8px;">
-              Confirmar cuenta
-            </a>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+              <tr>
+                <td bgcolor="#2F6F4E" style="background:#2F6F4E; border-radius:8px;">
+                  <a href="${registrationUrl}" style="display:inline-block; padding:14px 32px; color:#FFFFFF; font-size:15px; font-weight:bold; text-decoration:none;">
+                    Confirmar cuenta
+                  </a>
+                </td>
+              </tr>
+            </table>
 
             <p style="margin:28px 0 0; color:#8A97A2; font-size:12px; line-height:1.5;">
               Este enlace es de un solo uso y expira el ${formattedExpiry}.<br />
