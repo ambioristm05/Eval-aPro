@@ -1,7 +1,8 @@
-import { Clock, Copy, MailPlus } from 'lucide-react';
+import { Clock, Copy, MailPlus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import { useTimedState } from '../../hooks/useTimedState.js';
-import { createEvaluatorInvitation, getInvitations } from '../../services/authService.js';
+import { createEvaluatorInvitation, deleteInvitation, getInvitations } from '../../services/authService.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { moduleIcons } from '../../utils/navigation.jsx';
 
@@ -20,6 +21,8 @@ export function AdminInvitationsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [history, setHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -63,6 +66,25 @@ export function AdminInvitationsPage() {
       setError(getErrorMessage(requestError));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await deleteInvitation(deleteTarget.id);
+      setMessage('Invitación eliminada.');
+      setDeleteTarget(null);
+      await loadHistory();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -195,6 +217,7 @@ export function AdminInvitationsPage() {
                   <th>Creada</th>
                   <th>Expira</th>
                   <th>Usada</th>
+                  <th aria-label="Acciones" />
                 </tr>
               </thead>
               <tbody>
@@ -209,6 +232,17 @@ export function AdminInvitationsPage() {
                     <td>{formatDate(inv.createdAt)}</td>
                     <td>{formatDate(inv.expiresAt)}</td>
                     <td>{formatDate(inv.usedAt)}</td>
+                    <td>
+                      <button
+                        className="icon-button danger"
+                        type="button"
+                        onClick={() => setDeleteTarget(inv)}
+                        title="Eliminar invitación"
+                        aria-label={`Eliminar invitación de ${inv.email}`}
+                      >
+                        <Trash2 size={17} aria-hidden="true" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -216,6 +250,16 @@ export function AdminInvitationsPage() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={`Eliminar invitación de ${deleteTarget?.email ?? ''}`}
+        description="Esta acción borra el registro del historial de invitaciones y no se puede deshacer. Si el evaluador ya usó el enlace, su cuenta no se ve afectada."
+        confirmLabel="Eliminar invitación"
+        isBusy={isDeleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </section>
   );
 }

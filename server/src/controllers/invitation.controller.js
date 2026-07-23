@@ -98,6 +98,21 @@ export const listInvitations = asyncHandler(async (req, res) => {
   res.json({ invitations: data });
 });
 
+export const deleteInvitation = asyncHandler(async (req, res) => {
+  const invitation = await Invitation.findOne({
+    _id: req.validated.params.id,
+    createdBy: req.user._id
+  });
+
+  if (!invitation) {
+    throw new AppError('Invitación no encontrada', 404);
+  }
+
+  await Invitation.deleteOne({ _id: invitation._id });
+
+  res.json({ message: 'Invitación eliminada correctamente' });
+});
+
 export const validateInvitation = asyncHandler(async (req, res) => {
   const invitation = await findValidInvitation(req.validated.params.token);
 

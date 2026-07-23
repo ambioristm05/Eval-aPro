@@ -40,6 +40,11 @@ export async function validateInvitation(token) {
   return data;
 }
 
+export async function deleteInvitation(id) {
+  const { data } = await api.delete(`/invitations/${id}`);
+  return data;
+}
+
 export async function getMe() {
   const { data } = await api.get('/auth/me');
   return data.user;
