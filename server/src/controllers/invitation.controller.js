@@ -60,7 +60,12 @@ export const createEvaluatorInvitation = asyncHandler(async (req, res) => {
 
   let emailSent = false;
   try {
-    const result = await sendEvaluatorInvitationEmail({ to: email, registrationUrl, expiresAt });
+    const result = await sendEvaluatorInvitationEmail({
+      to: email,
+      registrationUrl,
+      expiresAt,
+      inviterName: req.user.name
+    });
     emailSent = result.sent;
   } catch (error) {
     emailSent = false;
