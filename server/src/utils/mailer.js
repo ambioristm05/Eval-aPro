@@ -1,29 +1,39 @@
-import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
+
+const RESEND_API_URL = 'https://api.resend.com/emails';
+
+async function sendViaResend({ to, subject, html }) {
+  const response = await fetch(RESEND_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.smtp.pass}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: env.smtp.from,
+      to,
+      subject,
+      html
+    })
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Resend respondió ${response.status}: ${errorBody}`);
+  }
+
+  return response.json();
+}
 
 export async function sendPasswordResetEmail({ to, token }) {
   const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
 
-  if (!env.smtp.host || !env.smtp.user || !env.smtp.pass) {
+  if (!env.smtp.pass) {
     console.log(`Password reset para ${to}: ${resetUrl}`);
     return { preview: resetUrl };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: env.smtp.host,
-    port: env.smtp.port,
-    secure: env.smtp.secure ?? env.smtp.port === 465,
-    auth: {
-      user: env.smtp.user,
-      pass: env.smtp.pass
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000
-  });
-
-  await transporter.sendMail({
-    from: env.smtp.from,
+  await sendViaResend({
     to,
     subject: 'Restablece tu contraseña en EvaluaPro',
     html: `<p>Usa este enlace para restablecer tu contraseña:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`
@@ -79,26 +89,12 @@ export async function sendEvaluatorInvitationEmail({ to, registrationUrl, expire
     year: 'numeric'
   });
 
-  if (!env.smtp.host || !env.smtp.user || !env.smtp.pass) {
+  if (!env.smtp.pass) {
     console.log(`Invitación de evaluador para ${to}: ${registrationUrl}`);
     return { sent: false, preview: registrationUrl };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: env.smtp.host,
-    port: env.smtp.port,
-    secure: env.smtp.secure ?? env.smtp.port === 465,
-    auth: {
-      user: env.smtp.user,
-      pass: env.smtp.pass
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000
-  });
-
-  await transporter.sendMail({
-    from: env.smtp.from,
+  await sendViaResend({
     to,
     subject: 'Confirma tu cuenta de evaluador en EvaluaPro',
     html: buildInvitationEmailHtml({ inviterName, registrationUrl, formattedExpiry })
