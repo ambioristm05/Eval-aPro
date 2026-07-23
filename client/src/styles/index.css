@@ -2110,6 +2110,7 @@ a.action-item:focus-visible {
 }
 
 .permission-toggle {
+  position: relative;
   display: inline-grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.75rem;
