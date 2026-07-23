@@ -26,7 +26,7 @@ async function sendViaResend({ to, subject, html }) {
 }
 
 export async function sendPasswordResetEmail({ to, token }) {
-  const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
+  const resetUrl = `${env.primaryClientUrl}/reset-password?token=${token}`;
 
   if (!env.smtp.pass) {
     console.log(`Password reset para ${to}: ${resetUrl}`);
@@ -43,7 +43,7 @@ export async function sendPasswordResetEmail({ to, token }) {
 }
 
 function buildInvitationEmailHtml({ inviterName, registrationUrl, formattedExpiry }) {
-  const assetsBase = env.clientUrl.replace(/\/$/, '');
+  const assetsBase = env.primaryClientUrl.replace(/\/$/, '');
   const introLine = inviterName
     ? `${inviterName} te invitó a unirte a EvaluaPro como evaluador.`
     : 'Has sido invitado a unirte a EvaluaPro como evaluador.';

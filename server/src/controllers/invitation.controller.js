@@ -56,7 +56,7 @@ export const createEvaluatorInvitation = asyncHandler(async (req, res) => {
     createdBy: req.user._id
   });
 
-  const registrationUrl = `${env.clientUrl}/register/evaluator?token=${rawToken}`;
+  const registrationUrl = `${env.primaryClientUrl}/register/evaluator?token=${rawToken}`;
 
   let emailSent = false;
   try {

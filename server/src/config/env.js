@@ -25,12 +25,17 @@ if (nodeEnv === 'production') {
   }
 }
 
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
 export const env = {
   port: process.env.PORT || 5000,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/evaluapro',
   jwtSecret: process.env.JWT_SECRET || 'dev_secret_change_me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  // Puede contener varios orígenes separados por coma (usado para CORS). Ver `primaryClientUrl`
+  // para construir enlaces individuales (registro, reset de contraseña, assets de correo).
+  clientUrl,
+  primaryClientUrl: clientUrl.split(',')[0].trim(),
   nodeEnv,
   adminName: process.env.ADMIN_NAME || 'Administrador',
   adminEmail: process.env.ADMIN_EMAIL || 'admin@evaluapro.local',
