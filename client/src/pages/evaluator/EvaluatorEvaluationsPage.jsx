@@ -951,7 +951,7 @@ function EvaluatorEvaluationsPage() {
                 <section className="rubric-sheet" aria-label="Rúbrica de evaluación">
                 <div className="rubric-sheet-header">
                   <div className="rubric-sheet-brand">
-                    <img src="/icono-plano.svg" alt="EvalúaPro" />
+                    <img src="/icono-plano.svg" alt="EvaluaPro" />
                   </div>
                   <div className="rubric-sheet-heading">
                     <h2>{selectedInstrument.title}</h2>
@@ -1036,7 +1036,7 @@ function EvaluatorEvaluationsPage() {
                 <section className="checklist-sheet" aria-label="Lista de cotejo">
                 <div className="checklist-sheet-header">
                   <div className="checklist-sheet-brand">
-                    <img src="/icono-plano.svg" alt="EvalúaPro" />
+                    <img src="/icono-plano.svg" alt="EvaluaPro" />
                   </div>
                   <div className="checklist-sheet-heading">
                     <h2>{selectedInstrument.title}</h2>

@@ -36,7 +36,7 @@ if (env.nodeEnv === 'development') {
 
 app.get('/', (req, res) => {
   res.json({
-    name: 'EvalúaPro API',
+    name: 'EvaluaPro API',
     status: 'ok'
   });
 });

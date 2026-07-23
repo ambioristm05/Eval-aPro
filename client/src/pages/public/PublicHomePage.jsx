@@ -37,7 +37,7 @@ function PublicHomePage() {
     <section className="home-grid">
       <div className="intro-panel">
         <p className="eyebrow">Gestión académica digital</p>
-        <h1>EvalúaPro</h1>
+        <h1>EvaluaPro</h1>
         <p className="lead">
           Organiza tareas, instrumentos de evaluación, resultados y reportes en
           un flujo pensado para evaluadores y participantes.

@@ -422,7 +422,7 @@ export function renderReportHtml(report) {
                 <rect x="266" y="266" width="148" height="148" rx="30" fill="#FFFFFF" opacity="0.19"/>
                 <path d="M150 274 L232 354 L374 156" fill="none" stroke="#FFFFFF" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              EvalúaPro
+              EvaluaPro
             </div>
             <h1>${escapeHtml(labelForType(plainReport.type))}</h1>
             <div class="subtitle">${escapeHtml(title)}</div>
@@ -441,7 +441,7 @@ export function renderReportHtml(report) {
             ? `<section><h2>Evaluaciones publicadas</h2>${renderEvaluations(plainReport.evaluations)}</section>`
             : ''
         }
-        <footer>Reporte generado automáticamente por EvalúaPro.</footer>
+        <footer>Reporte generado automáticamente por EvaluaPro.</footer>
       </body>
     </html>`;
 }

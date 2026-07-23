@@ -1,6 +1,6 @@
 {
-  "name": "EvalúaPro",
-  "short_name": "EvalúaPro",
+  "name": "EvaluaPro",
+  "short_name": "EvaluaPro",
   "description": "Sistema de gestión de tareas e instrumentos de evaluación.",
   "start_url": "/",
   "display": "standalone",

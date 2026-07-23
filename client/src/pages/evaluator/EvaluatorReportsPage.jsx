@@ -499,7 +499,7 @@ function EvaluatorReportsPage() {
       <section className="print-sheet">
         <header className="print-header">
           <div>
-            <p className="eyebrow">EvalúaPro</p>
+            <p className="eyebrow">EvaluaPro</p>
             <h1>{reportTitles[reportType]}</h1>
             <p>{report?.generatedAt ? new Date(report.generatedAt).toLocaleDateString('es-DO') : new Date().toLocaleDateString('es-DO')}</p>
           </div>

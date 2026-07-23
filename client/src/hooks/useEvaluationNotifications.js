@@ -24,7 +24,7 @@ export function useEvaluationNotifications({ userId, enabled = true } = {}) {
       const isNew = hasLoadedOnceRef.current && current > (lastCountRef.current ?? seen);
 
       if (isNew && document.visibilityState !== 'visible' && window.Notification?.permission === 'granted') {
-        new window.Notification('EvalúaPro', {
+        new window.Notification('EvaluaPro', {
           body: 'Tienes una nueva evaluación publicada.',
           tag: 'evaluapro-evaluation',
         });

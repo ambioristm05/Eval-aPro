@@ -45,9 +45,9 @@ function Header() {
   return (
     <header className="site-header">
       <div className="brand-row">
-        <Link to="/" className="brand" aria-label="Ir al inicio de EvalúaPro" onClick={handleBrandClick}>
+        <Link to="/" className="brand" aria-label="Ir al inicio de EvaluaPro" onClick={handleBrandClick}>
           <img className="brand-mark" src="/icono-plano.svg" width="40" height="40" alt="" aria-hidden="true" />
-          <span className="brand-name">EvalúaPro</span>
+          <span className="brand-name">EvaluaPro</span>
         </Link>
         {user ? (
           <button

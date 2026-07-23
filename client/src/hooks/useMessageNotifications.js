@@ -34,7 +34,7 @@ export function useMessageNotifications({ enabled = true } = {}) {
 
         if (nextUnread > previousUnread && nextMessageAt && nextMessageAt !== previousMessageAt) {
           const notification = new window.Notification(contact.user.name, {
-            body: contact.lastMessage || 'Tienes un mensaje nuevo en EvalúaPro.',
+            body: contact.lastMessage || 'Tienes un mensaje nuevo en EvaluaPro.',
             tag: `evaluapro-message-${contact.user.id}`,
           });
 

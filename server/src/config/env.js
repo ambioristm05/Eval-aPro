@@ -40,6 +40,6 @@ export const env = {
     port: Number(process.env.SMTP_PORT || 587),
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
-    from: process.env.SMTP_FROM || 'EvalúaPro <no-reply@evaluapro.local>'
+    from: process.env.SMTP_FROM || 'EvaluaPro <no-reply@evaluapro.local>'
   }
 };

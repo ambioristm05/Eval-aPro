@@ -22,7 +22,7 @@ export async function sendPasswordResetEmail({ to, token }) {
   await transporter.sendMail({
     from: env.smtp.from,
     to,
-    subject: 'Restablece tu contraseña en EvalúaPro',
+    subject: 'Restablece tu contraseña en EvaluaPro',
     html: `<p>Usa este enlace para restablecer tu contraseña:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`
   });
 

@@ -39,7 +39,7 @@ function AdminDashboard() {
     <DashboardShell
       eyebrow="Panel administrativo"
       title="Control del sistema"
-      description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y configura la operación general de EvalúaPro."
+      description="Gestiona la entrada de evaluadores, supervisa estados de cuenta y configura la operación general de EvaluaPro."
       stats={[
         { label: 'Evaluadores', value: String(stats.evaluators), icon: UserCog },
         { label: 'Invitaciones pendientes', value: String(stats.invitations), icon: KeyRound },

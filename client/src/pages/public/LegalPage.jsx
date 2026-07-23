@@ -8,11 +8,11 @@ const sections = [
     subsections: [
       {
         heading: '1. Aceptación de los términos',
-        body: 'Al acceder y usar EvalúaPro, el usuario acepta quedar sujeto a los presentes términos. Si no está de acuerdo con alguno de ellos, debe abstenerse de usar la plataforma.',
+        body: 'Al acceder y usar EvaluaPro, el usuario acepta quedar sujeto a los presentes términos. Si no está de acuerdo con alguno de ellos, debe abstenerse de usar la plataforma.',
       },
       {
         heading: '2. Descripción del servicio',
-        body: 'EvalúaPro es una plataforma de gestión académica digital que permite a evaluadores crear grupos, diseñar instrumentos de evaluación, registrar resultados y generar reportes. Los estudiantes pueden consultar sus calificaciones y retroalimentación.',
+        body: 'EvaluaPro es una plataforma de gestión académica digital que permite a evaluadores crear grupos, diseñar instrumentos de evaluación, registrar resultados y generar reportes. Los estudiantes pueden consultar sus calificaciones y retroalimentación.',
       },
       {
         heading: '3. Cuentas y acceso',
@@ -24,7 +24,7 @@ const sections = [
       },
       {
         heading: '5. Propiedad intelectual',
-        body: 'El código, diseño y contenidos propios de EvalúaPro son propiedad de sus desarrolladores. Los datos académicos introducidos por evaluadores y estudiantes son de su exclusiva titularidad.',
+        body: 'El código, diseño y contenidos propios de EvaluaPro son propiedad de sus desarrolladores. Los datos académicos introducidos por evaluadores y estudiantes son de su exclusiva titularidad.',
       },
       {
         heading: '6. Modificaciones del servicio',
@@ -32,7 +32,7 @@ const sections = [
       },
       {
         heading: '7. Limitación de responsabilidad',
-        body: 'EvalúaPro no se hace responsable por pérdida de datos derivada de fallos técnicos ajenos a nuestra voluntad, ni por el uso indebido de la plataforma por parte de terceros.',
+        body: 'EvaluaPro no se hace responsable por pérdida de datos derivada de fallos técnicos ajenos a nuestra voluntad, ni por el uso indebido de la plataforma por parte de terceros.',
       },
     ],
   },
@@ -66,7 +66,7 @@ const sections = [
       },
       {
         heading: '7. Cookies',
-        body: 'EvalúaPro no utiliza cookies de seguimiento ni publicidad. La sesión del usuario se gestiona mediante un token almacenado en sessionStorage, que se elimina al cerrar el navegador.',
+        body: 'EvaluaPro no utiliza cookies de seguimiento ni publicidad. La sesión del usuario se gestiona mediante un token almacenado en sessionStorage, que se elimina al cerrar el navegador.',
       },
       {
         heading: '8. Cambios a esta política',
@@ -84,10 +84,10 @@ function LegalPage() {
           <ArrowLeft size={16} aria-hidden="true" />
           Volver al inicio
         </Link>
-        <p className="eyebrow">EvalúaPro</p>
+        <p className="eyebrow">EvaluaPro</p>
         <h1>Políticas de la plataforma</h1>
         <p className="legal-intro">
-          Estos documentos describen las condiciones bajo las cuales puedes usar EvalúaPro y cómo
+          Estos documentos describen las condiciones bajo las cuales puedes usar EvaluaPro y cómo
           tratamos la información que nos confías. Última actualización: julio 2026.
         </p>
         <nav className="legal-toc" aria-label="Secciones">
