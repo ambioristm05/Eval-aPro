@@ -16,7 +16,10 @@ export async function sendPasswordResetEmail({ to, token }) {
     auth: {
       user: env.smtp.user,
       pass: env.smtp.pass
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000
   });
 
   await transporter.sendMail({
@@ -88,7 +91,10 @@ export async function sendEvaluatorInvitationEmail({ to, registrationUrl, expire
     auth: {
       user: env.smtp.user,
       pass: env.smtp.pass
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000
   });
 
   await transporter.sendMail({

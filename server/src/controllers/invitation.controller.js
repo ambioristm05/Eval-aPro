@@ -68,6 +68,7 @@ export const createEvaluatorInvitation = asyncHandler(async (req, res) => {
     });
     emailSent = result.sent;
   } catch (error) {
+    console.error('No se pudo enviar el correo de invitación:', error);
     emailSent = false;
   }
 
