@@ -367,7 +367,7 @@ Mantener variables y bases de datos separadas evita mezclar pruebas con datos re
 - ~~Crear o revisar el script `server/src/scripts/seedAdmin.js`~~ — ya existe (`server/src/scripts/seedAdmin.js`).
 - ~~Confirmar el flujo final para crear evaluadores~~ — resuelto: invitacion por administrador, con envio automatico de correo via Resend.
 - ~~Definir dominio final~~ — resuelto para el frontend (`evaluapro.app`, DNS en Hostinger apuntando a Vercel, certificado HTTPS automatico). El backend sigue en el subdominio por defecto de Render; configurar `api.evaluapro.app` es opcional.
-- Documentar una coleccion de Postman o Swagger para validar la API.
+- ~~Documentar una coleccion de Postman o Swagger para validar la API~~ — resuelto: `server/postman/EvaluaPro.postman_collection.json` documenta los 115 endpoints (16 carpetas por recurso), con autenticacion automatica via el request "Login" (guarda el token en la variable de coleccion `authToken`).
 - ~~Exportacion de reportes a CSV/Excel~~ — resuelto: cada reporte (individual, grupo, tarea, notas finales, instrumento) tiene botones de exportar a CSV y Excel (`.xlsx`, via `exceljs`) junto al de PDF.
 - Probar generacion PDF en el proveedor seleccionado (Puppeteer en Render).
 - Agregar politicas de backup y restauracion de MongoDB Atlas.
