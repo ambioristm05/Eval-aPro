@@ -1,0 +1,4321 @@
+{
+  "info": {
+    "name": "EvaluaPro API",
+    "description": "Colección Postman completa de la API de EvaluaPro (Express + MongoDB), montada bajo /api. Incluye todos los endpoints de autenticación, invitaciones, usuarios, grupos, jerarquía académica (cursos/módulos/clases), tareas, instrumentos, evaluaciones, resultados, reportes, estadísticas, auditoría, mensajería y configuración.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "7c1e6f2a-8b3d-4e5f-9a6c-1d2e3f4a5b6c"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Verifica que la API esté funcionando correctamente. No requiere autenticación.\n\nPúblico (sin autenticación)."
+      },
+      "response": []
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión con email y contraseña. Guarda automáticamente el token recibido en la variable de colección {{authToken}} mediante un test script.\n\nPúblico (sin autenticación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.gonzalez@evaluapro.com\",\n  \"password\": \"Contrasena123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    if (data && data.token) {",
+                  "        pm.collectionVariables.set('authToken', data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/student",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "student"
+              ]
+            },
+            "description": "Crea una cuenta de estudiante autoregistrada (rol student, estado activo).\n\nPúblico (sin autenticación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan.perez@evaluapro.com\",\n  \"password\": \"Contrasena123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar evaluador con invitación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/evaluator/invitation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "evaluator",
+                "invitation"
+              ]
+            },
+            "description": "Completa el registro de un evaluador usando el token de una invitación previamente enviada por un administrador.\n\nPúblico (sin autenticación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"María Rodríguez\",\n  \"email\": \"maria.rodriguez@evaluapro.com\",\n  \"password\": \"Contrasena123\",\n  \"token\": \"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Olvidé mi contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Envía un correo con un enlace para restablecer la contraseña si el email existe.\n\nPúblico (sin autenticación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.gonzalez@evaluapro.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restablecer contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Restablece la contraseña usando el token recibido por correo.\n\nPúblico (sin autenticación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4\",\n  \"password\": \"NuevaContrasena123\",\n  \"confirmPassword\": \"NuevaContrasena123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Cierra la sesión actual (no requiere token; el cliente debe descartar el JWT almacenado).\n\nPúblico (sin autenticación)."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener mi usuario (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Devuelve los datos del usuario autenticado actual.\n\nRequiere autenticación (cualquier rol: admin, evaluator o student)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invitaciones",
+      "item": [
+        {
+          "name": "Crear invitación de evaluador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/evaluator",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "evaluator"
+              ]
+            },
+            "description": "Genera y envía una invitación por correo para que una persona se registre como evaluador.\n\nRequiere autenticación. Rol(es) permitido(s): admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo.evaluador@evaluapro.com\",\n  \"expiresInDays\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar invitaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations"
+              ]
+            },
+            "description": "Lista todas las invitaciones de evaluador creadas.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar invitación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina/revoca una invitación pendiente por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Validar token de invitación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/validate/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "validate",
+                "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+              ]
+            },
+            "description": "Verifica que un token de invitación sea válido y no haya expirado ni sido usado (público, usado antes de completar el registro de evaluador).\n\nPúblico (sin autenticación)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Obtener mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Devuelve el perfil del usuario autenticado.\n\nRequiere autenticación (cualquier rol: admin, evaluator o student)."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Actualiza datos del propio perfil (por ahora, el nombre).\n\nRequiere autenticación (cualquier rol: admin, evaluator o student).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana González\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar mi contraseña",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "password"
+              ]
+            },
+            "description": "Cambia la contraseña del usuario autenticado, validando la contraseña actual.\n\nRequiere autenticación (cualquier rol: admin, evaluator o student).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Contrasena123\",\n  \"newPassword\": \"NuevaContrasena456\",\n  \"confirmNewPassword\": \"NuevaContrasena456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar mi cuenta",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Elimina (soft delete) la propia cuenta, requiriendo confirmar la contraseña.\n\nRequiere autenticación (cualquier rol: admin, evaluator o student).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Contrasena123\",\n  \"reason\": \"Ya no utilizaré la plataforma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar evaluadores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/evaluators?search=&status=active&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "evaluators"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista los usuarios con rol evaluador, con filtros de búsqueda/estado y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear evaluador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/evaluators",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "evaluators"
+              ]
+            },
+            "description": "Crea directamente una cuenta de evaluador (sin invitación).\n\nRequiere autenticación. Rol(es) permitido(s): admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Carlos Martínez\",\n  \"email\": \"carlos.martinez@evaluapro.com\",\n  \"password\": \"Contrasena123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar usuario permanentemente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/64f1a2b3c4d5e6f7a8b9c0d1/permanent?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "permanent"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina un usuario (evaluador o estudiante) de forma permanente e irreversible.\n\nRequiere autenticación. Rol(es) permitido(s): admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Contrasena123\",\n  \"reason\": \"Cuenta duplicada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "students"
+              ]
+            },
+            "description": "Crea una cuenta de estudiante, opcionalmente asignándola a un grupo.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Luis Fernández\",\n  \"email\": \"luis.fernandez@evaluapro.com\",\n  \"password\": \"Contrasena123\",\n  \"group\": \"64f1a2b3c4d5e6f7a8b9c0d2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/students?search=&status=active&includeDeleted=false&groupId=64f1a2b3c4d5e6f7a8b9c0d2&availableForGroup=64f1a2b3c4d5e6f7a8b9c0d2&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "students"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "includeDeleted",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "groupId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "availableForGroup",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista estudiantes con filtros de búsqueda, estado, grupo y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estudiante por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/students/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "students",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el detalle de un estudiante por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Suspender estudiante",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/64f1a2b3c4d5e6f7a8b9c0d1/suspend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "suspend"
+              ]
+            },
+            "description": "Suspende la cuenta de un estudiante, indicando la razón.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incumplimiento de normas académicas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivar estudiante",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/64f1a2b3c4d5e6f7a8b9c0d1/reactivate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "reactivate"
+              ]
+            },
+            "description": "Reactiva la cuenta de un estudiante previamente suspendido.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Situación regularizada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar estudiante",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina (soft delete) la cuenta de un estudiante, indicando la razón.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Estudiante retirado del programa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Grupos",
+      "item": [
+        {
+          "name": "Obtener mi grupo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "my"
+              ]
+            },
+            "description": "Devuelve el grupo al que pertenece el estudiante autenticado.\n\nRequiere autenticación. Rol(es) permitido(s): student."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups"
+              ]
+            },
+            "description": "Crea un nuevo grupo de estudiantes.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo A - Mañana\",\n  \"description\": \"Grupo matutino de primer semestre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar grupos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups?search=&status=active&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista los grupos con filtros de búsqueda, estado y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar estudiante a grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/64f1a2b3c4d5e6f7a8b9c0d1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "students"
+              ]
+            },
+            "description": "Agrega un estudiante existente al grupo indicado.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"64f1a2b3c4d5e6f7a8b9c0d2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar estudiante de grupo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/64f1a2b3c4d5e6f7a8b9c0d1/students/64f1a2b3c4d5e6f7a8b9c0d2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "students",
+                "64f1a2b3c4d5e6f7a8b9c0d2"
+              ]
+            },
+            "description": "Elimina a un estudiante del grupo indicado.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener grupo por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el detalle de un grupo por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar grupo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza nombre, descripción o estado de un grupo.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo A - Actualizado\",\n  \"description\": \"Descripción actualizada\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar grupo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina un grupo por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cursos",
+      "item": [
+        {
+          "name": "Crear curso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            },
+            "description": "Crea un nuevo curso dentro de la jerarquía académica.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Desarrollo de Software\",\n  \"description\": \"Curso introductorio de ingeniería de software\",\n  \"status\": \"active\",\n  \"location\": \"Aula 301\",\n  \"startDate\": \"2026-08-01\",\n  \"endDate\": \"2026-12-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses?search=&status=active&evaluatorId=64f1a2b3c4d5e6f7a8b9c0d1&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "evaluatorId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista cursos con filtros de búsqueda, estado, evaluador y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear módulo para curso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1/modules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "modules"
+              ]
+            },
+            "description": "Crea un módulo dentro del curso indicado.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fundamentos de Programación\",\n  \"description\": \"Módulo introductorio\",\n  \"status\": \"active\",\n  \"order\": 1,\n  \"startDate\": \"2026-08-01\",\n  \"endDate\": \"2026-09-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar módulos de un curso",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1/modules?search=&status=active&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "modules"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista los módulos pertenecientes a un curso, con filtros y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener curso por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene el detalle de un curso por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar curso",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza uno o más campos de un curso existente.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Desarrollo de Software Avanzado\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar curso",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina (soft delete) un curso por su id.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar curso permanentemente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/64f1a2b3c4d5e6f7a8b9c0d1/permanent?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "permanent"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina un curso de forma permanente e irreversible.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Módulos",
+      "item": [
+        {
+          "name": "Crear clase para módulo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "classes"
+              ]
+            },
+            "description": "Crea una clase (sesión) dentro del módulo indicado.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Clase 1 - Introducción\",\n  \"description\": \"Primera sesión del módulo\",\n  \"status\": \"active\",\n  \"order\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar clases de un módulo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1/classes?search=&status=active&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "classes"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista las clases pertenecientes a un módulo, con filtros y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener módulo por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene el detalle de un módulo por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar módulo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza uno o más campos de un módulo existente.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fundamentos de Programación II\",\n  \"order\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar módulo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina (soft delete) un módulo por su id.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar módulo permanentemente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/modules/64f1a2b3c4d5e6f7a8b9c0d1/permanent?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "permanent"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina un módulo de forma permanente e irreversible.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clases",
+      "item": [
+        {
+          "name": "Crear tarea para clase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "tasks"
+              ]
+            },
+            "description": "Crea una tarea (actividad evaluable) dentro de la clase indicada.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tarea 1 - Ejercicios prácticos\",\n  \"description\": \"Resolver los ejercicios del capítulo 1\",\n  \"groups\": [\n    \"64f1a2b3c4d5e6f7a8b9c0d2\"\n  ],\n  \"students\": [],\n  \"instrument\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n  \"status\": \"pending\",\n  \"dueDate\": \"2026-08-15\",\n  \"weight\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar tareas de una clase",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1/tasks?search=&status=pending&groupId=64f1a2b3c4d5e6f7a8b9c0d2&studentId=64f1a2b3c4d5e6f7a8b9c0d2&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": true
+                },
+                {
+                  "key": "groupId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "studentId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista las tareas de una clase, con filtros y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener clase por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene el detalle de una clase por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar clase",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza uno o más campos de una clase existente.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Clase 1 - Introducción (actualizada)\",\n  \"order\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar clase",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina (soft delete) una clase por su id.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar clase permanentemente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/classes/64f1a2b3c4d5e6f7a8b9c0d1/permanent?cascade=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "permanent"
+              ],
+              "query": [
+                {
+                  "key": "cascade",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Elimina una clase de forma permanente e irreversible.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "item": [
+        {
+          "name": "Crear tarea",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "description": "Crea una tarea asociada directamente a una clase (variante genérica de creación de tareas).\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tarea 2 - Proyecto final\",\n  \"description\": \"Desarrollar un proyecto integrador\",\n  \"class\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n  \"groups\": [\n    \"64f1a2b3c4d5e6f7a8b9c0d2\"\n  ],\n  \"students\": [],\n  \"instrument\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n  \"status\": \"pending\",\n  \"dueDate\": \"2026-09-01\",\n  \"weight\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar tareas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks?search=&status=pending&groupId=64f1a2b3c4d5e6f7a8b9c0d2&studentId=64f1a2b3c4d5e6f7a8b9c0d2&courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": true
+                },
+                {
+                  "key": "groupId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "studentId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista tareas con filtros por curso/módulo/clase/grupo/estudiante y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener tarea por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el detalle de una tarea por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar tarea",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza uno o más campos de una tarea existente.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"weight\": 25\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar tarea",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina una tarea por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Instrumentos",
+      "item": [
+        {
+          "name": "Crear instrumento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ]
+            },
+            "description": "Crea un instrumento de evaluación (rúbrica, lista de cotejo, escala, guía de observación o cuestionario).\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Rúbrica de Evaluación de Proyecto\",\n  \"description\": \"Rúbrica para evaluar el proyecto final\",\n  \"type\": \"rubric\",\n  \"status\": \"draft\",\n  \"criteria\": [\n    {\n      \"name\": \"Calidad del código\",\n      \"description\": \"Legibilidad y buenas prácticas\",\n      \"maxScore\": 10,\n      \"levels\": [\n        {\n          \"name\": \"Excelente\",\n          \"description\": \"Cumple todos los estándares\",\n          \"score\": 10\n        },\n        {\n          \"name\": \"Aceptable\",\n          \"description\": \"Cumple parcialmente\",\n          \"score\": 6\n        }\n      ]\n    }\n  ],\n  \"indicators\": [],\n  \"options\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar instrumentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments?search=&status=active&type=rubric&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "rubric",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista instrumentos con filtros de búsqueda, estado, tipo y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener instrumento por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el detalle de un instrumento por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar instrumento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza uno o más campos de un instrumento existente.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Rúbrica de Evaluación de Proyecto (v2)\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar instrumento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina (soft delete) un instrumento por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar instrumento permanentemente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/64f1a2b3c4d5e6f7a8b9c0d1/permanent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "permanent"
+              ]
+            },
+            "description": "Elimina un instrumento de forma permanente e irreversible.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Evaluaciones",
+      "item": [
+        {
+          "name": "Contar mis evaluaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "count"
+              ]
+            },
+            "description": "Devuelve el conteo de evaluaciones del estudiante autenticado.\n\nRequiere autenticación. Rol(es) permitido(s): student."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear evaluación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations"
+              ]
+            },
+            "description": "Registra la evaluación de un estudiante para una tarea, con las respuestas del instrumento aplicado.\n\nRequiere autenticación. Rol(es) permitido(s): evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n  \"task\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n  \"answers\": [\n    {\n      \"criterion\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n      \"levelName\": \"Excelente\",\n      \"score\": 10,\n      \"observation\": \"Muy buen desempeño\"\n    }\n  ],\n  \"feedback\": \"Buen trabajo en general, seguir reforzando la documentación.\",\n  \"suggestions\": [\n    \"Agregar más comentarios en el código\"\n  ],\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar evaluaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations?studentId=64f1a2b3c4d5e6f7a8b9c0d1&taskId=64f1a2b3c4d5e6f7a8b9c0d2&status=draft&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations"
+              ],
+              "query": [
+                {
+                  "key": "studentId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "taskId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "draft",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista evaluaciones con filtros por estudiante, tarea, estado y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar evaluaciones de un estudiante",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/student/64f1a2b3c4d5e6f7a8b9c0d1?status=completed&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista las evaluaciones asociadas a un estudiante específico.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Publicar evaluación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/64f1a2b3c4d5e6f7a8b9c0d1/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "publish"
+              ]
+            },
+            "description": "Publica una evaluación (cambia su estado a \"published\") para que el estudiante pueda verla.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener evaluación por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el detalle de una evaluación por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar evaluación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Actualiza respuestas, retroalimentación, sugerencias o estado de una evaluación existente.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feedback\": \"Retroalimentación actualizada\",\n  \"status\": \"completed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar evaluación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/evaluations/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "evaluations",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Elimina una evaluación por su id.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resultados",
+      "item": [
+        {
+          "name": "Obtener mi calificación final",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/final-grade/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "results",
+                "final-grade",
+                "me"
+              ]
+            },
+            "description": "Calcula y devuelve la calificación final del estudiante autenticado.\n\nRequiere autenticación. Rol(es) permitido(s): student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener calificación final de un estudiante",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/final-grade/student/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "results",
+                "final-grade",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Calcula y devuelve la calificación final de un estudiante específico.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener mis resultados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/me?taskId=64f1a2b3c4d5e6f7a8b9c0d2&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "results",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "taskId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista los resultados (evaluaciones publicadas) del estudiante autenticado, con filtro por tarea y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener resultados de un estudiante",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/student/64f1a2b3c4d5e6f7a8b9c0d1?taskId=64f1a2b3c4d5e6f7a8b9c0d2&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "results",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "taskId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Lista los resultados de un estudiante específico, con filtro por tarea y paginación.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener resultado por evaluación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/evaluation/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "results",
+                "evaluation",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el resultado asociado a una evaluación específica.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Actualizar permiso de impresión de un estudiante",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1/print-permission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print-permission"
+              ]
+            },
+            "description": "Habilita o deshabilita el permiso del estudiante para imprimir/descargar su propio reporte.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Imprimir reporte de estudiante (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1/print?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera una vista HTML imprimible del reporte de estudiante.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de estudiante (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1/pdf?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de estudiante en formato PDF.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de estudiante (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1/csv?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de estudiante en formato CSV.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de estudiante (XLSX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1/xlsx?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de estudiante en formato Excel (XLSX).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reporte de estudiante (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/student/64f1a2b3c4d5e6f7a8b9c0d1?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "student",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los datos del reporte de estudiante en formato JSON.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Imprimir reporte de grupo (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/group/64f1a2b3c4d5e6f7a8b9c0d1/print?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "group",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera una vista HTML imprimible del reporte de grupo.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de grupo (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/group/64f1a2b3c4d5e6f7a8b9c0d1/pdf?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "group",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de grupo en formato PDF.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de grupo (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/group/64f1a2b3c4d5e6f7a8b9c0d1/csv?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "group",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de grupo en formato CSV.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de grupo (XLSX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/group/64f1a2b3c4d5e6f7a8b9c0d1/xlsx?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "group",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de grupo en formato Excel (XLSX).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reporte de grupo (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/group/64f1a2b3c4d5e6f7a8b9c0d1?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "group",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los datos del reporte de grupo en formato JSON.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Imprimir reporte de tarea (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/task/64f1a2b3c4d5e6f7a8b9c0d1/print?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "task",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera una vista HTML imprimible del reporte de tarea.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de tarea (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/task/64f1a2b3c4d5e6f7a8b9c0d1/pdf?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "task",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de tarea en formato PDF.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de tarea (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/task/64f1a2b3c4d5e6f7a8b9c0d1/csv?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "task",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de tarea en formato CSV.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de tarea (XLSX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/task/64f1a2b3c4d5e6f7a8b9c0d1/xlsx?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "task",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de tarea en formato Excel (XLSX).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reporte de tarea (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/task/64f1a2b3c4d5e6f7a8b9c0d1?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "task",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los datos del reporte de tarea en formato JSON.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Imprimir reporte de calificaciones finales (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/final-grades/64f1a2b3c4d5e6f7a8b9c0d1/print?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "final-grades",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera una vista HTML imprimible del reporte de calificaciones finales.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de calificaciones finales (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/final-grades/64f1a2b3c4d5e6f7a8b9c0d1/pdf?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "final-grades",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de calificaciones finales en formato PDF.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de calificaciones finales (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/final-grades/64f1a2b3c4d5e6f7a8b9c0d1/csv?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "final-grades",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de calificaciones finales en formato CSV.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de calificaciones finales (XLSX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/final-grades/64f1a2b3c4d5e6f7a8b9c0d1/xlsx?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "final-grades",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de calificaciones finales en formato Excel (XLSX).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reporte de calificaciones finales (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/final-grades/64f1a2b3c4d5e6f7a8b9c0d1?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "final-grades",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los datos del reporte de calificaciones finales en formato JSON.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Imprimir reporte de instrumento (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/instruments/64f1a2b3c4d5e6f7a8b9c0d1/print?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera una vista HTML imprimible del reporte de instrumento.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de instrumento (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/instruments/64f1a2b3c4d5e6f7a8b9c0d1/pdf?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de instrumento en formato PDF.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de instrumento (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/instruments/64f1a2b3c4d5e6f7a8b9c0d1/csv?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de instrumento en formato CSV.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Descargar reporte de instrumento (XLSX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/instruments/64f1a2b3c4d5e6f7a8b9c0d1/xlsx?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Genera y descarga el reporte de instrumento en formato Excel (XLSX).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator.\n\nLa respuesta es un archivo binario (descarga directa), no JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reporte de instrumento (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/instruments/64f1a2b3c4d5e6f7a8b9c0d1?courseId=64f1a2b3c4d5e6f7a8b9c0d1&moduleId=64f1a2b3c4d5e6f7a8b9c0d1&classId=64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "moduleId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                },
+                {
+                  "key": "classId",
+                  "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los datos del reporte de instrumento en formato JSON.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Estadísticas",
+      "item": [
+        {
+          "name": "Obtener estadísticas generales (overview)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "overview"
+              ]
+            },
+            "description": "Devuelve estadísticas generales del sistema (totales de cursos, grupos, tareas, evaluaciones, etc.).\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas por evaluador",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/by-evaluator",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "by-evaluator"
+              ]
+            },
+            "description": "Devuelve estadísticas agregadas agrupadas por evaluador.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas de un grupo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/groups/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "groups",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Devuelve estadísticas de desempeño para un grupo específico.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas de una tarea",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/tasks/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "tasks",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Devuelve estadísticas de desempeño para una tarea específica.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas de un instrumento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/instruments/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "instruments",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Devuelve estadísticas de uso/desempeño para un instrumento específico.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auditoría",
+      "item": [
+        {
+          "name": "Listar registros de auditoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit"
+              ]
+            },
+            "description": "Lista los registros del log de auditoría del sistema.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar entidades auditables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audit/entities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "entities"
+              ]
+            },
+            "description": "Lista los tipos de entidades disponibles para filtrar el log de auditoría.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mensajes",
+      "item": [
+        {
+          "name": "Listar contactos de mensajería",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "contacts"
+              ]
+            },
+            "description": "Lista los contactos con los que el usuario autenticado puede intercambiar mensajes.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener hilo de mensajes con un usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/thread/64f1a2b3c4d5e6f7a8b9c0d1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "thread",
+                "64f1a2b3c4d5e6f7a8b9c0d1"
+              ]
+            },
+            "description": "Obtiene el historial de mensajes entre el usuario autenticado y otro usuario.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student."
+          },
+          "response": []
+        },
+        {
+          "name": "Enviar mensaje",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "description": "Envía un mensaje directo a otro usuario.\n\nRequiere autenticación. Rol(es) permitido(s): admin, evaluator, student.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientId\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n  \"body\": \"Hola, quería consultarte sobre la tarea entregada.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Configuración",
+      "item": [
+        {
+          "name": "Obtener configuración",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Obtiene la configuración global de la plataforma.\n\nRequiere autenticación. Rol(es) permitido(s): admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar configuración",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Actualiza uno o más parámetros de configuración global de la plataforma.\n\nRequiere autenticación. Rol(es) permitido(s): admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institutionName\": \"Instituto EvaluaPro\",\n  \"evaluatorRegistrationOpen\": true,\n  \"invitationExpiryDays\": 7,\n  \"minPassingGrade\": 70,\n  \"studentPrintDefault\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -7,3 +7,6 @@ build/
 *.log
 coverage/
 .vite/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+.pnpm-store/
