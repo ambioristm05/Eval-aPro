@@ -7,6 +7,7 @@ import {
 } from '../services/report.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { generatePdfFromHtml } from '../utils/generatePDF.js';
+import { renderReportCsv, renderReportXlsx } from '../utils/reportExport.js';
 import { renderReportHtml } from '../utils/reportHtml.js';
 
 function filenameForReport(report) {
@@ -43,6 +44,26 @@ async function sendPdf(res, report) {
   res.send(pdf);
 }
 
+const UTF8_BOM = '﻿';
+
+function sendCsv(res, report) {
+  const csv = renderReportCsv(report);
+  const filename = filenameForReport(report);
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+  res.send(UTF8_BOM + csv);
+}
+
+async function sendXlsx(res, report) {
+  const buffer = await renderReportXlsx(report);
+  const filename = filenameForReport(report);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+  res.send(buffer);
+}
+
 export const printStudentReport = asyncHandler(async (req, res) => {
   const report = await buildStudentReport(req, req.validated.params.studentId);
   sendHtml(res, report);
@@ -51,6 +72,16 @@ export const printStudentReport = asyncHandler(async (req, res) => {
 export const pdfStudentReport = asyncHandler(async (req, res) => {
   const report = await buildStudentReport(req, req.validated.params.studentId);
   await sendPdf(res, report);
+});
+
+export const csvStudentReport = asyncHandler(async (req, res) => {
+  const report = await buildStudentReport(req, req.validated.params.studentId);
+  sendCsv(res, report);
+});
+
+export const xlsxStudentReport = asyncHandler(async (req, res) => {
+  const report = await buildStudentReport(req, req.validated.params.studentId);
+  await sendXlsx(res, report);
 });
 
 export const printGroupReport = asyncHandler(async (req, res) => {
@@ -63,6 +94,16 @@ export const pdfGroupReport = asyncHandler(async (req, res) => {
   await sendPdf(res, report);
 });
 
+export const csvGroupReport = asyncHandler(async (req, res) => {
+  const report = await buildGroupReport(req, req.validated.params.groupId);
+  sendCsv(res, report);
+});
+
+export const xlsxGroupReport = asyncHandler(async (req, res) => {
+  const report = await buildGroupReport(req, req.validated.params.groupId);
+  await sendXlsx(res, report);
+});
+
 export const printTaskReport = asyncHandler(async (req, res) => {
   const report = await buildTaskReport(req, req.validated.params.taskId);
   sendHtml(res, report);
@@ -71,6 +112,16 @@ export const printTaskReport = asyncHandler(async (req, res) => {
 export const pdfTaskReport = asyncHandler(async (req, res) => {
   const report = await buildTaskReport(req, req.validated.params.taskId);
   await sendPdf(res, report);
+});
+
+export const csvTaskReport = asyncHandler(async (req, res) => {
+  const report = await buildTaskReport(req, req.validated.params.taskId);
+  sendCsv(res, report);
+});
+
+export const xlsxTaskReport = asyncHandler(async (req, res) => {
+  const report = await buildTaskReport(req, req.validated.params.taskId);
+  await sendXlsx(res, report);
 });
 
 export const printFinalGradesReport = asyncHandler(async (req, res) => {
@@ -83,6 +134,16 @@ export const pdfFinalGradesReport = asyncHandler(async (req, res) => {
   await sendPdf(res, report);
 });
 
+export const csvFinalGradesReport = asyncHandler(async (req, res) => {
+  const report = await buildFinalGradesReport(req, req.validated.params.groupId);
+  sendCsv(res, report);
+});
+
+export const xlsxFinalGradesReport = asyncHandler(async (req, res) => {
+  const report = await buildFinalGradesReport(req, req.validated.params.groupId);
+  await sendXlsx(res, report);
+});
+
 export const printInstrumentReport = asyncHandler(async (req, res) => {
   const report = await buildInstrumentReport(req, req.validated.params.instrumentId);
   sendHtml(res, report);
@@ -91,4 +152,14 @@ export const printInstrumentReport = asyncHandler(async (req, res) => {
 export const pdfInstrumentReport = asyncHandler(async (req, res) => {
   const report = await buildInstrumentReport(req, req.validated.params.instrumentId);
   await sendPdf(res, report);
+});
+
+export const csvInstrumentReport = asyncHandler(async (req, res) => {
+  const report = await buildInstrumentReport(req, req.validated.params.instrumentId);
+  sendCsv(res, report);
+});
+
+export const xlsxInstrumentReport = asyncHandler(async (req, res) => {
+  const report = await buildInstrumentReport(req, req.validated.params.instrumentId);
+  await sendXlsx(res, report);
 });

@@ -1,10 +1,12 @@
-import { Download, Printer } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Printer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTimedState } from '../../hooks/useTimedState.js';
 import {
+  getCsvReport,
   getPdfReport,
   getPrintableReport,
   getReport,
+  getXlsxReport,
   listCourseModules,
   listModuleClasses,
   listResource,
@@ -79,6 +81,8 @@ function EvaluatorReportsPage() {
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [isExportingXlsx, setIsExportingXlsx] = useState(false);
 
   const isHierarchyFilterActive = Boolean(
     hierarchyFilter.courseId || hierarchyFilter.moduleId || hierarchyFilter.classId
@@ -355,26 +359,30 @@ function EvaluatorReportsPage() {
     }
   };
 
-  const handleDownloadPdf = async () => {
+  const downloadReportFile = async (getter, extension, setLoading) => {
     if (!report || !selectedId) return;
 
     setError('');
-    setIsDownloading(true);
+    setLoading(true);
 
     try {
-      const blob = await getPdfReport(reportType, selectedId, hierarchyParams);
+      const blob = await getter(reportType, selectedId, hierarchyParams);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `reporte-${reportType}-${selectedId}.pdf`;
+      a.download = `reporte-${reportType}-${selectedId}.${extension}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
-      setIsDownloading(false);
+      setLoading(false);
     }
   };
+
+  const handleDownloadPdf = () => downloadReportFile(getPdfReport, 'pdf', setIsDownloading);
+  const handleExportCsv = () => downloadReportFile(getCsvReport, 'csv', setIsExportingCsv);
+  const handleExportXlsx = () => downloadReportFile(getXlsxReport, 'xlsx', setIsExportingXlsx);
 
   const handleOpenPrintableReport = async () => {
     if (!report || !selectedId) return;
@@ -565,15 +573,35 @@ function EvaluatorReportsPage() {
         </div>
       </section>
 
-      <button
-        className="floating-print no-print"
-        type="button"
-        onClick={handleDownloadPdf}
-        title="Descargar PDF"
-        disabled={!report || isDownloading}
-      >
-        {isDownloading ? <span className="button-spinner-ring" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
-      </button>
+      <div className="floating-actions no-print">
+        <button
+          className="floating-print"
+          type="button"
+          onClick={handleDownloadPdf}
+          title="Descargar PDF"
+          disabled={!report || isDownloading}
+        >
+          {isDownloading ? <span className="button-spinner-ring" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
+        </button>
+        <button
+          className="floating-print"
+          type="button"
+          onClick={handleExportXlsx}
+          title="Exportar a Excel"
+          disabled={!report || isExportingXlsx}
+        >
+          {isExportingXlsx ? <span className="button-spinner-ring" aria-hidden="true" /> : <FileSpreadsheet size={20} aria-hidden="true" />}
+        </button>
+        <button
+          className="floating-print"
+          type="button"
+          onClick={handleExportCsv}
+          title="Exportar a CSV"
+          disabled={!report || isExportingCsv}
+        >
+          {isExportingCsv ? <span className="button-spinner-ring" aria-hidden="true" /> : <FileText size={20} aria-hidden="true" />}
+        </button>
+      </div>
     </section>
   );
 }

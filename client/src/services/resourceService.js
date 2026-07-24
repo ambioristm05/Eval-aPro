@@ -111,7 +111,7 @@ export async function updateStudentReportPermission(studentId, enabled) {
   return data;
 }
 
-export async function getReport(type, id, params) {
+function reportBasePath(type, id) {
   const pathMap = {
     student: `/reports/student/${id}`,
     group: `/reports/group/${id}`,
@@ -120,32 +120,30 @@ export async function getReport(type, id, params) {
     instrument: `/reports/instruments/${id}`,
   };
 
-  const { data } = await api.get(pathMap[type], { params });
+  return pathMap[type];
+}
+
+export async function getReport(type, id, params) {
+  const { data } = await api.get(reportBasePath(type, id), { params });
   return data.report;
 }
 
 export async function getPrintableReport(type, id, params) {
-  const pathMap = {
-    student: `/reports/student/${id}/print`,
-    group: `/reports/group/${id}/print`,
-    task: `/reports/task/${id}/print`,
-    final: `/reports/final-grades/${id}/print`,
-    instrument: `/reports/instruments/${id}/print`,
-  };
-
-  const { data } = await api.get(pathMap[type], { params, responseType: 'text' });
+  const { data } = await api.get(`${reportBasePath(type, id)}/print`, { params, responseType: 'text' });
   return data;
 }
 
 export async function getPdfReport(type, id, params) {
-  const pathMap = {
-    student: `/reports/student/${id}/pdf`,
-    group: `/reports/group/${id}/pdf`,
-    task: `/reports/task/${id}/pdf`,
-    final: `/reports/final-grades/${id}/pdf`,
-    instrument: `/reports/instruments/${id}/pdf`,
-  };
+  const response = await api.get(`${reportBasePath(type, id)}/pdf`, { params, responseType: 'blob' });
+  return response.data;
+}
 
-  const response = await api.get(pathMap[type], { params, responseType: 'blob' });
+export async function getCsvReport(type, id, params) {
+  const response = await api.get(`${reportBasePath(type, id)}/csv`, { params, responseType: 'blob' });
+  return response.data;
+}
+
+export async function getXlsxReport(type, id, params) {
+  const response = await api.get(`${reportBasePath(type, id)}/xlsx`, { params, responseType: 'blob' });
   return response.data;
 }

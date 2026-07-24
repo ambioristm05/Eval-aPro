@@ -9,6 +9,11 @@ import {
   updateStudentReportPermission
 } from '../controllers/report.controller.js';
 import {
+  csvFinalGradesReport,
+  csvGroupReport,
+  csvInstrumentReport,
+  csvStudentReport,
+  csvTaskReport,
   pdfFinalGradesReport,
   pdfGroupReport,
   pdfInstrumentReport,
@@ -18,7 +23,12 @@ import {
   printGroupReport,
   printInstrumentReport,
   printStudentReport,
-  printTaskReport
+  printTaskReport,
+  xlsxFinalGradesReport,
+  xlsxGroupReport,
+  xlsxInstrumentReport,
+  xlsxStudentReport,
+  xlsxTaskReport
 } from '../controllers/print.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { authorize } from '../middlewares/role.middleware.js';
@@ -58,6 +68,20 @@ router.get(
 );
 
 router.get(
+  '/student/:studentId/csv',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR, USER_ROLES.STUDENT),
+  validateRequest(studentReportSchema),
+  csvStudentReport
+);
+
+router.get(
+  '/student/:studentId/xlsx',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR, USER_ROLES.STUDENT),
+  validateRequest(studentReportSchema),
+  xlsxStudentReport
+);
+
+router.get(
   '/student/:studentId',
   authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR, USER_ROLES.STUDENT),
   validateRequest(studentReportSchema),
@@ -76,6 +100,20 @@ router.get(
   authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
   validateRequest(groupReportSchema),
   pdfGroupReport
+);
+
+router.get(
+  '/group/:groupId/csv',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(groupReportSchema),
+  csvGroupReport
+);
+
+router.get(
+  '/group/:groupId/xlsx',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(groupReportSchema),
+  xlsxGroupReport
 );
 
 router.get(
@@ -100,6 +138,20 @@ router.get(
 );
 
 router.get(
+  '/task/:taskId/csv',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(taskReportSchema),
+  csvTaskReport
+);
+
+router.get(
+  '/task/:taskId/xlsx',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(taskReportSchema),
+  xlsxTaskReport
+);
+
+router.get(
   '/task/:taskId',
   authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
   validateRequest(taskReportSchema),
@@ -121,6 +173,20 @@ router.get(
 );
 
 router.get(
+  '/final-grades/:groupId/csv',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(groupReportSchema),
+  csvFinalGradesReport
+);
+
+router.get(
+  '/final-grades/:groupId/xlsx',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(groupReportSchema),
+  xlsxFinalGradesReport
+);
+
+router.get(
   '/final-grades/:groupId',
   authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
   validateRequest(groupReportSchema),
@@ -139,6 +205,20 @@ router.get(
   authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
   validateRequest(instrumentReportSchema),
   pdfInstrumentReport
+);
+
+router.get(
+  '/instruments/:instrumentId/csv',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(instrumentReportSchema),
+  csvInstrumentReport
+);
+
+router.get(
+  '/instruments/:instrumentId/xlsx',
+  authorize(USER_ROLES.ADMIN, USER_ROLES.EVALUATOR),
+  validateRequest(instrumentReportSchema),
+  xlsxInstrumentReport
 );
 
 router.get(

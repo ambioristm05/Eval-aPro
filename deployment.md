@@ -25,23 +25,24 @@ Usuario
   |
   v
 Frontend React/Vite
-Vercel o Netlify
+Vercel (dominio propio: evaluapro.app)
   |
-  | VITE_API_URL=https://api.evaluapro.com/api
+  | VITE_API_URL=https://evaluapro-api.onrender.com/api
   v
 Backend Express
-Render o Railway
+Render (subdominio por defecto, sin dominio propio)
   |
   | MONGO_URI=mongodb+srv://...
   v
 MongoDB Atlas
 ```
 
-Servicios opcionales:
+Estado real del despliegue (actualizado):
 
-- **SMTP:** para invitaciones, recuperacion de contrasena y notificaciones futuras.
-- **Almacenamiento externo:** si luego se agregan fotos de perfil, adjuntos o archivos exportados.
-- **Dominio propio:** por ejemplo `evaluapro.com`, `app.evaluapro.com` y `api.evaluapro.com`.
+- El **frontend** ya usa un dominio propio: `evaluapro.app` (comprado en Hostinger, DNS apuntando a Vercel).
+- El **backend** sigue en el subdominio por defecto de Render (`evaluapro-api.onrender.com`); nunca se configuró `api.evaluapro.app`. Es opcional hacerlo mas adelante si se quiere.
+- **Envio de correo:** no se usa SMTP tradicional. Render bloquea conexiones SMTP salientes (confirmado en produccion con error `ETIMEDOUT`), asi que el envio de correos (invitaciones, recuperacion de contrasena) se hace via la **API HTTP de Resend** (`https://api.resend.com/emails`), que viaja por HTTPS y no se bloquea. Ver seccion 4.1.
+- **Almacenamiento externo:** pendiente, solo seria necesario si se agregan fotos de perfil o adjuntos.
 
 ---
 
@@ -85,30 +86,30 @@ PORT=5000
 MONGO_URI=mongodb+srv://USER:PASSWORD@cluster.mongodb.net/evaluapro
 JWT_SECRET=usar_un_secreto_largo_y_seguro
 JWT_EXPIRES_IN=7d
-CLIENT_URL=https://app.evaluapro.com
+CLIENT_URL=https://evaluapro.app,https://www.evaluapro.app
 ADMIN_NAME=Administrador
-ADMIN_EMAIL=admin@evaluapro.com
+ADMIN_EMAIL=admin@evaluapro.app
 ADMIN_PASSWORD=usar_una_contrasena_segura
-SMTP_HOST=smtp.proveedor.com
-SMTP_PORT=587
-SMTP_USER=usuario_smtp
-SMTP_PASS=password_smtp
-SMTP_FROM=EvaluaPro <no-reply@evaluapro.com>
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=465
+SMTP_USER=resend
+SMTP_PASS=re_tu_api_key_de_resend
+SMTP_FROM=EvaluaPro <no-reply@evaluapro.app>
 ```
 
 Notas:
 
-- `CLIENT_URL` debe coincidir exactamente con la URL publica del frontend para que CORS funcione.
+- `CLIENT_URL` puede llevar **varios origenes separados por coma** (por ejemplo con y sin `www`); el backend los separa para armar la lista blanca de CORS (`server/src/app.js`). Para construir enlaces individuales (registro, reset de contrasena, imagenes de correo) el codigo usa `env.primaryClientUrl`, que toma solo el primer origen de la lista — importante si se agrega o reordena un origen.
 - `JWT_SECRET` no debe usarse con el valor de desarrollo.
 - `ADMIN_PASSWORD` debe rotarse despues del primer inicio de sesion si se usa para crear un administrador inicial.
-- Las variables SMTP son opcionales al inicio, pero seran necesarias para invitaciones y recuperacion de contrasena.
+- **Las variables `SMTP_*` ya no configuran una conexion SMTP real** (Render bloquea SMTP saliente). El backend usa la **API HTTP de Resend**, reutilizando `SMTP_PASS` como el API key de Resend (el usuario SMTP de Resend siempre es literalmente `resend`, por eso `SMTP_USER=resend`). `SMTP_HOST`/`SMTP_PORT` quedan sin uso real, se conservan solo por compatibilidad de nombres. Sin estas variables, el sistema hace fallback a `console.log` (no falla, pero no envia correos).
 
 ### 4.2. Frontend
 
 Configurar esta variable en Vercel o Netlify:
 
 ```env
-VITE_API_URL=https://api.evaluapro.com/api
+VITE_API_URL=https://evaluapro-api.onrender.com/api
 ```
 
 Notas:
@@ -171,7 +172,7 @@ Variables requeridas:
 - `ADMIN_NAME`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
-- Variables SMTP si se usaran invitaciones o correos.
+- Variables `SMTP_*` (en realidad usadas para la API de Resend, ver seccion 4.1) si se usaran invitaciones o correos.
 
 Ruta de salud:
 
@@ -294,7 +295,7 @@ Antes de abrir el sistema a usuarios reales:
 - [ ] Eliminacion de estudiantes y evaluaciones importantes es logica, no fisica.
 - [ ] Acciones destructivas requieren confirmacion.
 - [ ] Reportes e impresion disponibles solo para usuarios autorizados.
-- [ ] Credenciales SMTP guardadas como variables de entorno.
+- [ ] API key de Resend (`SMTP_PASS`) guardada como variable de entorno, nunca en el codigo.
 - [ ] Backups de MongoDB activados o planificados.
 
 ---
@@ -344,17 +345,17 @@ MongoDB: mongodb://localhost:27017/evaluapro
 ### Staging
 
 ```txt
-Frontend: https://staging-app.evaluapro.com
-Backend: https://staging-api.evaluapro.com
+Frontend: https://staging-app.evaluapro.app
+Backend: https://staging-api.evaluapro.app
 MongoDB: evaluapro_staging
 ```
 
-### Produccion
+### Produccion (real)
 
 ```txt
-Frontend: https://app.evaluapro.com
-Backend: https://api.evaluapro.com
-MongoDB: evaluapro_prod
+Frontend: https://evaluapro.app  (Vercel, dominio propio)
+Backend: https://evaluapro-api.onrender.com  (Render, subdominio por defecto)
+MongoDB: evaluapro_prod (Atlas)
 ```
 
 Mantener variables y bases de datos separadas evita mezclar pruebas con datos reales de estudiantes.
@@ -363,12 +364,13 @@ Mantener variables y bases de datos separadas evita mezclar pruebas con datos re
 
 ## 12. Pendientes antes de produccion
 
-- Crear o revisar el script `server/src/scripts/seedAdmin.js`, ya que `package.json` declara `seed:admin`.
+- ~~Crear o revisar el script `server/src/scripts/seedAdmin.js`~~ — ya existe (`server/src/scripts/seedAdmin.js`).
+- ~~Confirmar el flujo final para crear evaluadores~~ — resuelto: invitacion por administrador, con envio automatico de correo via Resend.
+- ~~Definir dominio final~~ — resuelto para el frontend (`evaluapro.app`, DNS en Hostinger apuntando a Vercel, certificado HTTPS automatico). El backend sigue en el subdominio por defecto de Render; configurar `api.evaluapro.app` es opcional.
 - Documentar una coleccion de Postman o Swagger para validar la API.
-- Confirmar el flujo final para crear evaluadores: administrador manual o invitacion.
-- Probar generacion PDF en el proveedor seleccionado.
-- Agregar politicas de backup y restauracion de MongoDB.
-- Definir dominio final y certificados HTTPS.
+- ~~Exportacion de reportes a CSV/Excel~~ — resuelto: cada reporte (individual, grupo, tarea, notas finales, instrumento) tiene botones de exportar a CSV y Excel (`.xlsx`, via `exceljs`) junto al de PDF.
+- Probar generacion PDF en el proveedor seleccionado (Puppeteer en Render).
+- Agregar politicas de backup y restauracion de MongoDB Atlas.
 - Revisar limites de subida, tamano de JSON y rendimiento en reportes grandes.
 
 ---

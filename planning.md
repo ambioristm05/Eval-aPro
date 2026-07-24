@@ -325,7 +325,6 @@ La aplicación debe permitir crear diferentes tipos de instrumentos.
 Tipos iniciales:
 
 - Rúbrica analítica.
-- Rúbrica holística.
 - Lista de cotejo.
 - Escala de valoración.
 - Guía de observación.
